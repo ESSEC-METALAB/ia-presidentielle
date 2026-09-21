@@ -1,10 +1,14 @@
 """Provider clients.
 
-Only the batch surface is implemented, because production extraction runs as a
-batch — for provenance as much as for the 50% discount. The gold-set comparison
-uses ordinary synchronous calls instead; 50 documents do not need a batch, and
-keeping the comparison synchronous means a second provider costs no extra
-client code.
+Production extraction runs as a batch — for provenance as much as for the 50%
+discount. The gold-set comparison runs synchronously instead: fifty documents
+do not need a batch, and waiting hours per candidate model would make the
+comparison tedious enough to skip.
+
+Both paths build their request from :func:`request_body`, so the comparison
+cannot quietly measure a different prompt or a looser schema than production
+sends. Only OpenAI is implemented; an Anthropic client is about twenty lines
+when a Claude model needs scoring, and `schema.py` is already neutral.
 
 Request and response shapes here were read from the provider's current API
 documentation, not recalled.
@@ -23,6 +27,31 @@ _OPENAI_STATUS = {
     "expired": "expired",
     "failed": "failed", "cancelled": "failed", "cancelling": "failed",
 }
+
+
+def request_body(payload: dict) -> dict:
+    """The request itself, shared by the batch and synchronous paths.
+
+    Defined once on purpose. The gold set exists to choose a model, and a
+    comparison that sent a different prompt or a looser schema than production
+    sends would be measuring the wrong thing. Both callers build from here, so
+    they cannot drift apart.
+    """
+    return {
+        "model": payload["model"],
+        "messages": [
+            {"role": "system", "content": payload["system"]},
+            {"role": "user", "content": payload["user"]},
+        ],
+        "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "extraction",
+                "schema": payload["schema"],
+                "strict": True,
+            },
+        },
+    }
 
 
 class OpenAIBatchClient:
@@ -44,21 +73,7 @@ class OpenAIBatchClient:
             "custom_id": payload["custom_id"],
             "method": "POST",
             "url": OpenAIBatchClient.endpoint,
-            "body": {
-                "model": payload["model"],
-                "messages": [
-                    {"role": "system", "content": payload["system"]},
-                    {"role": "user", "content": payload["user"]},
-                ],
-                "response_format": {
-                    "type": "json_schema",
-                    "json_schema": {
-                        "name": "extraction",
-                        "schema": payload["schema"],
-                        "strict": True,
-                    },
-                },
-            },
+            "body": request_body(payload),
         }
 
     def submit(self, payloads: list[dict]) -> str:
@@ -101,3 +116,35 @@ class OpenAIBatchClient:
             except (KeyError, IndexError, json.JSONDecodeError):
                 continue
         return out
+
+
+class OpenAISyncClient:
+    """One call, one answer. Used only to score the gold set.
+
+    Production extraction is batched, for provenance as much as for the 50%.
+    The comparison is not: fifty documents do not need a batch, waiting hours
+    per candidate model would make the comparison tedious enough to skip, and
+    a synchronous call sends the identical body — see :func:`request_body`.
+    """
+
+    def __init__(self, api_key: str | None = None):
+        from openai import OpenAI
+
+        self.client = OpenAI(api_key=api_key) if api_key else OpenAI()
+
+    def complete(self, payload: dict) -> dict | None:
+        """The parsed extraction, or ``None`` if the answer was unusable.
+
+        A model that returns something unparseable has failed the document,
+        and that is a result worth scoring — so it is reported as a failure
+        rather than smoothed into an empty extraction, which is the *correct*
+        answer for most documents and would flatter the model.
+        """
+        answer = self.client.chat.completions.create(**request_body(payload))
+        content = answer.choices[0].message.content
+        if not content:
+            return None
+        try:
+            return json.loads(content)
+        except json.JSONDecodeError:
+            return None
