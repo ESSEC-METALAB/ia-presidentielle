@@ -61,21 +61,29 @@ jobs:
         with:
           fetch-depth: 0
 
-      # An open review is still the working state: yesterday's claims, the
-      # outstanding batch and the dedup history all live on its branch. A
-      # closed or merged one means start again from main — written this way
-      # rather than by merging main back in, because a squash merge leaves the
-      # branch with no ancestor in common and conflicts on every file.
+      # The review branch accumulates DATA, never code.
+      #
+      # Checking the branch out wholesale would run whatever code it was
+      # branched from: a review left open for a week would still be running
+      # last week's fetchers, and a fix merged to main in the meantime would
+      # not reach the job that needs it. So the code always comes from main,
+      # and only data/ is restored from the open review — which is where
+      # yesterday's claims, the outstanding batch and the dedup history live,
+      # including any correction an editor made in the pull request.
+      #
+      # Restoring rather than merging is deliberate: a squash merge leaves the
+      # branch with no common ancestor, and merging main back in would then
+      # conflict on every file.
       - name: Continue the open review, or start a new one
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$REVIEW_BRANCH" origin/main
           if [ -n "$(gh pr list --head "$REVIEW_BRANCH" --state open --json number --jq '.[].number')" ]; then
-            echo "continuing the open review"
-            git checkout -B "$REVIEW_BRANCH" "origin/$REVIEW_BRANCH"
+            echo "continuing the open review: code from main, data from the branch"
+            git checkout "origin/$REVIEW_BRANCH" -- data/
           else
-            echo "no review open; starting from main"
-            git checkout -B "$REVIEW_BRANCH" origin/main
+            echo "no review open; starting fresh from main"
           fi
 
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -134,7 +142,11 @@ jobs:
             exit 0
           fi
           git commit -m "Morning pass: claims, provenance artifacts, pipeline state"
-          git push origin "$REVIEW_BRANCH"
+          # Forced because the branch is rebuilt on main every run. The lease
+          # is what makes it safe: if someone pushed to the review since this
+          # job fetched, the push is refused rather than silently discarding
+          # their work, and re-running the job picks their commit up.
+          git push --force-with-lease origin "$REVIEW_BRANCH"
           if [ -n "$(gh pr list --head "$REVIEW_BRANCH" --state open --json number --jq '.[].number')" ]; then
             exit 0
           fi
