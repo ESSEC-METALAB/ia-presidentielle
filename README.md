@@ -153,11 +153,24 @@ Non-code, and each blocks publication:
 - [ ] Contact address live for *droit de réponse* (LCEN art. 6-IV: 3-month
       window, 3-day response)
 
-Code, and each blocks publication too:
+Code:
 
-- [ ] `.github/workflows/daily.yml` — the cron, the PR, the Vercel preview
-- [ ] Dead-man's switch: GitHub gives *no* notification when a scheduled
-      workflow silently stops, which is the `nosdeputes.fr` failure again
+- [x] `.github/workflows/daily.yml` — the morning pass. Verified green end to
+      end 2026-09-21: 10 new documents, 110 chunks submitted, gates clean,
+      24 pages rendered, review branch pushed.
+- [x] `.github/workflows/checks.yml` — the gates on the pull request, required
+      by branch protection on `main`. The daily workflow runs on a schedule,
+      so its result never attached to the review branch's head commit.
+- [ ] Dead-man's switch: the step exists but is skipped until a
+      `HEALTHCHECK_URL` secret is set. GitHub gives *no* notification when a
+      scheduled workflow silently stops — the `nosdeputes.fr` failure again.
+- [ ] Opening the review is manual. It needs "Allow GitHub Actions to create
+      and approve pull requests", and that same setting lets a workflow
+      *approve* one, which is the opposite of the editorial premise. The
+      branch is pushed either way; someone clicks once per cycle.
 - [ ] J-2 publication freeze wired into the cron (code électoral art. L. 49),
       with the election dates in config rather than in the workflow
 - [ ] A gold set, and a model chosen against it (spec §6c)
+- [ ] Required review on merge, once the *directeur de la publication* has an
+      account — GitHub forbids approving your own pull request, so requiring
+      an approval with a single maintainer deadlocks every review.
