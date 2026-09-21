@@ -125,8 +125,10 @@ by hand from real quotes to exercise the gates and the renderer.
   scored comparison table before any model is committed to, with the cheap tier
   as the incumbent. Neither the 50 labelled claims nor the table exists, and
   `clients.py` has no synchronous path to run the comparison with.
-- **The yt-dlp-in-CI spike is still untested.** It ran on a laptop; runners use
-  datacenter IPs, which YouTube throttles for transcripts. Load-bearing.
+- **YouTube extraction does not work from CI.** Measured 2026-09-21 on a
+  runner, twice, and via two independent endpoints: both answer *"Sign in to
+  confirm you're not a bot"* / `RequestBlocked`. Listing still works, so video
+  leads are unaffected; timestamped video claims are not reachable from CI.
 - **Méthodologie and Mentions légales are placeholders.** Deliberately — that
   prose needs the *directeur de la publication* and legal review.
 - **Link integrity is half-implemented.** Spec §7 asks that every `source_url`
@@ -134,10 +136,11 @@ by hand from real quotes to exercise the gates and the renderer.
   still answers.
 - **Accessibility has never been measured.** The structural rules are asserted
   in `tests/test_render.py`, but `axe` and Lighthouse have not been run once.
-- **Three of seven candidates have no wired source** — Attal, Le Pen and
-  Bardella. Renaissance publishes no working feed and Attal's France 2040 plan
-  has no document; the RN pair have none configured. All three are covered only
-  via press leads, and the grid says so: *Non suivi*, not *aucune position*.
+- **One of seven candidates has no wired source** — Jordan Bardella. He has
+  zero turns in the Assemblée because he sits in the European Parliament, whose
+  verbatim reports need their own fetcher. The grid says so: *Non suivi*, not
+  *aucune position*. Attal and Le Pen were in this list until the `an` fetcher;
+  Mélenchon and Philippe hold no seat anywhere and stay on press/site sourcing.
 - **`check_grid_complete` lives in the renderer, not `lint.py`** — the rule is a
   property of the rendered grid, so it is asserted in `tests/test_render.py`.
 
