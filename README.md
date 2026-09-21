@@ -27,7 +27,7 @@ grille** (candidates × six policy axes).
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 .venv/bin/pip install yt-dlp          # CLI dependency, used by the video fetcher
-.venv/bin/python -m pytest -q          # 172 tests, all should pass
+.venv/bin/python -m pytest -q          # 188 tests, all should pass
 ```
 
 ## Running it
@@ -78,7 +78,7 @@ sources.yaml      Every source, with its tier. Verified before being listed.
 templates/        Jinja2. The grid is a real <table>, deliberately.
 data/claims.json  Published claims. In git; the database is not.
 data/artifacts/   Batch request and response JSONL: byte-exact provenance.
-tests/            172 tests.
+tests/            188 tests.
 ```
 
 ## How it works
@@ -103,15 +103,17 @@ The design rests on three ideas worth stating plainly:
 
 | | |
 |---|---|
-| Corpus | 71 documents, 8 leads, 27 AI-bearing (38%) |
+| Corpus on `main` | 71 documents, 8 leads, 27 AI-bearing (38%) |
 | Claims | 6 hand-built fixtures from real quotes, lint-clean |
-| Chunks awaiting extraction | 100 |
-| Tests | 172 |
+| Tests | 188 |
 | Site | Renders 24 pages, both locales |
 | Cost to extract the whole corpus | ~$0.006 batched |
 
-**No model has produced a claim yet.** The six in `data/claims.json` were built
-by hand from real quotes to exercise the gates and the renderer.
+The pipeline is live: the daily workflow ran green end to end on 2026-09-21 and
+submitted its first real batch. Counts above describe `main`; the morning's work
+accumulates on the `daily` review branch until it is merged, so that branch is
+ahead. **No model-extracted claim has been reviewed yet** — the six in
+`data/claims.json` were built by hand to exercise the gates and the renderer.
 
 ## Blocked
 
