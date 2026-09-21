@@ -64,11 +64,29 @@ provenance. Results expire after 29 days — download and commit, never link.
 
 ### Phase 0 — Spikes (do first; these are load-bearing and untested)
 
-1. **yt-dlp from a GitHub Actions runner.** My test ran on the user's laptop.
-   Runners use datacenter IPs, which YouTube throttles for transcripts.
-   → *Verify:* a workflow run downloads a French VTT. If it fails, fall back to
-   yt-dlp audio + local `faster-whisper`, and mark ASR quotes as machine-
-   transcribed pending human confirmation.
+1. ~~**yt-dlp from a GitHub Actions runner.**~~ **DONE 2026-09-21 — it does
+   not work.** Caption download fails with `ERROR: [youtube] Sign in to
+   confirm you're not a bot`. Re-run with `--js-runtimes node` (runners ship
+   Node 22) to rule out the deprecated-JS-runtime warning: same error, so it
+   is the datacenter IP, not the runtime.
+
+   **What still works:** `--flat-playlist` listing succeeds from the same
+   runner, in the spike and in the daily run. So video *discovery* is fine and
+   `speakers: multi` → leads is unaffected. What is blocked is extraction, so
+   `speakers: single` → documents cannot run in CI. No configured source uses
+   `single` today, so nothing in production is broken by this.
+
+   **The documented fallback does not work either.** yt-dlp audio + local
+   `faster-whisper` assumed audio was reachable; the bot check is on the
+   player API, which audio needs too. Real options, none free: run the
+   single-speaker fetch off-CI on a residential IP (a self-hosted runner at
+   ESSEC, or by hand); cookies, which expire, are a credential to manage and
+   sit badly with an unattended job publishing under an institution's name;
+   or the official Data API, whose `captions` endpoint requires OAuth *as the
+   video owner* and so cannot read a candidate's channel.
+
+   Re-runnable as `.github/workflows/spike-ytdlp.yml` — YouTube changes this
+   periodically.
 2. ~~**GDELT French benchmark.**~~ **DONE 2026-09-18 — dropped.** 12 queries
    across 3 operator variants plus a control all returned HTTP 200 with zero
    articles. Same failure signature as `nosdeputes.fr`. Discovery falls back to

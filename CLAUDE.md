@@ -93,6 +93,15 @@ question is indistinguishable from the candidate's answer, and the
 quote-in-source lint cannot catch it — the quote really is in the transcript, it
 is simply not his. `single` → documents, `multi` → leads.
 
+**YouTube extraction does not work from CI; listing does.**
+Measured 2026-09-21 on a runner, twice, including with `--js-runtimes node` to
+rule out the JS-runtime warning: caption download fails with *"Sign in to
+confirm you're not a bot"*, while `--flat-playlist` succeeds. So `speakers:
+multi` → leads is fine and `speakers: single` → documents cannot run in CI.
+`fetch._ytdlp` therefore **raises on a non-zero exit** — it used to return
+`out.stdout` regardless, which made a blocked fetcher and a video with no AI
+content produce the identical empty result. Do not restore the quiet version.
+
 **No `computed_field` on models that round-trip through JSON.**
 Pydantic serialises computed fields, then `extra="forbid"` rejects them on
 read-back. `Claim.id` and `Document.url_hash` are plain properties for this

@@ -125,3 +125,33 @@ def test_recovery_clears_the_alert(store):
     store.record_run("flaky", fetched=10, kept=2)
     store.commit()
     assert store.dead_sources() == []
+
+
+# --- a blocked yt-dlp must not look like a quiet video ---------------------
+
+def test_a_failing_ytdlp_raises_instead_of_returning_nothing(monkeypatch):
+    """Measured 2026-09-21: from a GitHub runner YouTube answers caption
+    requests with "Sign in to confirm you're not a bot" while the playlist
+    listing still succeeds. Swallowing that made a blocked fetcher and a video
+    with no AI content produce the same empty result."""
+    import subprocess
+
+    from observatoire import fetch
+
+    def blocked(*a, **k):
+        return subprocess.CompletedProcess(
+            a[0], 1, stdout="", stderr="ERROR: [youtube] Sign in to confirm you're not a bot.")
+
+    monkeypatch.setattr(subprocess, "run", blocked)
+    with pytest.raises(RuntimeError, match="not a bot"):
+        fetch._ytdlp(["--version"])
+
+
+def test_a_successful_ytdlp_still_returns_its_output(monkeypatch):
+    import subprocess
+
+    from observatoire import fetch
+
+    monkeypatch.setattr(subprocess, "run",
+                        lambda *a, **k: subprocess.CompletedProcess(a[0], 0, stdout="ok\n", stderr=""))
+    assert fetch._ytdlp(["--version"]) == "ok\n"

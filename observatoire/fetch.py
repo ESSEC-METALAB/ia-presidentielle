@@ -248,7 +248,22 @@ def fetch_page(src: dict, person: dict, sid: str) -> Result:
 
 
 def _ytdlp(args: list[str]) -> str:
+    """Raises on failure rather than returning empty output.
+
+    Returning ``out.stdout`` regardless of the exit code made the two
+    outcomes that matter indistinguishable: a video whose transcript carries
+    no AI content produces nothing, and a blocked yt-dlp also produces
+    nothing — ``fetch_youtube`` would ``continue`` past both. Measured
+    2026-09-21: from a GitHub runner, caption download fails with *"Sign in to
+    confirm you're not a bot"* while the playlist listing still succeeds, so
+    the silent version would have reported a healthy source forever.
+
+    ``fetch.run`` already records a per-source exception without stopping the
+    morning, so raising here surfaces the problem instead of burying it.
+    """
     out = subprocess.run(["yt-dlp", *args], capture_output=True, text=True, timeout=180)
+    if out.returncode != 0:
+        raise RuntimeError(f"yt-dlp exited {out.returncode}: {out.stderr.strip()[:300]}")
     return out.stdout
 
 
