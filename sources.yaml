@@ -27,6 +27,10 @@ people:
       - {type: site, url: "https://republicains.fr", tier: "2", max: 500}
       - {type: youtube, channel: "https://www.youtube.com/@lesrepublicains/videos",
          tier: "2", speakers: multi, label: "Les Républicains", max: 5}
+      # 33 séances, 234k chars — all of it ministerial, and it stops in July
+      # 2025. He returned to the Sénat on 13 November 2025, so this source is
+      # backfill only; his ongoing record is in the Sénat comptes rendus.
+      - {type: an, acteur: "PA2538", tier: "1", enabled: false}
 
   - slug: jean-luc-melenchon
     name: Jean-Luc Mélenchon
@@ -42,6 +46,9 @@ people:
     party: PS
     match: ["Olivier Faure"]          # "Faure" alone is a common surname
     sources:
+      # Député, Seine-et-Marne. Attribution is by actor id, so the surname
+      # problem above does not arise here at all.
+      - {type: an, acteur: "PA609332", tier: "1", enabled: false}
       - {type: rss, url: "https://parti-socialiste.fr/feed/", tier: "2", max: 15}
       # one-off archive backfill; RSS carries the delta
       - {type: site, url: "https://parti-socialiste.fr", tier: "2", max: 500}
@@ -52,7 +59,11 @@ people:
     name: Gabriel Attal
     party: Renaissance
     match: [Attal]
-    sources: []
+    sources:
+      # Renaissance publishes no working feed and the France 2040 plan has no
+      # document, so until this his only coverage was press leads. Député,
+      # Hauts-de-Seine: 80 séances, 142k chars, still speaking in 2026.
+      - {type: an, acteur: "PA722190", tier: "1", enabled: false}
 
   - slug: edouard-philippe
     name: Édouard Philippe
@@ -67,12 +78,16 @@ people:
     name: Marine Le Pen
     party: RN
     match: ["Marine Le Pen"]          # bare "Le Pen" is ambiguous
-    sources: []
+    sources:
+      # Députée, Pas-de-Calais: 74 séances, 257k chars, still speaking in 2026.
+      - {type: an, acteur: "PA720614", tier: "1", enabled: false}
 
   - slug: jordan-bardella
     name: Jordan Bardella
     party: RN
     match: [Bardella]
+    # Zero turns in the Assemblée: he is an MEP. His verbatim record is the
+    # European Parliament's, which needs its own fetcher.
     sources: []
 
 # Fetched once, then attributed to whichever people they name. Specialist tech

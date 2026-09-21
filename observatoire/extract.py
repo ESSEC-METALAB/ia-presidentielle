@@ -214,6 +214,12 @@ def to_claims(doc: Document, result: ExtractionResult, *, party: str = "",
             person=doc.person,
             party=party,
             tier=doc.tier,
+            # Carried from the fetch context like every other provenance
+            # field. True only where the source names its own speaker, which
+            # today means the official parliamentary record; everything else
+            # stays a default for an editor to confirm, and the site marks it
+            # with an asterisk.
+            tier_confirmed=doc.tier_confirmed,
             source_url=doc.url,
             archive_url=doc.archive_url,
             timestamp_s=timestamp,

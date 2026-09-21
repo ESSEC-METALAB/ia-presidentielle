@@ -237,8 +237,11 @@ if __name__ == "__main__":
     args = ap.parse_args()
 
     cfg = yaml.safe_load(Path(args.sources).read_text(encoding="utf-8"))
+    # A person whose every source is switched off is not monitored, whatever
+    # the file lists. fetch honours `enabled`; the grid has to agree, or it
+    # would claim coverage that no run produces.
     people = [Person(p["slug"], p["name"], p.get("party", ""),
-                     monitored=bool(p.get("sources")))
+                     monitored=any(s.get("enabled", True) for s in p.get("sources") or []))
               for p in cfg["people"]]
     stats = render(load_claims(args.claims), people, Path(args.out))
     print(" · ".join(f"{k} {v}" for k, v in stats.items()))

@@ -15,13 +15,17 @@ teaser under *courte citation* is the lawful route, and it needs a human.
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import re
 import subprocess
 import tempfile
 import time
+import xml.etree.ElementTree as ET
+import zipfile
 from dataclasses import dataclass, field
 from datetime import date as Date
+from functools import lru_cache
 from pathlib import Path
 from urllib.parse import urlparse
 from urllib.robotparser import RobotFileParser
@@ -324,6 +328,98 @@ def fetch_news(src: dict, person: dict, sid: str) -> Result:
     return [], leads
 
 
+# --------------------------------------------------------------------------
+# Assemblée nationale — comptes rendus intégraux
+#
+# The official verbatim record, and the first source that does not have to
+# guess whose words it carries: every paragraph names its speaker by a stable
+# actor id, so attribution is exact rather than a surname match. It is also
+# the first source whose tier is confirmed by the record itself.
+#
+# One archive serves every configured person, so it is parsed once per run and
+# each person reads their own paragraphs out of it.
+# --------------------------------------------------------------------------
+
+AN_NS = "{http://schemas.assemblee-nationale.fr/referentiel}"
+AN_ARCHIVE = ("https://data.assemblee-nationale.fr/static/openData/repository/"
+              "{legislature}/vp/syceronbrut/syseron.xml.zip")
+AN_SEANCE = "https://www.assemblee-nationale.fr/dyn/{legislature}/comptes-rendus/seance/{uid}"
+
+
+def _an_paragraphs(root) -> dict[str, str]:
+    """Speaker id → everything that speaker said in this séance.
+
+    ``roledebat="president"`` is dropped: chairing the sitting produces "la
+    parole est à M. X", which is procedure, not a position. It matters because
+    a candidate can preside.
+    """
+    by_speaker: dict[str, list[str]] = {}
+    for para in root.iter(f"{AN_NS}paragraphe"):
+        acteur = para.get("id_acteur")
+        if not acteur or acteur == "PA0" or para.get("roledebat") == "president":
+            continue
+        node = para.find(f"{AN_NS}texte")
+        if node is None:
+            continue
+        said = " ".join("".join(node.itertext()).split())
+        if said:
+            by_speaker.setdefault(acteur, []).append(said)
+    return {k: "\n\n".join(v) for k, v in by_speaker.items()}
+
+
+@lru_cache(maxsize=1)
+def _an_seances(url: str) -> tuple:
+    """Download and parse the whole archive, once.
+
+    ~53 MB and 600 séances, regenerated daily. Cached for the process because
+    four configured people would otherwise download and parse it four times.
+    """
+    raw = httpx.get(url, timeout=300, follow_redirects=True)
+    raw.raise_for_status()
+    out = []
+    with zipfile.ZipFile(io.BytesIO(raw.content)) as archive:
+        for name in archive.namelist():
+            if not name.endswith(".xml"):
+                continue
+            try:
+                root = ET.fromstring(archive.read(name))
+            except ET.ParseError:
+                continue  # a malformed séance is skipped, never guessed at
+            said = _an_paragraphs(root)
+            if not said:
+                continue
+            meta = root.find(f"{AN_NS}metadonnees")
+            out.append((
+                root.findtext(f"{AN_NS}uid") or "",
+                _parse_date(meta.findtext(f"{AN_NS}dateSeance") if meta is not None else None),
+                (meta.findtext(f"{AN_NS}dateSeanceJour") if meta is not None else None) or "",
+                said,
+            ))
+    return tuple(out)
+
+
+def fetch_an(src: dict, person: dict, sid: str) -> Result:
+    """One document per séance in which this person actually spoke."""
+    acteur = src["acteur"]
+    legislature = str(src.get("legislature", 17))
+    since = _parse_date(src.get("since"))
+    docs = []
+    for uid, date, jour, said in _an_seances(AN_ARCHIVE.format(legislature=legislature)):
+        text = said.get(acteur)
+        if not text or (since and date and date < since):
+            continue
+        docs.append(Document(
+            person=person["slug"], source_id=sid, kind="an",
+            tier=Tier(str(src["tier"])),
+            # Confirmed, not defaulted: the record names the speaker, so no
+            # editor has to decide whose words these are.
+            tier_confirmed=True,
+            url=AN_SEANCE.format(legislature=legislature, uid=uid),
+            text=text, title=f"Séance du {jour}" if jour else uid, date=date,
+        ))
+    return docs, []
+
+
 def fetch_x(src: dict, person: dict, sid: str) -> Result:
     raise NotImplementedError(
         "X fetcher is pending Phase 0 spike 3: needs an API key and a measured "
@@ -332,7 +428,7 @@ def fetch_x(src: dict, person: dict, sid: str) -> Result:
 
 
 FETCHERS = {"rss": fetch_rss, "pdf": fetch_pdf, "page": fetch_page, "site": fetch_site,
-            "youtube": fetch_youtube, "news": fetch_news, "x": fetch_x}
+            "youtube": fetch_youtube, "news": fetch_news, "x": fetch_x, "an": fetch_an}
 
 # Archive crawls are one-off. Daily runs skip them; --backfill includes them.
 BACKFILL_ONLY = {"site"}

@@ -284,6 +284,13 @@ class Document(BaseModel):
     title: str | None = None
     date: Date | None = None
     archive_url: str | None = None
+    tier_confirmed: bool = Field(
+        default=False,
+        description="True only when the source states whose words these are — an "
+        "official verbatim record naming its speaker. Every other source defaults "
+        "its tier, because a party site cannot distinguish its own communiqué from "
+        "the candidate's speech.",
+    )
     fingerprint: str | None = Field(
         default=None, description="trafilatura content hash, for near-duplicate detection"
     )
