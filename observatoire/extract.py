@@ -304,6 +304,24 @@ if __name__ == "__main__":
                 print(f"{batch_id} {status} — its chunks return to the queue")
                 continue
             claims = collect(batch_id, requests, client, args.artifacts, parties)
+
+            # A batch can complete with every single line errored — an account
+            # over its billing limit does exactly this — and `results` skips
+            # errored lines, so that arrives here as zero results. A document
+            # that legitimately holds no AI position still comes back as
+            # `{"claims": []}`, which IS a result. So no results at all, from
+            # a batch that was sent requests, means nothing was extracted
+            # rather than nothing was found. Treated as success it would mark
+            # every chunk as done and they would never be asked again.
+            responses = args.artifacts / f"{batch_id}{RESPONSES_SUFFIX}"
+            if responses.exists() and responses.stat().st_size == 0:
+                responses.unlink()
+                (args.artifacts / f"{batch_id}{REQUESTS_SUFFIX}").rename(
+                    args.artifacts / f"{batch_id}{EXPIRED_SUFFIX}")
+                print(f"{batch_id} answered nothing at all — every line failed. "
+                      "Its chunks return to the queue.")
+                continue
+
             for claim in claims:
                 store.add_claim(claim)
             store.commit()

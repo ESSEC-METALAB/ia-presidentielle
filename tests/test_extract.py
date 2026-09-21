@@ -6,6 +6,7 @@ from observatoire.extract import (
     CHUNK_CHARS,
     EXPIRED_SUFFIX,
     REQUESTS_SUFFIX,
+    RESPONSES_SUFFIX,
     FakeClient,
     build_requests,
     chunk,
@@ -217,3 +218,36 @@ def test_prompt_states_the_rules_the_lints_enforce():
     assert "character for character" in sp     # quote-in-source
     assert "ambitieux" in sp                   # neutrality
     assert sp.count("- **") == 6               # six axes
+
+
+def test_a_batch_where_every_line_errored_is_not_a_successful_extraction(tmp_path):
+    """An account over its billing limit completes the batch with every line
+    errored. `results` skips errored lines, so that arrives as zero results —
+    while a document that legitimately holds no AI position still comes back
+    as {"claims": []}, which IS a result.
+
+    Measured 2026-09-21: batch_6ab0fe55 came back "0 claims" this way, and
+    treating it as success marked all 110 chunks done so they would never be
+    asked again.
+    """
+    reqs = build_requests([document()], {})
+    submitted = FakeClient()
+    bid = submit(reqs, submitted, "m", tmp_path)
+
+    class EveryLineErrored(FakeClient):
+        def results(self, batch_id):
+            return {}
+
+    assert collect(bid, reqs, EveryLineErrored(), tmp_path) == []
+    # The discriminator the CLI acts on: nothing was written at all.
+    assert (tmp_path / f"{bid}{RESPONSES_SUFFIX}").stat().st_size == 0
+
+
+def test_a_batch_that_genuinely_found_nothing_still_writes_a_response(tmp_path):
+    """The contrast that makes the check above safe: [] is the expected answer
+    for most documents and must keep counting as extracted."""
+    reqs = build_requests([document()], {})
+    client = FakeClient()  # defaults to {"claims": []}
+    bid = submit(reqs, client, "m", tmp_path)
+    assert collect(bid, reqs, client, tmp_path) == []
+    assert (tmp_path / f"{bid}{RESPONSES_SUFFIX}").stat().st_size > 0

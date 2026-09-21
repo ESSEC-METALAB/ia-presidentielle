@@ -113,7 +113,17 @@ jobs:
         continue-on-error: true
         run: uv run python -m observatoire.fetch
 
+      # Non-fatal for the same reason as fetch and the gates, and it was
+      # learned the hard way: this step failed on "billing hard limit has been
+      # reached" after Fetch had spent fourteen minutes taking Wayback
+      # snapshots of 180 documents, and because the job stopped here the
+      # commit never ran and all of it was discarded. Submitting is the step
+      # most likely to fail for reasons outside this repository — an account
+      # limit, a provider outage — and none of those are a reason to throw
+      # away the morning's fetching. The chunks stay queued for tomorrow.
       - name: Submit today's batch
+        id: submit
+        continue-on-error: true
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: uv run python -m observatoire.extract submit
@@ -177,8 +187,9 @@ jobs:
 
       # Last, so everything above has already been preserved on the branch.
       - name: Report what went wrong
-        if: steps.fetch.outcome == 'failure' || steps.gates.outcome == 'failure'
+        if: steps.fetch.outcome == 'failure' || steps.gates.outcome == 'failure' || steps.submit.outcome == 'failure'
         run: |
-          echo "fetch: ${{ steps.fetch.outcome }} — non-zero means a source has returned nothing three runs running"
-          echo "gates: ${{ steps.gates.outcome }} — non-zero means a claim failed a gate; the log above names it"
+          echo "fetch:  ${{ steps.fetch.outcome }} — non-zero means a source has returned nothing three runs running"
+          echo "submit: ${{ steps.submit.outcome }} — non-zero means the batch was not accepted; the morning is still saved above"
+          echo "gates:  ${{ steps.gates.outcome }} — non-zero means a claim failed a gate; the log above names it"
           exit 1
