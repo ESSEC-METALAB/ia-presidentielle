@@ -72,6 +72,61 @@ no SQLite at all.
 
 Extraction is not yet wired to a scheduler — see [§ Before launch](#before-launch).
 
+## Seeing it end to end
+
+`docs/chaine-publication.html` has the architecture: the sources, the morning
+loop, and the anatomy of a claim.
+
+To watch the whole thing actually run, `--dry-run` exercises every step against
+a fake model — no key, no spend, real artifacts written:
+
+```bash
+uv run python -m observatoire.fetch --no-archive   # sources → documents + leads
+uv run python -m observatoire.extract submit  --dry-run --artifacts /tmp/a
+uv run python -m observatoire.extract collect --dry-run --artifacts /tmp/a --claims /tmp/claims.json
+uv run python -m observatoire.lint                 # the gates, over what is published
+uv run python -m observatoire.render               # → site/, then open site/fr/
+```
+
+The fake client answers `[]` for every chunk, which is the *correct* answer for
+most documents — so this shows you the machinery and the provenance artifacts,
+not claims. Real claims need a key and an account under its billing limit.
+
+`--no-archive` skips Wayback. Leave it off for a real run: the snapshot is
+taken at ingest and a claim without one cannot pass the gates. With it on,
+expect roughly a second per document.
+
+## Reading the data locally
+
+Everything the pipeline holds is one SQLite file, and every record is stored as
+JSON in a `payload` column — right for the pipeline, unreadable by eye. The
+database therefore carries four views that unpack it, so no one has to write
+`json_extract` by hand:
+
+```bash
+uvx datasette data/observatoire.db      # browsable, faceted, no install
+```
+
+| View | What it answers |
+|---|---|
+| `v_documents` | what was fetched and kept: person, kind, tier, date, size, whether it is archived |
+| `v_leads` | tier 3, never published as a claim — the editor's queue |
+| `v_claims` | quote, position, contexte, axis, tier, source and archive links |
+| `v_sources` | per-source run counts. `fetched` is the liveness signal, not `kept` |
+
+Two things worth knowing while reading:
+
+- **`v_documents.kind = 'an'` is the Assemblée nationale**, and those rows have
+  `tier_confirmed = 1`. Every other source defaults its tier, because a party
+  site cannot distinguish its own communiqué from the candidate's speech.
+- **An empty extraction is the expected result.** Most documents carry no AI
+  position, so a document with no claim against it is the normal case, not a
+  gap.
+
+The claims themselves are also plain text in `data/claims.json` — that file is
+the published record and what the pull request diff shows — and the rendered
+site in `site/` is the same data as a reader sees it.
+
 ## Layout
 
 ```

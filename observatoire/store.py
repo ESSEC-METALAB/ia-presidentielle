@@ -54,6 +54,59 @@ CREATE TABLE IF NOT EXISTS source_runs (
     kept      INTEGER NOT NULL   -- items retained after matching and dedup
 );
 CREATE INDEX IF NOT EXISTS idx_runs ON source_runs(source_id);
+
+-- Everything above stores its record as JSON in `payload`, which is the right
+-- shape for the pipeline and useless to read. These views unpack it so the
+-- database can be browsed by a human — `uvx datasette data/observatoire.db`
+-- or any SQLite client — without anybody writing json_extract by hand.
+-- They are views, so they cost nothing and cannot drift from the data.
+CREATE VIEW IF NOT EXISTS v_documents AS
+SELECT person,
+       json_extract(payload, '$.kind')  AS kind,
+       json_extract(payload, '$.tier')  AS tier,
+       json_extract(payload, '$.date')  AS date,
+       json_extract(payload, '$.title') AS title,
+       length(json_extract(payload, '$.text'))        AS chars,
+       json_extract(payload, '$.tier_confirmed')      AS tier_confirmed,
+       json_extract(payload, '$.archive_url') IS NOT NULL AS archived,
+       json_extract(payload, '$.url')   AS url,
+       source_id, fetched_at, url_hash
+FROM documents;
+
+-- Tier 3. Never published as a claim: a question for the editor.
+CREATE VIEW IF NOT EXISTS v_leads AS
+SELECT person,
+       json_extract(payload, '$.title')     AS title,
+       json_extract(payload, '$.publisher') AS publisher,
+       json_extract(payload, '$.date')      AS date,
+       json_extract(payload, '$.reason')    AS reason,
+       json_extract(payload, '$.url')       AS url,
+       source_id, fetched_at
+FROM leads;
+
+CREATE VIEW IF NOT EXISTS v_claims AS
+SELECT person, axis, status,
+       json_extract(payload, '$.date')           AS date,
+       json_extract(payload, '$.tier')           AS tier,
+       json_extract(payload, '$.tier_confirmed') AS tier_confirmed,
+       json_extract(payload, '$.quote_fr')       AS quote_fr,
+       json_extract(payload, '$.position_fr')    AS position_fr,
+       json_extract(payload, '$.contexte_fr')    AS contexte_fr,
+       json_extract(payload, '$.source_url')     AS source_url,
+       json_extract(payload, '$.archive_url')    AS archive_url,
+       id
+FROM claims;
+
+-- What each source returned, most recent first. `fetched` is the liveness
+-- signal: a feed returning items that name no candidate is healthy, a feed
+-- returning nothing three runs running is dead.
+CREATE VIEW IF NOT EXISTS v_sources AS
+SELECT source_id,
+       COUNT(*)      AS runs,
+       SUM(fetched)  AS fetched_total,
+       SUM(kept)     AS kept_total,
+       MAX(run_at)   AS last_run
+FROM source_runs GROUP BY source_id ORDER BY last_run DESC;
 """
 
 
