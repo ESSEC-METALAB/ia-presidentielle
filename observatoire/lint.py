@@ -103,3 +103,28 @@ def lint(claims: list[Claim], sources: dict[str, Document]) -> list[Finding]:
         findings.extend(check_no_evaluative_language(claim))
         findings.extend(check_archive_present(claim))
     return findings
+
+
+if __name__ == "__main__":
+    import argparse
+
+    from .store import Store, load_claims
+
+    # Runs over what is *published*, not over what the pipeline happens to
+    # hold: claims.json is the file the editor reviews and the renderer
+    # builds from, so it is the file the gates have to be true of.
+    ap = argparse.ArgumentParser(description="Run every quality gate. Non-zero on any finding.")
+    ap.add_argument("--claims", default="data/claims.json")
+    ap.add_argument("--db", default="data/observatoire.db")
+    args = ap.parse_args()
+
+    claims = load_claims(args.claims)
+    store = Store(args.db)
+    sources = {d.url: d for d in store.documents()}
+    store.close()
+
+    findings = lint(claims, sources)
+    for finding in findings:
+        print(finding)
+    print(f"{len(claims)} claims · {len(findings)} findings")
+    raise SystemExit(1 if findings else 0)

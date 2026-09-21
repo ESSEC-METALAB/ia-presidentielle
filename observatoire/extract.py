@@ -256,11 +256,17 @@ if __name__ == "__main__":
     names = {p["slug"]: p["name"] for p in cfg["people"]}
     parties = {p["slug"]: p.get("party", "") for p in cfg["people"]}
 
-    if args.dry_run:
-        client = FakeClient()
-    else:
+    def open_client():
+        """Built only once there is actually something to send.
+
+        Constructing it eagerly would mean a morning with nothing outstanding
+        still needed a key, so the daily run would fail on a day it had no
+        work to do — the least useful moment to demand a credential.
+        """
+        if args.dry_run:
+            return FakeClient()
         from .clients import OpenAIBatchClient
-        client = OpenAIBatchClient()
+        return OpenAIBatchClient()
 
     store = Store(args.db)
     requests = build_requests(store.documents(), names)
@@ -271,10 +277,14 @@ if __name__ == "__main__":
         if not todo:
             print(f"nothing new to extract ({len(requests)} chunks already submitted)")
         else:
-            batch_id = submit(todo, client, args.model, args.artifacts)
+            batch_id = submit(todo, open_client(), args.model, args.artifacts)
             print(f"submitted {len(todo)} chunks as {batch_id} ({args.model})")
     else:
-        for batch_id in pending_batches(args.artifacts):
+        outstanding = pending_batches(args.artifacts)
+        if not outstanding:
+            print("no batch outstanding")
+        client = open_client() if outstanding else None
+        for batch_id in outstanding:
             status = client.poll(batch_id)
             if status == "pending":
                 print(f"{batch_id} still running")

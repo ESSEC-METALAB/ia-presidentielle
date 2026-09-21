@@ -12,10 +12,15 @@ __pycache__/
 # Rendered output — rebuilt from data on every deploy.
 site/
 
-# Local fetch cache. Documents and leads are re-fetchable; the *claims* and the
-# batch provenance artifacts are the things that must be in git, because the
-# editorial review happens as a pull-request diff and a binary SQLite file
-# cannot be reviewed in one. See README § Known gaps.
-data/*.db
+# The database IS committed (spec §8). Not because it is reviewable — it is
+# not — but because it is the pipeline's memory: what has already been seen,
+# how many items each source returned on each of its last runs, and the
+# documents a batch submitted yesterday will be collected against tomorrow.
+# None of that is re-derivable from a fresh checkout, and a daily job that
+# starts empty re-fetches everything and can never notice a feed going quiet.
+#
+# What a human reviews is data/claims.json. That separation is what made
+# committing the binary acceptable again.
 data/*.db-journal
+data/*.db-wal
 backfill.log
