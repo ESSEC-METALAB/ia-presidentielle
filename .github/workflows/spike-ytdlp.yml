@@ -26,7 +26,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install
-        run: pip install yt-dlp PyYAML
+        run: pip install yt-dlp PyYAML youtube-transcript-api
 
       - name: Newest video on the configured channel
         id: pick
@@ -77,3 +77,27 @@ jobs:
           echo "cues:  $(grep -c -- '-->' "$vtt")"
           echo "--- first 20 lines ---"
           head -20 "$vtt"
+
+      # A different endpoint entirely: yt-dlp is blocked on the player API,
+      # while this library reads the timedtext caption endpoint. Its own
+      # README says YouTube blocks most cloud-provider IPs, so this is
+      # expected to fail — but it is a two-minute test and the two paths fail
+      # for different reasons, which is worth knowing before concluding that
+      # nothing works from CI.
+      - name: Second path — timedtext rather than the player API
+        if: always()
+        continue-on-error: true
+        run: |
+          python - <<'PY'
+          from youtube_transcript_api import YouTubeTranscriptApi
+          vid = "${{ steps.pick.outputs.video }}"
+          try:
+              t = YouTubeTranscriptApi().fetch(vid, languages=["fr"])
+              snippets = list(t)
+              print(f"OK: {len(snippets)} snippets")
+              for s in snippets[:3]:
+                  print(f"  [{s.start:.1f}s] {s.text}")
+          except Exception as e:
+              print(f"FAILED: {type(e).__name__}")
+              print(str(e)[:600])
+          PY

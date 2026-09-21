@@ -88,7 +88,7 @@ footer.site{border-top:1px solid var(--line);margin-top:46px;padding-top:18px;
 /* The landing page is an editorial cover; the reading pages keep their theme. */
 .home{
   --paper:#F2F0E9;--surface:#FBFAF6;--ink:#252620;--muted:#65655E;--line:#D4D2C9;--faint:#E8E6DE;
-  --blue:#233E91;--red:#C34632;--party:#233E91;--source:#2F6E6A;--meta:#4F7245;
+  --blue:#233E91;--red:#BA412F;--party:#233E91;--source:#2F6E6A;--press:#8A6028;--meta:#45653D;
   padding-inline:48px;padding-bottom:32px;
 }
 .home>.wrap{max-width:1344px}
