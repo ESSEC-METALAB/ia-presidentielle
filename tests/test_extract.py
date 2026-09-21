@@ -4,7 +4,8 @@ from datetime import date
 import pytest
 
 from observatoire.extract import (
-    CHUNK_CHARS, FakeClient, build_requests, chunk, collect, submit, to_claims,
+    CHUNK_CHARS, EXPIRED_SUFFIX, REQUESTS_SUFFIX, FakeClient, build_requests, chunk,
+    collect, pending_batches, submit, submitted_ids, to_claims,
 )
 from observatoire.prompt import prompt_hash, system_prompt
 from observatoire.schema import Claim, ClaimType, Cue, Document, ExtractionResult, Tier
@@ -108,6 +109,49 @@ def test_malformed_answer_is_dropped_not_guessed_at(tmp_path):
     client = FakeClient(answers={reqs[0].custom_id: {"claims": [{"axis": "nope"}]}})
     bid = submit(reqs, client, "m", tmp_path)
     assert collect(bid, reqs, client, tmp_path) == []
+
+
+# --- what has been asked already, so nothing is paid for twice -------------
+#
+# The artifacts the provenance rules already require double as the queue.
+# There is no batch-id table to drift out of sync with them.
+
+def test_nothing_is_submitted_when_there_is_nothing_new(tmp_path):
+    assert submitted_ids(tmp_path) == set()
+    reqs = build_requests([document()], {})
+    submit(reqs, FakeClient(), "m", tmp_path)
+    assert submitted_ids(tmp_path) == {r.custom_id for r in reqs}
+
+
+def test_a_chunk_that_answered_nothing_is_not_asked_again(tmp_path):
+    """``claims: []`` is the expected answer for most documents. Re-asking
+    would pay for the whole corpus again every morning."""
+    reqs = build_requests([document()], {})
+    client = FakeClient()  # defaults to {"claims": []}
+    bid = submit(reqs, client, "m", tmp_path)
+    assert collect(bid, reqs, client, tmp_path) == []
+    assert submitted_ids(tmp_path) == {r.custom_id for r in reqs}
+
+
+def test_a_collected_batch_is_no_longer_pending(tmp_path):
+    reqs = build_requests([document()], {})
+    client = FakeClient()
+    bid = submit(reqs, client, "m", tmp_path)
+    assert pending_batches(tmp_path) == [bid]
+    collect(bid, reqs, client, tmp_path)
+    assert pending_batches(tmp_path) == []
+
+
+def test_an_expired_batch_returns_its_chunks_to_the_queue(tmp_path):
+    """Its record is kept, but it counts as neither submitted nor pending, so
+    the next submit asks for those chunks again."""
+    reqs = build_requests([document()], {})
+    bid = submit(reqs, FakeClient(), "m", tmp_path)
+    (tmp_path / f"{bid}{REQUESTS_SUFFIX}").rename(tmp_path / f"{bid}{EXPIRED_SUFFIX}")
+
+    assert submitted_ids(tmp_path) == set()
+    assert pending_batches(tmp_path) == []
+    assert (tmp_path / f"{bid}{EXPIRED_SUFFIX}").exists()
 
 
 # --- provenance is attached by code, never by the model --------------------

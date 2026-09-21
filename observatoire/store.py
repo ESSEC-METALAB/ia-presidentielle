@@ -1,10 +1,14 @@
-"""SQLite store. Committed to the repo — git is the audit trail.
+"""SQLite store — the working cache, not the published record.
 
 Holds three things: what we have already seen (dedup), what we fetched
 (documents and leads), and how many items each source returned on each run
 (liveness). The last one exists because ``nosdeputes.fr`` returned HTTP 200
 with an empty array indefinitely, and a source that silently dies is
 indistinguishable from a quiet week unless you count.
+
+Claims live here while the pipeline works on them, but what gets *published*
+is ``data/claims.json`` — see :func:`export_claims`. The editorial gate is a
+pull-request diff and a reviewer cannot read a binary SQLite file in one.
 """
 
 from __future__ import annotations
@@ -55,6 +59,59 @@ CREATE INDEX IF NOT EXISTS idx_runs ON source_runs(source_id);
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="microseconds")
+
+
+# --- the published record -------------------------------------------------
+#
+# Claims are reviewed as a pull-request diff, so the file has to read like
+# prose to a human editor, not like a database export.
+
+
+def _review_order(claim) -> tuple[str, str, str]:
+    """Group a person's claims together, oldest first.
+
+    Sorting on ``id`` alone would be stable but scatters one candidate's
+    claims through the file at random, and a new claim would land at a random
+    line. ``date`` is nullable on purpose — a source that carries no date gets
+    none — so it sorts first rather than being invented.
+    """
+    return (claim.person, claim.date.isoformat() if claim.date else "", claim.id)
+
+
+def export_claims(path: str | Path, claims: list) -> None:
+    """Write the claims a reviewer will read.
+
+    ``ensure_ascii=False`` is not cosmetic: the quotes are French, and
+    ``\\u00e9`` in a diff is not something an editor can check a quote against.
+    """
+    payload = [c.model_dump(mode="json") for c in sorted(claims, key=_review_order)]
+    Path(path).write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+
+
+def load_claims(path: str | Path) -> list:
+    from .schema import Claim
+
+    return [Claim.model_validate(c) for c in json.loads(Path(path).read_text(encoding="utf-8"))]
+
+
+def merge_claims(path: str | Path, new: list) -> int:
+    """Add claims the file does not already carry. Returns how many.
+
+    The file wins on every id it already has, because by then a human has
+    been through it — corrected a ``contexte``, confirmed a ``tier``, moved a
+    status off ``pending``. Re-exporting the pipeline's own copy over the top
+    would silently undo that editing, and the SQLite cache it came from is not
+    even in the repository. Merging also keeps the morning's diff to the
+    claims that are genuinely new, which is the diff the editor agreed to read.
+    """
+    path = Path(path)
+    existing = load_claims(path) if path.exists() else []
+    known = {c.id for c in existing}
+    added = [c for c in new if c.id not in known]
+    export_claims(path, existing + added)
+    return len(added)
 
 
 class Store:

@@ -221,10 +221,13 @@ if __name__ == "__main__":
     import argparse
     import yaml
 
-    from .store import Store
+    from .store import load_claims
 
+    # Renders from the committed claims file, never from the local SQLite
+    # cache: what ships has to be exactly what was reviewed in the diff, and
+    # CI has no database.
     ap = argparse.ArgumentParser(description="Render the static site.")
-    ap.add_argument("--db", default="data/observatoire.db")
+    ap.add_argument("--claims", default="data/claims.json")
     ap.add_argument("--sources", default="sources.yaml")
     ap.add_argument("--out", default="site")
     args = ap.parse_args()
@@ -233,7 +236,5 @@ if __name__ == "__main__":
     people = [Person(p["slug"], p["name"], p.get("party", ""),
                      monitored=bool(p.get("sources")))
               for p in cfg["people"]]
-    store = Store(args.db)
-    stats = render(store.claims(), people, Path(args.out))
-    store.close()
+    stats = render(load_claims(args.claims), people, Path(args.out))
     print(" · ".join(f"{k} {v}" for k, v in stats.items()))

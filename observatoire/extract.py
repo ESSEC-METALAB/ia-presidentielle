@@ -112,13 +112,45 @@ class FakeClient:
                 for p in self.submitted}
 
 
+REQUESTS_SUFFIX = ".requests.jsonl"
+RESPONSES_SUFFIX = ".responses.jsonl"
+# An expired or failed batch is renamed to this. The file stays — it is still
+# an audit record — but it counts as neither submitted nor pending, so the
+# chunks inside it are picked up again by the next submit. That is the
+# "retry expired custom_ids" rule, kept without a second place to store state.
+EXPIRED_SUFFIX = ".expired.jsonl"
+
+
+def submitted_ids(artifacts: Path) -> set[str]:
+    """Every ``custom_id`` already sent in some batch.
+
+    Keyed on what was *asked*, not on what came back: a chunk that answered
+    ``[]`` has been extracted correctly — that is the expected answer for most
+    documents — and must not be paid for again tomorrow.
+    """
+    out: set[str] = set()
+    for path in artifacts.glob(f"*{REQUESTS_SUFFIX}"):
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                out.add(json.loads(line)["custom_id"])
+    return out
+
+
+def pending_batches(artifacts: Path) -> list[str]:
+    """Batches submitted but not yet collected — a request file with no
+    response file beside it. No batch-id registry is needed; the artifacts the
+    provenance rules already require are the registry."""
+    ids = [p.name[: -len(REQUESTS_SUFFIX)] for p in artifacts.glob(f"*{REQUESTS_SUFFIX}")]
+    return sorted(i for i in ids if not (artifacts / f"{i}{RESPONSES_SUFFIX}").exists())
+
+
 def submit(requests: list[Request], client: BatchClient, model: str,
            artifacts: Path) -> str:
     """Submit and write the request artifact. That file is the audit record."""
     artifacts.mkdir(parents=True, exist_ok=True)
     payloads = [r.payload(model) for r in requests]
     batch_id = client.submit(payloads)
-    path = artifacts / f"{batch_id}.requests.jsonl"
+    path = artifacts / f"{batch_id}{REQUESTS_SUFFIX}"
     with path.open("w", encoding="utf-8") as fh:
         for r, p in zip(requests, payloads):
             fh.write(json.dumps({
@@ -134,15 +166,19 @@ def submit(requests: list[Request], client: BatchClient, model: str,
 
 
 def collect(batch_id: str, requests: list[Request], client: BatchClient,
-            artifacts: Path) -> list[Claim]:
+            artifacts: Path, parties: dict[str, str] | None = None) -> list[Claim]:
     """Fetch results, write the response artifact, assemble claims.
 
     Batch results are retained by the provider for 29 days only, so they are
     downloaded and committed rather than linked.
+
+    ``parties`` maps a person slug to their party, from ``sources.yaml``. Like
+    every other provenance field it comes from the fetch context, never from
+    the model.
     """
     raw = client.results(batch_id)
     artifacts.mkdir(parents=True, exist_ok=True)
-    with (artifacts / f"{batch_id}.responses.jsonl").open("w", encoding="utf-8") as fh:
+    with (artifacts / f"{batch_id}{RESPONSES_SUFFIX}").open("w", encoding="utf-8") as fh:
         for cid, body in raw.items():
             fh.write(json.dumps({"custom_id": cid, "response": body}, ensure_ascii=False) + "\n")
 
@@ -156,7 +192,8 @@ def collect(batch_id: str, requests: list[Request], client: BatchClient,
             parsed = ExtractionResult.model_validate(body)
         except Exception:
             continue  # a malformed answer is dropped, never guessed at
-        claims.extend(to_claims(req.document, parsed))
+        claims.extend(to_claims(req.document, parsed,
+                                party=(parties or {}).get(req.document.person, "")))
     return claims
 
 
@@ -184,3 +221,76 @@ def to_claims(doc: Document, result: ExtractionResult, *, party: str = "",
             status=Status.PENDING,
         ))
     return out
+
+
+# The docs list no dated snapshot for this model — checked 2026-09-21, the
+# models page offers `gpt-5.6-luna` and nothing else — so there is no pin to
+# take. The defence against an alias moving underneath us is therefore the
+# artifact: every request line records the model id, the prompt hash and the
+# SHA-256 of the text, so a changed answer can at least be attributed. Pin
+# this the day a dated snapshot is published.
+MODEL = "gpt-5.6-luna"
+
+
+if __name__ == "__main__":
+    import argparse
+
+    import yaml
+
+    from .store import Store, merge_claims
+
+    ap = argparse.ArgumentParser(
+        description="Extract claims from fetched documents, as a batch.")
+    ap.add_argument("command", choices=["submit", "collect"])
+    ap.add_argument("--db", default="data/observatoire.db")
+    ap.add_argument("--sources", default="sources.yaml")
+    ap.add_argument("--claims", default="data/claims.json")
+    ap.add_argument("--artifacts", default="data/artifacts", type=Path)
+    ap.add_argument("--model", default=MODEL)
+    ap.add_argument("--dry-run", action="store_true",
+                    help="run against the fake client: exercises the whole path "
+                         "and writes real artifacts, but spends nothing")
+    args = ap.parse_args()
+
+    cfg = yaml.safe_load(Path(args.sources).read_text(encoding="utf-8"))
+    names = {p["slug"]: p["name"] for p in cfg["people"]}
+    parties = {p["slug"]: p.get("party", "") for p in cfg["people"]}
+
+    if args.dry_run:
+        client = FakeClient()
+    else:
+        from .clients import OpenAIBatchClient
+        client = OpenAIBatchClient()
+
+    store = Store(args.db)
+    requests = build_requests(store.documents(), names)
+
+    if args.command == "submit":
+        already = submitted_ids(args.artifacts)
+        todo = [r for r in requests if r.custom_id not in already]
+        if not todo:
+            print(f"nothing new to extract ({len(requests)} chunks already submitted)")
+        else:
+            batch_id = submit(todo, client, args.model, args.artifacts)
+            print(f"submitted {len(todo)} chunks as {batch_id} ({args.model})")
+    else:
+        for batch_id in pending_batches(args.artifacts):
+            status = client.poll(batch_id)
+            if status == "pending":
+                print(f"{batch_id} still running")
+                continue
+            if status in ("expired", "failed"):
+                # Leave the record, drop it from both sets, and the next
+                # submit picks its chunks up again.
+                (args.artifacts / f"{batch_id}{REQUESTS_SUFFIX}").rename(
+                    args.artifacts / f"{batch_id}{EXPIRED_SUFFIX}")
+                print(f"{batch_id} {status} — its chunks return to the queue")
+                continue
+            claims = collect(batch_id, requests, client, args.artifacts, parties)
+            for claim in claims:
+                store.add_claim(claim)
+            store.commit()
+            added = merge_claims(args.claims, claims)
+            print(f"{batch_id}: {len(claims)} claims, {added} new in {args.claims}")
+
+    store.close()
