@@ -85,6 +85,13 @@ provenance. Results expire after 29 days — download and commit, never link.
    or the official Data API, whose `captions` endpoint requires OAuth *as the
    video owner* and so cannot read a candidate's channel.
 
+   **A second, independent path is blocked too.** `youtube-transcript-api`
+   reads the `timedtext` caption endpoint rather than the player API, and
+   fails with `RequestBlocked`: *"You are doing requests from an IP belonging
+   to a cloud provider... most IPs from cloud providers are blocked."* Two
+   different endpoints, one wall. The block is on the IP, not the technique,
+   so there is no third library to try.
+
    Re-runnable as `.github/workflows/spike-ytdlp.yml` — YouTube changes this
    periodically.
 2. ~~**GDELT French benchmark.**~~ **DONE 2026-09-18 — dropped.** 12 queries
