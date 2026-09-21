@@ -27,7 +27,7 @@ grille** (candidates × six policy axes).
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 .venv/bin/pip install yt-dlp          # CLI dependency, used by the video fetcher
-.venv/bin/python -m pytest -q          # 146 tests, all should pass
+.venv/bin/python -m pytest -q          # 172 tests, all should pass
 ```
 
 ## Running it
@@ -40,15 +40,23 @@ python3 -m venv .venv
 # The daily pass: feeds, programmes, pages, video, press leads.
 .venv/bin/python -m observatoire.fetch
 
-# Build the bilingual static site into site/
+# Extract. Submit at T, collect when the batch is done — never blocking on it.
+# --dry-run exercises the whole path against a fake client and spends nothing.
+export OPENAI_API_KEY=...
+.venv/bin/python -m observatoire.extract submit
+.venv/bin/python -m observatoire.extract collect
+
+# Build the bilingual static site into site/, from data/claims.json
 .venv/bin/python -m observatoire.render
 ```
 
-Extraction needs an API key and is not yet wired to a scheduler:
+`collect` writes new claims into `data/claims.json`, which is the published
+record and the thing reviewed in the pull request. It never overwrites a claim
+the file already carries — once a claim is in there a human has been through
+it. `render` builds from that file and never opens the database, so CI needs
+no SQLite at all.
 
-```bash
-export OPENAI_API_KEY=...            # see § Blocked
-```
+Extraction is not yet wired to a scheduler — see [§ Before launch](#before-launch).
 
 ## Layout
 
@@ -62,12 +70,15 @@ observatoire/
   extract.py      Chunking, batch submit/collect, provenance artifacts.
   clients.py      Provider batch clients. Shapes read from current API docs.
   lint.py         The quality gates. Every one fails the build.
-  store.py        SQLite: dedup, documents, leads, claims, source liveness.
+  store.py        SQLite working cache, plus the claims.json the site is built
+                  from — the published record, reviewed as a diff.
   i18n.py         Locale paths and ~26 chrome strings.
   render.py       Static site: hreflang, sitemap, feeds, hashed assets.
 sources.yaml      Every source, with its tier. Verified before being listed.
 templates/        Jinja2. The grid is a real <table>, deliberately.
-tests/            146 tests.
+data/claims.json  Published claims. In git; the database is not.
+data/artifacts/   Batch request and response JSONL: byte-exact provenance.
+tests/            172 tests.
 ```
 
 ## How it works
@@ -94,28 +105,39 @@ The design rests on three ideas worth stating plainly:
 |---|---|
 | Corpus | 71 documents, 8 leads, 27 AI-bearing (38%) |
 | Claims | 6 hand-built fixtures from real quotes, lint-clean |
-| Tests | 146 |
+| Chunks awaiting extraction | 100 |
+| Tests | 172 |
 | Site | Renders 24 pages, both locales |
 | Cost to extract the whole corpus | ~$0.006 batched |
+
+**No model has produced a claim yet.** The six in `data/claims.json` were built
+by hand from real quotes to exercise the gates and the renderer.
 
 ## Blocked
 
 | Blocker | Unblocks |
 |---|---|
-| `OPENAI_API_KEY` | Extraction. 53 chunks are ready to submit. |
-| A GitHub repository | The yt-dlp-in-CI spike — YouTube throttles datacenter IPs and this is **untested**. Also the Actions workflow. |
-| X API key (~$90/mo) | The `x` fetcher, which raises `NotImplementedError` by design rather than shipping a guessed endpoint shape. |
+| X API key (~$90/mo) | The `x` fetcher, which raises `NotImplementedError` by design rather than shipping a guessed endpoint shape. Also Phase 0 spike 3, which measures the real posts/day behind the ~$90 estimate. |
 
 ## Known gaps
 
-- **Claims should be committed as JSON, not only SQLite.** The editorial gate is
-  a pull-request diff, and a binary SQLite file cannot be reviewed in one.
-  `data/*.db` is currently gitignored as a local cache; a `data/claims.json`
-  export is needed before the PR workflow is real.
+- **No gold set, so no model has been chosen on evidence.** Spec §6c requires a
+  scored comparison table before any model is committed to, with the cheap tier
+  as the incumbent. Neither the 50 labelled claims nor the table exists, and
+  `clients.py` has no synchronous path to run the comparison with.
+- **The yt-dlp-in-CI spike is still untested.** It ran on a laptop; runners use
+  datacenter IPs, which YouTube throttles for transcripts. Load-bearing.
 - **Méthodologie and Mentions légales are placeholders.** Deliberately — that
   prose needs the *directeur de la publication* and legal review.
-- **Gabriel Attal has no wired source.** Renaissance publishes no working feed
-  and his France 2040 plan has no document; he is covered only via press leads.
+- **Link integrity is half-implemented.** Spec §7 asks that every `source_url`
+  resolves; `lint.py` checks the archive URL's shape but not that the original
+  still answers.
+- **Accessibility has never been measured.** The structural rules are asserted
+  in `tests/test_render.py`, but `axe` and Lighthouse have not been run once.
+- **Three of seven candidates have no wired source** — Attal, Le Pen and
+  Bardella. Renaissance publishes no working feed and Attal's France 2040 plan
+  has no document; the RN pair have none configured. All three are covered only
+  via press leads, and the grid says so: *Non suivi*, not *aucune position*.
 - **`check_grid_complete` lives in the renderer, not `lint.py`** — the rule is a
   property of the rendered grid, so it is asserted in `tests/test_render.py`.
 
@@ -130,4 +152,12 @@ Non-code, and each blocks publication:
 - [ ] Legal review of both
 - [ ] Contact address live for *droit de réponse* (LCEN art. 6-IV: 3-month
       window, 3-day response)
-- [ ] J-2 publication freeze wired into the cron (code électoral art. L. 49)
+
+Code, and each blocks publication too:
+
+- [ ] `.github/workflows/daily.yml` — the cron, the PR, the Vercel preview
+- [ ] Dead-man's switch: GitHub gives *no* notification when a scheduled
+      workflow silently stops, which is the `nosdeputes.fr` failure again
+- [ ] J-2 publication freeze wired into the cron (code électoral art. L. 49),
+      with the election dates in config rather than in the workflow
+- [ ] A gold set, and a model chosen against it (spec §6c)

@@ -47,11 +47,11 @@ verified RSS plus French open data covers discovery for €0).
 |---|---|
 | Pipeline | **Python 3.12+**, shelling out to `trafilatura` and `yt-dlp` CLIs |
 | Schema | **Pydantic** — `model_json_schema()` → the provider's structured-output contract; `model_validate()` → build gate. One source of truth, provider-neutral |
-| Model | **`gpt-5.6-luna`** by default, pinned to a dated snapshot, via **Batch API**. Provider is a config value — `schema.py` is neutral |
+| Model | **`gpt-5.6-luna`** by default, via **Batch API**. Provider is a config value — `schema.py` is neutral. The models page publishes no dated snapshot for it (checked 2026-09-21), so there is nothing to pin to; the model id, prompt hash and text SHA-256 in every request line are what make a changed answer attributable |
 | Site | **Jinja2** → static HTML, FR + EN |
 | Orchestration | **GitHub Actions** cron at an odd minute + `workflow_dispatch` |
-| Hosting | **Cloudflare Pages** — unlimited bandwidth, per-PR previews |
-| Storage | SQLite committed to the repo; git is the audit trail |
+| Hosting | **Vercel** — solely for per-PR preview deployments, so the *directeur de la publication* reviews the rendered site rather than a diff |
+| Storage | `data/claims.json` plus the batch JSONL artifacts committed to the repo; git is the audit trail. SQLite is the local working cache and is gitignored — a reviewer cannot read a binary file in a diff |
 
 **Batch is chosen for provenance, not the 50%.** The submitted JSONL is one line
 per document carrying the exact prompt, schema and model snapshot; the results
@@ -173,7 +173,7 @@ J-2 publication freeze condition wired into the cron (code électoral art. L. 49
 |---|---|
 | X API (~20 candidates × ~30 posts/day @ $0.005/read) | ~$90 |
 | Extraction, batched (`gpt-5.6-luna`) | ~$1.45 |
-| Everything else (vie-publique, AN, nosparlementaires, Cloudflare, Actions) | $0 |
+| Everything else (vie-publique, AN, nosparlementaires, Vercel, Actions) | $0 |
 | **Total** | **~$92** |
 
 Output is ~68% of the model bill because the schema is bilingual, so output
@@ -209,7 +209,7 @@ non-identical output."*
 1. `python -m pytest` — schema, lints, hreflang, grid completeness
 2. `python fetch.py --dry-run` — per-source counts, liveness asserts
 3. `python extract.py --gold` — quote fidelity and axis agreement against the 50-claim gold set
-4. Trigger the workflow via `workflow_dispatch` — confirm PR opens with a Cloudflare preview URL
+4. Trigger the workflow via `workflow_dispatch` — confirm PR opens with a Vercel preview URL
 5. Open the preview, verify a video claim by its `?t=` deep link
 6. `axe` + Lighthouse on both locales
 7. Inject a fabricated quote → confirm red build
