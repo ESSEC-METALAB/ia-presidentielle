@@ -1,6 +1,47 @@
 {% extends "base.html.j2" %}
 {% block content %}
-<h1>{{ t('fil_title') }}</h1>
-<p class="lede">{{ t('tagline') }} {{ t('fil_intro') }}</p>
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero-copy">
+    <p class="eyebrow"><span class="edition-dot" aria-hidden="true"></span>{{ t('hero_edition') }}</p>
+    <h1 id="hero-title"><span>{{ t('hero_line_one') }}</span><span>{{ t('hero_line_two') }}</span><em>{{ t('hero_line_three') }}</em></h1>
+    <p class="hero-intro">{{ t('hero_intro') }}</p>
+    <div class="hero-actions">
+      <a class="hero-cta" href="{{ paths['grille'][locale] }}">{{ t('hero_compare') }} <span aria-hidden="true">↗</span></a>
+      <a class="hero-secondary" href="#positions">{{ t('hero_latest') }} <span aria-hidden="true">↓</span></a>
+    </div>
+    <p class="hero-principle"><span aria-hidden="true">✳</span>{{ t('hero_principle') }}</p>
+  </div>
+  <figure class="hero-figure">
+    <div class="art-frame">
+      <div class="election-seal" aria-hidden="true"><span>{{ t('hero_seal_top') }}</span><b>2027</b><span>{{ t('hero_seal_bottom') }}</span></div>
+      <span class="art-index" aria-hidden="true">FIG. 01 — HUMAN × AI</span>
+      <img class="hero-art" src="/assets/{{ hero_image_name }}" width="1536" height="1024" fetchpriority="high" alt="{{ t('hero_art_alt') }}">
+      <span class="art-cross" aria-hidden="true">+</span>
+    </div>
+    <figcaption><span>{{ t('hero_art_title') }}</span><small>{{ t('hero_art_credit') }}</small></figcaption>
+  </figure>
+</section>
+
+<section class="explore" aria-labelledby="explore-title">
+  <div class="explore-heading"><h2 id="explore-title">{{ t('explore_label') }}</h2><span aria-hidden="true">↓</span></div>
+  <div class="explore-links">
+    {% for number, title, description, href in [
+      ('01', 'explore_compare', 'explore_compare_text', paths['grille'][locale]),
+      ('02', 'explore_feed', 'explore_feed_text', '#positions'),
+      ('03', 'explore_method', 'explore_method_text', paths['methodo'][locale])
+    ] %}
+    <a class="explore-link" href="{{ href }}">
+      <span class="explore-number">{{ number }}</span>
+      <div><h3>{{ t(title) }}</h3><p>{{ t(description) }}</p></div>
+      <span class="explore-arrow" aria-hidden="true">↗</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="home-feed" id="positions" aria-labelledby="feed-title">
+  <div class="feed-heading"><div><p class="eyebrow">{{ t('fil_title') }}</p><h2 id="feed-title">{{ t('latest_title') }}</h2></div><a href="{{ paths['grille'][locale] }}">{{ t('view_grid') }} <span aria-hidden="true">↗</span></a></div>
+  <p class="lede">{{ t('fil_intro') }}</p>
 {% for claim in claims %}{% include "_claim.html.j2" %}{% endfor %}
+</section>
 {% endblock %}

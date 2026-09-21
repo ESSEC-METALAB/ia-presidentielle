@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ page_title }} — {{ t('site') }}</title>
+<title>{% if not home %}{{ page_title }} — {% endif %}{{ t('site') }}</title>
 <meta name="description" content="{{ t('tagline') }}">
 {%- for loc, href in alternates.items() %}
 <link rel="alternate" hreflang="{{ loc }}" href="{{ base_url }}{{ href }}">
@@ -12,13 +12,40 @@
 <link rel="canonical" href="{{ base_url }}{{ self_path }}">
 <link rel="alternate" type="application/rss+xml" title="{{ t('site') }}" href="/{{ locale }}/rss.xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+{% if home %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap">
+<link rel="preload" as="image" href="/assets/{{ hero_image_name }}">
+{% endif %}
 <link rel="stylesheet" href="/assets/{{ css_name }}">
 </head>
-<body>
+<body{% if home %} class="home"{% endif %}>
+<a class="skip-link" href="#main">{{ t('skip_content') }}</a>
 <div class="wrap{% if wide %} wide{% endif %}">
+{% if home %}
+<header class="home-masthead">
+  <a class="home-brand" href="{{ paths['fil'][locale] }}" aria-label="{{ t('site') }} — {{ t('home_label') }}">
+    <span class="brand-symbol" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span><b>observatoire<span class="brand-dot">.</span></b><small>IA &amp; {{ 'PRÉSIDENTIELLE' if locale == 'fr' else 'PRESIDENTIAL ELECTION' }} 2027</small></span>
+  </a>
+  <nav class="home-nav" aria-label="{{ t('site') }}">
+    <a href="{{ paths['grille'][locale] }}">{{ t('nav_positions') }}</a>
+    <a href="#positions">{{ t('nav_debate') }}</a>
+    <a href="{{ paths['methodo'][locale] }}">{{ t('nav_methodo') }}</a>
+  </nav>
+  <div class="masthead-meta">
+    <span class="institution" aria-label="{{ t('publisher') }}"><b>ESSEC</b><span>METALAB<br>INSTITUTE</span></span>
+    <div class="locale-switch" aria-label="{{ t('other_lang') }}">
+      <span>{{ locale|upper }}</span><span aria-hidden="true">/</span>
+      <a href="{{ alternates[other_locale] }}" hreflang="{{ other_locale }}" lang="{{ other_locale }}" aria-label="{{ t('other_lang') }}">{{ other_locale|upper }}</a>
+    </div>
+  </div>
+</header>
+{% else %}
 <header class="site">
   <div class="brand">
-    <b>{{ t('site') }}</b>
+    <a class="brand-home" href="{{ paths['fil'][locale] }}"><b>{{ t('site') }}</b></a>
     <span class="pub">{{ t('publisher') }}</span>
   </div>
   <nav aria-label="{{ t('site') }}">
@@ -28,11 +55,15 @@
     <a class="lang" href="{{ alternates[other_locale] }}" hreflang="{{ other_locale }}">{{ t('other_lang') }}</a>
   </nav>
 </header>
+{% endif %}
+<main id="main">
 {% block content %}{% endblock %}
+</main>
 <footer class="site">
   <span>{{ t('publisher') }}</span><span>·</span>
   <span>{{ t('updated') }} {{ built_on }}</span><span>·</span>
   <a href="{{ paths['methodo'][locale] }}">{{ t('nav_methodo') }}</a><span>·</span>
+  <a href="{{ paths['corrections'][locale] }}">{{ t('nav_corr') }}</a><span>·</span>
   <a href="{{ paths['legal'][locale] }}">{{ t('nav_legal') }}</a>
 </footer>
 </div>

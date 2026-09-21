@@ -55,7 +55,13 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p out
-          yt-dlp --skip-download --write-auto-subs --sub-lang fr --sub-format vtt \
+          # yt-dlp warns that extraction without a JS runtime is deprecated and
+          # only enables deno by default. Runners ship Node, which it also
+          # supports, so this costs nothing and tells us whether the bot check
+          # is really about the IP or just about the missing runtime.
+          echo "node: $(node --version)"
+          yt-dlp --js-runtimes node \
+                 --skip-download --write-auto-subs --sub-lang fr --sub-format vtt \
                  -o "out/%(id)s.%(ext)s" "https://youtu.be/${{ steps.pick.outputs.video }}"
 
       - name: What came back

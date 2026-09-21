@@ -143,7 +143,11 @@ def test_home_hero_links_to_the_grid_and_feed_with_local_artwork(site):
         doc = html(site, PATHS["fil"][locale])
         assert '<body class="home">' in doc
         assert len(re.findall(r"<h1\b", doc)) == 1
-        assert re.search(r'<h1\b[^>]*\bid="hero-title"', doc)
+        title = re.search(r'<h1\b[^>]*\bid="hero-title"[^>]*>(.*?)</h1>', doc, re.S).group(1)
+        assert " ".join(re.sub(r"<[^>]+>", "", title).split()) == {
+            "fr": "L’IA avance. À nous de choisir.",
+            "en": "AI is moving. The choice is ours.",
+        }[locale]
         cta = re.search(r'<a\b[^>]*class="hero-cta"[^>]*>', doc).group(0)
         assert f'href="{PATHS["grille"][locale]}"' in cta
         assert 'href="#positions"' in doc and 'id="positions"' in doc
