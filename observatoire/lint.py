@@ -38,10 +38,16 @@ class Finding:
     gate: str
     message: str
     claim_id: str | None = None
+    fatal: bool = True
+    """False for something a human should see but that must not stop
+    publication. Used only by the link check: a source the candidate has
+    deleted is expected, and is exactly what the archive snapshot exists for.
+    """
 
     def __str__(self) -> str:
         where = f" [{self.claim_id}]" if self.claim_id else ""
-        return f"{self.gate}{where}: {self.message}"
+        mark = "" if self.fatal else " (warning)"
+        return f"{self.gate}{where}{mark}: {self.message}"
 
 
 def check_quote_in_source(claim: Claim, source_text: str) -> list[Finding]:
@@ -85,6 +91,60 @@ def check_archive_present(claim: Claim) -> list[Finding]:
     return []
 
 
+def resolves(url: str, timeout: float = 15.0) -> bool:
+    """Does this URL still answer?
+
+    HEAD first, then GET: plenty of servers answer HEAD with 405 while serving
+    the page perfectly well, and treating that as rot would cry wolf.
+    """
+    import httpx
+
+    from .fetch import UA
+
+    for method in ("HEAD", "GET"):
+        try:
+            r = httpx.request(method, url, follow_redirects=True, timeout=timeout,
+                              headers={"User-Agent": UA})
+        except Exception:
+            continue
+        if r.status_code < 400:
+            return True
+        if r.status_code != 405:
+            return False
+    return False
+
+
+def check_links(claims: list[Claim], probe=resolves) -> list[Finding]:
+    """Link rot, reported honestly.
+
+    Spec §7 asks that every ``source_url`` resolves. Taken literally that gate
+    would fail the build the day a candidate deletes a page — which is the
+    precise event the Wayback snapshot exists to survive, on a citation that
+    still works. It would block publication over something nobody here
+    controls, and would teach an editor to override the gates.
+
+    So rot is fatal only when it leaves **no route to the evidence at all**:
+    the original is gone *and* there is no real capture behind it. Otherwise
+    the reader can still check the quote, and a human is told rather than the
+    build being stopped.
+
+    Requires network, so it is not part of the offline pull-request gate; the
+    morning run calls it with ``--check-links``.
+    """
+    out = []
+    for claim in claims:
+        if probe(claim.source_url):
+            continue
+        archived = bool(claim.archive_url) and bool(SNAPSHOT.match(claim.archive_url))
+        out.append(Finding(
+            "link-rot",
+            f"source no longer resolves: {claim.source_url}"
+            + (" — the archived capture still does" if archived
+               else " AND no capture stands behind it, so the quote cannot be checked"),
+            claim.id, fatal=not archived))
+    return out
+
+
 def lint(claims: list[Claim], sources: dict[str, Document]) -> list[Finding]:
     """Run every per-claim gate. ``sources`` maps source_url → document.
 
@@ -116,6 +176,10 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Run every quality gate. Non-zero on any finding.")
     ap.add_argument("--claims", default="data/claims.json")
     ap.add_argument("--db", default="data/observatoire.db")
+    ap.add_argument("--check-links", action="store_true",
+                    help="also probe every source_url. Needs network, so the "
+                         "offline pull-request gate leaves it out and the morning "
+                         "run does it.")
     args = ap.parse_args()
 
     claims = load_claims(args.claims)
@@ -124,7 +188,13 @@ if __name__ == "__main__":
     store.close()
 
     findings = lint(claims, sources)
+    if args.check_links:
+        findings += check_links(claims)
+
     for finding in findings:
         print(finding)
-    print(f"{len(claims)} claims · {len(findings)} findings")
-    raise SystemExit(1 if findings else 0)
+    fatal = [f for f in findings if f.fatal]
+    warnings = len(findings) - len(fatal)
+    print(f"{len(claims)} claims · {len(fatal)} findings"
+          + (f" · {warnings} warnings" if warnings else ""))
+    raise SystemExit(1 if fatal else 0)

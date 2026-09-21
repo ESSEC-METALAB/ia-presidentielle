@@ -120,3 +120,42 @@ def test_a_real_capture_url_passes():
 def test_anything_without_a_capture_timestamp_is_rejected(url):
     f = check_archive_present(claim(archive_url=url))
     assert len(f) == 1 and "proves nothing" in f[0].message
+
+
+# --- link rot: reported, but fatal only when the evidence is unreachable ---
+
+from observatoire.lint import check_links
+
+CAPTURE = "https://web.archive.org/web/20260918144520/https://a.test/1"
+
+
+def test_a_live_source_produces_nothing():
+    assert check_links([claim()], probe=lambda url: True) == []
+
+
+def test_a_deleted_source_with_a_capture_warns_but_does_not_stop_publication():
+    """A candidate deleting a page is the event the snapshot exists for. The
+    reader can still check the quote, so failing the build would block
+    publication over something nobody here controls."""
+    found = check_links([claim(archive_url=CAPTURE)], probe=lambda url: False)
+    assert len(found) == 1 and found[0].fatal is False
+    assert "archived capture still does" in found[0].message
+
+
+def test_a_deleted_source_with_no_capture_is_fatal():
+    """No route to the evidence at all: the quote cannot be checked by anyone."""
+    found = check_links([claim(archive_url=None)], probe=lambda url: False)
+    assert len(found) == 1 and found[0].fatal is True
+    assert "cannot be checked" in found[0].message
+
+
+def test_a_dated_query_url_does_not_count_as_a_capture():
+    """Wayback answers the dated-query form with HTTP 200 and a "not archived"
+    page, so it proves nothing — the same trap check_archive_present exists for."""
+    rotten = claim(archive_url="https://web.archive.org/web/2026/https://a.test/1")
+    assert check_links([rotten], probe=lambda url: False)[0].fatal is True
+
+
+def test_a_warning_says_so_when_printed():
+    found = check_links([claim(archive_url=CAPTURE)], probe=lambda url: False)
+    assert "(warning)" in str(found[0])

@@ -120,10 +120,15 @@ jobs:
       # a diff they can fix, not as a job that vanished. The red check is what
       # blocks the merge — which needs branch protection on main to mean
       # anything. See README § Before launch.
+      # --check-links only here: it needs network, which the pull-request gate
+      # deliberately does not have. A source the candidate has deleted warns
+      # rather than fails, because the archived capture still answers and
+      # stopping publication over that would teach an editor to override the
+      # gates. It turns fatal only when nothing stands behind the quote.
       - name: Quality gates
         id: gates
         continue-on-error: true
-        run: python -m observatoire.lint
+        run: python -m observatoire.lint --check-links
 
       # Proves the site still builds. What ships is built by Vercel from the
       # pull request; site/ is gitignored and is not committed here.

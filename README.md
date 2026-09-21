@@ -140,9 +140,13 @@ ahead. **No model-extracted claim has been reviewed yet** — the six in
   leads are unaffected; timestamped video claims are not reachable from CI.
 - **Méthodologie and Mentions légales are placeholders.** Deliberately — that
   prose needs the *directeur de la publication* and legal review.
-- **Link integrity is half-implemented.** Spec §7 asks that every `source_url`
-  resolves; `lint.py` checks the archive URL's shape but not that the original
-  still answers.
+- **Link rot warns rather than fails, deliberately.** Spec §7 asks that every
+  `source_url` resolves. Read literally that gate would fail the build the day
+  a candidate deletes a page — the precise event the Wayback snapshot exists to
+  survive, on a citation that still works. `lint --check-links` therefore only
+  turns fatal when the original is gone *and* no capture stands behind it, so
+  the quote cannot be checked by anyone. It runs in the morning job, not in the
+  pull-request gate, which is deliberately offline.
 - **Accessibility has never been measured.** The structural rules are asserted
   in `tests/test_render.py`, but `axe` and Lighthouse have not been run once.
 - **One of seven candidates has no wired source** — Jordan Bardella. He has
