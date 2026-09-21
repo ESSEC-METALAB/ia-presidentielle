@@ -40,6 +40,11 @@ env:
 jobs:
   morning:
     runs-on: ubuntu-latest
+    # OPENAI_API_KEY lives in this environment, not in the repository's
+    # secrets. Without naming it here the secret resolves to empty and the
+    # extraction steps fail on a missing credential. Checked: no protection
+    # rules and no branch policy, so a scheduled run is not held for approval.
+    environment: prd
     env:
       # Job-level because the `secrets` context is not available in a step's
       # `if:` — checked against the contexts table, not assumed. Written as a
@@ -126,10 +131,18 @@ jobs:
           fi
           git commit -m "Morning pass: claims, provenance artifacts, pipeline state"
           git push origin "$REVIEW_BRANCH"
-          if [ -z "$(gh pr list --head "$REVIEW_BRANCH" --state open --json number --jq '.[].number')" ]; then
-            gh pr create --base main --head "$REVIEW_BRANCH" \
-              --title "Revue du matin" --body-file .github/review-body.md
+          if [ -n "$(gh pr list --head "$REVIEW_BRANCH" --state open --json number --jq '.[].number')" ]; then
+            exit 0
           fi
+          # Best-effort, and deliberately not fatal. Opening this needs
+          # "Allow GitHub Actions to create and approve pull requests", which
+          # also lets a workflow *approve* one — and a human approving each
+          # morning is the whole editorial premise. The work is already pushed
+          # above, so the cost of leaving that setting off is one click on the
+          # branch banner, not a lost morning.
+          gh pr create --base main --head "$REVIEW_BRANCH" \
+            --title "Revue du matin" --body-file .github/review-body.md \
+            || echo "::warning::Could not open the pull request. The branch '$REVIEW_BRANCH' is pushed and carries the morning's work — open the review by hand."
 
       # The dead-man's switch. GitHub sends no notification when a scheduled
       # workflow silently stops, so absence of this ping is the alert — the
