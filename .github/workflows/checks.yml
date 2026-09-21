@@ -1,0 +1,47 @@
+# The gate that actually blocks a merge.
+#
+# The daily workflow runs the same checks, but it runs on a schedule, so its
+# result attaches to the scheduled run and not to the review branch's head
+# commit — a pull request opened from it carries no status at all. Requiring
+# the gates on a merge therefore needs them to run on the pull request itself,
+# which is what this does.
+#
+# No secrets and no network: this reads what the branch already contains.
+name: checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      # yt-dlp is deliberately absent: nothing here fetches.
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: Tests
+        run: python -m pytest -q
+
+      # Every published claim carries a verbatim quote that exists in its
+      # source, a dated Wayback capture, and prose that describes rather than
+      # judges. Any finding fails this job.
+      - name: Quality gates
+        run: python -m observatoire.lint
+
+      # The grid must render a cell for every person on every axis. A missing
+      # cell is asymmetric coverage, which for an institution during an
+      # election is the risk the whole design exists to answer.
+      - name: Render
+        run: python -m observatoire.render
