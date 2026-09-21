@@ -75,7 +75,8 @@ def build_requests(docs: list[Document], people: dict[str, str]) -> list[Request
     out = []
     for doc in docs:
         for i, part in enumerate(chunk(doc.text)):
-            out.append(Request(f"{doc.url_hash}:{i}", doc, people.get(doc.person, doc.person), part))
+            name = people.get(doc.person, doc.person)
+            out.append(Request(f"{doc.url_hash}:{i}", doc, name, part))
     return out
 
 
@@ -152,7 +153,7 @@ def submit(requests: list[Request], client: BatchClient, model: str,
     batch_id = client.submit(payloads)
     path = artifacts / f"{batch_id}{REQUESTS_SUFFIX}"
     with path.open("w", encoding="utf-8") as fh:
-        for r, p in zip(requests, payloads):
+        for r, p in zip(requests, payloads, strict=True):
             fh.write(json.dumps({
                 "custom_id": r.custom_id,
                 "url": r.document.url,

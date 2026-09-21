@@ -41,7 +41,7 @@ def test_demotion_drops_the_body_but_keeps_the_receipt():
 
 def test_existing_leads_are_preserved_through_routing():
     pre = Lead(person="p", source_id="s", title="T", url="https://b.test/1", reason="video")
-    docs, leads = route([doc(Tier.PRESS, url="https://a.test/9")], [pre])
+    _, leads = route([doc(Tier.PRESS, url="https://a.test/9")], [pre])
     assert len(leads) == 2 and pre in leads
 
 

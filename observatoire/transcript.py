@@ -28,11 +28,11 @@ _STRONG = re.compile(
       | mistral | data\s*-?\s*cent | souverainet[ée]\s+num[ée]rique
       | (?:puissance|capacit[ée]s?)\s+de\s+calcul | deepfake | hypertrucage
       | reconnaissance\s+faciale | AI\s+Act""",
-    re.X | re.I,
+    re.VERBOSE | re.IGNORECASE,
 )
 _WEAK = re.compile(
     r"\bnum[ée]rique|\bdonn[ée]es|automatisation|\brobot|\bcloud\b|technologi",
-    re.I,
+    re.IGNORECASE,
 )
 
 def parse_vtt(text: str) -> list[tuple[int, str]]:

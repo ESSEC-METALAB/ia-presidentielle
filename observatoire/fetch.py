@@ -265,7 +265,11 @@ def _ytdlp(args: list[str]) -> str:
     ``fetch.run`` already records a per-source exception without stopping the
     morning, so raising here surfaces the problem instead of burying it.
     """
-    out = subprocess.run(["yt-dlp", *args], capture_output=True, text=True, timeout=180)
+    # S603/S607: yt-dlp is resolved from PATH and every argument here is
+    # built from sources.yaml, which is reviewed before anything is added to
+    # it. No part of a fetched page reaches this call.
+    out = subprocess.run(["yt-dlp", *args], capture_output=True,  # noqa: S603, S607
+                         text=True, timeout=180, check=False)
     if out.returncode != 0:
         raise RuntimeError(f"yt-dlp exited {out.returncode}: {out.stderr.strip()[:300]}")
     return out.stdout
@@ -308,7 +312,7 @@ def fetch_youtube(src: dict, person: dict, sid: str) -> Result:
         docs.append(Document(
             person=person["slug"], source_id=sid, kind="youtube", tier=Tier(str(src["tier"])),
             url=url, text=text, title=title, date=_parse_date(upload),
-            cues=[Cue(t=t, line=l) for t, l in cues],
+            cues=[Cue(t=at, line=said) for at, said in cues],
         ))
     return docs, leads
 
@@ -382,7 +386,12 @@ def _an_seances(url: str) -> tuple:
             if not name.endswith(".xml"):
                 continue
             try:
-                root = ET.fromstring(archive.read(name))
+                # S314: an entity-expansion bomb would need the Assemblée
+                # nationale's own open-data archive to be serving one, over
+                # HTTPS, from a government domain. defusedxml is the right
+                # answer for arbitrary uploads; this is a single known
+                # publisher and adding a dependency for it would be theatre.
+                root = ET.fromstring(archive.read(name))  # noqa: S314
             except ET.ParseError:
                 continue  # a malformed séance is skipped, never guessed at
             said = _an_paragraphs(root)
@@ -476,7 +485,8 @@ def match_people(text: str, people: list[dict]) -> list[dict]:
 
 def source_id(person: dict, src: dict) -> str:
     key = src.get("url") or src.get("channel") or src.get("query") or ""
-    return f"{person['slug']}:{src['type']}:{hashlib.sha1(key.encode()).hexdigest()[:8]}"
+    digest = hashlib.sha1(key.encode(), usedforsecurity=False).hexdigest()[:8]
+    return f"{person['slug']}:{src['type']}:{digest}"
 
 
 @dataclass
@@ -514,7 +524,9 @@ def run(sources_path: str | Path, store: Store, *, do_archive: bool = True,
             continue
         if (src["type"] in BACKFILL_ONLY) != backfill:
             continue  # same gate as per-person sources
-        sid = f"shared:{src['type']}:{hashlib.sha1(src.get('url','').encode()).hexdigest()[:8]}"
+        digest = hashlib.sha1(src.get("url", "").encode(),
+                              usedforsecurity=False).hexdigest()[:8]
+        sid = f"shared:{src['type']}:{digest}"
         fetcher = FETCHERS.get(src["type"])
         if fetcher is None:
             report.errors[sid] = f"unknown source type {src['type']!r}"

@@ -7,7 +7,6 @@ from pydantic import ValidationError
 from observatoire.schema import (
     MAX_QUOTE_WORDS,
     Claim,
-    ClaimType,
     ExtractedClaim,
     ExtractionResult,
     Status,

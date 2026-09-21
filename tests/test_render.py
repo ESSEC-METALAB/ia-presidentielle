@@ -71,7 +71,7 @@ def test_x_default_is_present_and_points_at_french(site, page):
 
 def test_canonical_points_at_the_page_itself(site):
     """An hreflang set is ignored if it points at non-canonical URLs."""
-    for page, paths in PATHS.items():
+    for paths in PATHS.values():
         for locale in LOCALES:
             doc = html(site, paths[locale])
             assert f'<link rel="canonical" href="{BASE_URL}{paths[locale]}">' in doc
@@ -143,7 +143,7 @@ def test_home_hero_links_to_the_grid_and_feed_with_local_artwork(site):
         doc = html(site, PATHS["fil"][locale])
         assert '<body class="home">' in doc
         assert len(re.findall(r"<h1\b", doc)) == 1
-        title = re.search(r'<h1\b[^>]*\bid="hero-title"[^>]*>(.*?)</h1>', doc, re.S).group(1)
+        title = re.search(r'<h1\b[^>]*\bid="hero-title"[^>]*>(.*?)</h1>', doc, re.DOTALL).group(1)
         assert " ".join(re.sub(r"<[^>]+>", "", title).split()) == {
             "fr": "L’IA avance. À nous de choisir.",
             "en": "AI is moving. The choice is ours.",
@@ -168,7 +168,7 @@ def test_sitemap_lists_every_page_with_alternates(site):
     urls = root.findall("s:url", ns)
     assert len(urls) == (len(PATHS) + len(PEOPLE)) * len(LOCALES)
     for u in urls:
-        langs = {l.get("hreflang") for l in u.findall("x:link", ns)}
+        langs = {link.get("hreflang") for link in u.findall("x:link", ns)}
         assert langs == {"fr", "en", "x-default"}
 
 
@@ -198,7 +198,7 @@ def test_robots_points_at_the_sitemap(site):
 
 # --- review findings: three things the earlier suite did not catch ---------
 
-UNWATCHED = PEOPLE + [Person("marine-le-pen", "Marine Le Pen", "RN", monitored=False)]
+UNWATCHED = [*PEOPLE, Person("marine-le-pen", "Marine Le Pen", "RN", monitored=False)]
 
 
 @pytest.fixture(scope="module")

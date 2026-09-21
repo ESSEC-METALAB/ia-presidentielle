@@ -1,14 +1,22 @@
 import json
-from datetime import date
 
 import pytest
 
 from observatoire.extract import (
-    CHUNK_CHARS, EXPIRED_SUFFIX, REQUESTS_SUFFIX, FakeClient, build_requests, chunk,
-    collect, pending_batches, submit, submitted_ids, to_claims,
+    CHUNK_CHARS,
+    EXPIRED_SUFFIX,
+    REQUESTS_SUFFIX,
+    FakeClient,
+    build_requests,
+    chunk,
+    collect,
+    pending_batches,
+    submit,
+    submitted_ids,
+    to_claims,
 )
 from observatoire.prompt import prompt_hash, system_prompt
-from observatoire.schema import Claim, ClaimType, Cue, Document, ExtractionResult, Tier
+from observatoire.schema import Cue, Document, ExtractionResult, Tier
 
 EC = dict(
     axis="souverainete", claim_type="discours", date="2026-07-07",

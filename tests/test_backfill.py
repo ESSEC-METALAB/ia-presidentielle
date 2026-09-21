@@ -1,6 +1,6 @@
 """Archive crawls are one-off; daily runs must not repeat them."""
-import yaml
 import pytest
+import yaml
 
 from observatoire import fetch as F
 from observatoire.schema import Document, Tier

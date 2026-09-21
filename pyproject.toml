@@ -34,10 +34,58 @@ fetch = [
 extract = ["openai==3.15.0"]
 
 [dependency-groups]
-dev = ["pytest==9.1.1"]
+dev = ["pytest==9.1.1", "ruff==0.16.8"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["observatoire"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# Chosen to be high-signal on this codebase rather than maximal: a config that
+# needs a hundred suppressions teaches people to ignore the linter.
+select = ["E", "F", "I", "B", "UP", "C4", "S", "PERF", "FURB", "RUF"]
+ignore = [
+    # The text this project handles is French. RUF001-003 flag the typographic
+    # apostrophe and the non-breaking space before « : » as "ambiguous
+    # unicode", which in a corpus of French quotations is not a defect — it is
+    # the correct character, and quote_fr is never edited.
+    "RUF001", "RUF002", "RUF003",
+    # A broken source must not stop the morning, a malformed model answer is
+    # dropped rather than guessed at, and an unreachable robots.txt is not a
+    # prohibition. Each is a deliberate catch-all with a comment explaining
+    # why; narrowing them means guessing what a hostile web can produce.
+    "BLE001", "S110", "S112",
+    # dict(...) reads better than a brace literal where the keys are field
+    # names being overridden, which is most of the test fixtures.
+    "C408",
+    # Dates here are French publication dates taken from the source, not
+    # instants. A timezone would invent precision the record does not carry.
+    "DTZ011",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests are literals compared against expected values; that is what they are.
+# S101 is assert, which is the entire mechanism.
+"tests/*" = [
+    "S101",   # assert is the entire mechanism of a test
+    "B017",
+    "E501",
+    "S314",   # the XML parsed here is the sitemap and feeds this build just wrote
+]
+# A table of French and English interface strings. Wrapping a translation pair
+# across lines to satisfy a column limit makes it harder to see the two
+# languages side by side, which is the only reason the table is shaped this way.
+"observatoire/i18n.py" = ["E501"]
+# The prompt itself. Reflowing these lines would change the text the model
+# receives and therefore prompt_hash, which is recorded with every batch as
+# provenance — a formatting rule must not be able to alter the record.
+"observatoire/prompt.py" = ["E501"]
+# Field descriptions. These are sent to the model as part of the schema, so
+# the same reasoning applies as for the prompt.
+"observatoire/schema.py" = ["E501"]

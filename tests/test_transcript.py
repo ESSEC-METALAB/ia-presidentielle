@@ -1,7 +1,11 @@
 import pytest
 
 from observatoire.transcript import (
-    estimate_tokens, flatten, locate, mentions_ai, parse_vtt,
+    estimate_tokens,
+    flatten,
+    locate,
+    mentions_ai,
+    parse_vtt,
 )
 
 # Mirrors real yt-dlp auto-caption output: a 10ms repaint cue, then a real cue

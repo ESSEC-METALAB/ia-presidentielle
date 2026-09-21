@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from .schema import Document, Lead
@@ -58,7 +58,7 @@ CREATE INDEX IF NOT EXISTS idx_runs ON source_runs(source_id);
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="microseconds")
+    return datetime.now(UTC).isoformat(timespec="microseconds")
 
 
 # --- the published record -------------------------------------------------

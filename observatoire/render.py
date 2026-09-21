@@ -13,7 +13,7 @@ from __future__ import annotations
 import hashlib
 import shutil
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import date
 from pathlib import Path
 from urllib.parse import urlparse
 from xml.sax.saxutils import escape
@@ -22,7 +22,13 @@ from feedgen.feed import FeedGenerator
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from .i18n import (
-    AXIS_LABELS, DEFAULT, LOCALES, PATHS, TIER_LABELS, axis_label, person_path, t,
+    DEFAULT,
+    LOCALES,
+    PATHS,
+    TIER_LABELS,
+    axis_label,
+    person_path,
+    t,
 )
 from .schema import Axis, Claim
 
@@ -66,7 +72,7 @@ def build_grid(claims: list[Claim], people: list[Person]) -> dict[str, dict[str,
     could be read as an in-kind campaign benefit under art. L. 52-8.
     """
     grid: dict[str, dict[str, Claim | None]] = {
-        p.slug: {axis: None for axis in AXES} for p in people
+        p.slug: dict.fromkeys(AXES) for p in people
     }
     for c in sorted(claims, key=lambda c: str(c.date)):
         if c.person in grid:
@@ -223,6 +229,7 @@ def _static_bodies() -> dict[str, dict[str, str]]:
 
 if __name__ == "__main__":
     import argparse
+
     import yaml
 
     from .store import load_claims

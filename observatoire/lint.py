@@ -66,10 +66,10 @@ def check_no_evaluative_language(claim: Claim) -> list[Finding]:
     out = []
     for field in ("position_fr", "position_en", "contexte_fr", "contexte_en"):
         value = getattr(claim, field)
-        for m in _BANNED.finditer(value):
-            out.append(Finding("neutrality",
-                               f"{field} judges rather than describes: {m.group(0)!r}",
-                               claim.id))
+        out.extend(
+            Finding("neutrality",
+                    f"{field} judges rather than describes: {m.group(0)!r}", claim.id)
+            for m in _BANNED.finditer(value))
     return out
 
 

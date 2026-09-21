@@ -3,7 +3,11 @@ from datetime import date
 import pytest
 
 from observatoire.lint import (
-    check_archive_present, check_no_evaluative_language, check_quote_in_source, lint,
+    check_archive_present,
+    check_links,
+    check_no_evaluative_language,
+    check_quote_in_source,
+    lint,
 )
 from observatoire.schema import Claim, Document, Tier
 
@@ -124,7 +128,6 @@ def test_anything_without_a_capture_timestamp_is_rejected(url):
 
 # --- link rot: reported, but fatal only when the evidence is unreachable ---
 
-from observatoire.lint import check_links
 
 CAPTURE = "https://web.archive.org/web/20260918144520/https://a.test/1"
 
