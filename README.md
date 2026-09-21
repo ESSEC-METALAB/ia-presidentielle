@@ -27,7 +27,7 @@ grille** (candidates × six policy axes).
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 .venv/bin/pip install yt-dlp          # CLI dependency, used by the video fetcher
-.venv/bin/python -m pytest -q          # 188 tests, all should pass
+.venv/bin/python -m pytest -q          # 204 tests, all should pass
 ```
 
 ## Running it
@@ -74,11 +74,14 @@ observatoire/
                   from — the published record, reviewed as a diff.
   i18n.py         Locale paths and ~26 chrome strings.
   render.py       Static site: hreflang, sitemap, feeds, hashed assets.
+  gold.py         Scores candidate models against the gold set. Refuses to
+                  score contexte, which no machine can check.
 sources.yaml      Every source, with its tier. Verified before being listed.
 templates/        Jinja2. The grid is a real <table>, deliberately.
 data/claims.json  Published claims. In git; the database is not.
 data/artifacts/   Batch request and response JSONL: byte-exact provenance.
-tests/            188 tests.
+gold/claims.json  Labelled documents that decide which model runs.
+tests/            204 tests.
 ```
 
 ## How it works
@@ -105,7 +108,7 @@ The design rests on three ideas worth stating plainly:
 |---|---|
 | Corpus on `main` | 71 documents, 8 leads, 27 AI-bearing (38%) |
 | Claims | 6 hand-built fixtures from real quotes, lint-clean |
-| Tests | 188 |
+| Tests | 204 |
 | Site | Renders 24 pages, both locales |
 | Cost to extract the whole corpus | ~$0.006 batched |
 
@@ -123,10 +126,14 @@ ahead. **No model-extracted claim has been reviewed yet** — the six in
 
 ## Known gaps
 
-- **No gold set, so no model has been chosen on evidence.** Spec §6c requires a
-  scored comparison table before any model is committed to, with the cheap tier
-  as the incumbent. Neither the 50 labelled claims nor the table exists, and
-  `clients.py` has no synchronous path to run the comparison with.
+- **No model has been chosen on evidence yet.** Spec §6c requires a scored
+  comparison before committing to one, with the cheap tier as the incumbent.
+  The harness exists — `python -m observatoire.gold --model A --model B` scores
+  quote fidelity, axis agreement and empty-array discipline, and prints every
+  `contexte` for the human check no lint can do. What is missing is the labels:
+  `gold/claims.json` carries **6** of the 50 claims the spec asks for, so the
+  empty-discipline column is the only trustworthy one today. Label what the
+  pipeline produces and add it. No comparison has been run.
 - **YouTube extraction does not work from CI.** Measured 2026-09-21 on a
   runner, twice, and via two independent endpoints: both answer *"Sign in to
   confirm you're not a bot"* / `RequestBlocked`. Listing still works, so video

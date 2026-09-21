@@ -1,0 +1,218 @@
+{
+  "_": [
+    "The gold set decides which model runs in production (spec §6c).",
+    "",
+    "Positives are the hand-built claims: real quotes, already lint-clean, each",
+    "reachable in the first chunk of its document so the model is asked about the",
+    "whole passage rather than a fragment of it.",
+    "",
+    "Negatives are the first 20 single-chunk documents, ordered by url_hash, whose",
+    "text contains no AI term at all. Ordered rather than chosen, so nobody picked",
+    "the easy ones. Text is not prefiltered in production, so these are exactly the",
+    "documents a model really is asked about — and [] is the right answer for every",
+    "one of them.",
+    "",
+    "INCOMPLETE. The spec asks for 50 labelled claims and this carries 6. It is a",
+    "seed: label the claims the pipeline produces and add them here. Until then the",
+    "empty-discipline column is the trustworthy one, and recall is measured over too",
+    "few claims to mean much."
+  ],
+  "documents": [
+    {
+      "url_hash": "2c921ea91596ff60",
+      "url": "https://republicains.fr/actualites/2026/07/07/sur-lia-nous-avons-une-fenetre-de-tir-de-deux-ans/",
+      "person": "bruno-retailleau",
+      "why": "hand-built from a real quote; carries a stated AI position",
+      "claims": [
+        {
+          "axis": "services-publics",
+          "quote_fr": "Pour les Français, je propose un agent IA administratif unique, « Marianne », capable de simplifier toutes leurs démarches"
+        },
+        {
+          "axis": "souverainete",
+          "quote_fr": "À mes yeux, l’IA dépasse même ce qu’a été le choix stratégique du nucléaire pour la France : ce dernier était un levier de souveraineté, l’IA sera la souveraineté même"
+        }
+      ]
+    },
+    {
+      "url_hash": "e6bd0cd235d8ad80",
+      "url": "https://www.edouardphilippe.fr/priorites/pour-une-france-plus-conquerante",
+      "person": "edouard-philippe",
+      "why": "hand-built from a real quote; carries a stated AI position",
+      "claims": [
+        {
+          "axis": "emploi-formation",
+          "quote_fr": "- Adapter l'enseignement, le recrutement et la formation continue à l'IA, en instaurant un droit à la reconversion pour les métiers menacés"
+        },
+        {
+          "axis": "souverainete",
+          "quote_fr": "- Développer une infrastructure d'intelligence artificielle européenne souveraine, en soutenant nos champions et en doublant notre capacité de calcul en cinq ans"
+        }
+      ]
+    },
+    {
+      "url_hash": "e05805ff815805b7",
+      "url": "https://lafranceinsoumise.fr/2026/06/01/choose-france-macron-transforme-la-france-en-colonie-numerique-des-geants-mondiaux-de-lia/",
+      "person": "jean-luc-melenchon",
+      "why": "hand-built from a real quote; carries a stated AI position",
+      "claims": [
+        {
+          "axis": "souverainete",
+          "quote_fr": "Nous proposons la création d’un grand pôle public du numérique et de l’intelligence artificielle"
+        }
+      ]
+    },
+    {
+      "url_hash": "7d001df095a7e6cf",
+      "url": "https://parti-socialiste.fr/communiques-de-presse/sommet-pour-laction-sur-lintelligence-artificielle-faire-de-lia-un-levier-dinnovation-au-service-de-linteret-general/",
+      "person": "olivier-faure",
+      "why": "hand-built from a real quote; carries a stated AI position",
+      "claims": [
+        {
+          "axis": "regulation",
+          "quote_fr": "Le Parti Socialiste soutient l’instauration d’une gouvernance mondiale de l’IA, appuyée par des cadres de régulation ambitieux tels que l’IA Act dont les premières dispositions sont mises en œuvre depuis le 2 février 2025"
+        }
+      ]
+    },
+    {
+      "url_hash": "012d56f2c0760ef2",
+      "url": "https://lafranceinsoumise.fr/2026/09/04/plan-genevard-1-milliard-pour-ne-surtout-rien-changer/",
+      "person": "jean-luc-melenchon",
+      "why": "no AI term anywhere in the text; [] is the correct answer",
+      "claims": []
+    },
+    {
+      "url_hash": "045b883b659a23d4",
+      "url": "https://parti-socialiste.fr/communiques-de-presse/bureau-national-du-16-septembre-2026/",
+      "person": "olivier-faure",
+      "why": "no AI term anywhere in the text; [] is the correct answer",
+      "claims": []
+    },
+    {
+      "url_hash": "04bab5f792aa133c",
+      "url": "https://republicains.fr/actualites/2026/08/02/lespace-schengen-doit-etre-reserve-aux-europeens/",
+      "person": "bruno-retailleau",
+      "why": "no AI term anywhere in the text; [] is the correct answer",
+      "claims": []
+    },
+    {
+      "url_hash": "10c6a970c6434a98",
+      "url": "https://republicains.fr/actualites/2026/07/15/les-yeux-dans-les-yeux-avec-jean-jacques-bourdin/",
+      "person": "bruno-retailleau",
+      "why": "no AI term anywhere in the text; [] is the correct answer",
+      "claims": []
+    },
+    {
+      "url_hash": "2252c6db6fc628be",
+      "url": "https://parti-socialiste.fr/actualites/choisir-2027-le-processus-de-designation-du-ou-de-la-candidat-e-socialiste-a-lelection-presidentielle-est-lance/",
+      "person": "olivier-faure",
+      "why": "no AI term anywhere in the text; [] is the correct answer",
+      "claims": []
+    },
+    {
+      "url_hash": "28f9c2059706183a",
+      "url": "https://lafranceinsoumise.fr/2026/09/16/a-propos-de-la-presence-de-la-france-insoumise-sur-bfmtv/",
+      "person": "jean-luc-melenchon",
+      "why": "no AI term anywhere in the text; [] is the correct answer",
+      "claims": []
+    },
+    {
+      "url_hash": "41546327d2e2177a",
+      "url": "https://parti-socialiste.fr/billets/souffrance-psychique-au-travail-la-droite-senatoriale-a-prefere-le-silence-a-la-verite/",
+      "person": "olivier-faure",
+      "why": "no AI term anywhere in the text; [] is the correct answer",
+      "claims": []
+    },
+    {
+      "url_hash": "479f7ec0d806d487",
+      "url": "https://republicains.fr/actualites/2026/07/15/une-grande-nation-ne-repond-pas-a-la-souffrance-par-la-mort/",
+      "person": "bruno-retailleau",
+      "why": "no AI term anywhere in the text; [] is the correct answer",
+      "claims": []
+    },
+    {
+      "url_hash": "4f8109028fb3f0e7",
+      "url": "https://lafranceinsoumise.fr/2026/09/09/pourquoi-nous-ne-repondrons-a-aucune-invitation-de-bfmtv-cette-semaine/",
+      "person": "jean-luc-melenchon",
+      "why": "no AI term anywhere in the text; [] is the correct answer",
+      "claims": []
+    },
+    {
+      "url_hash": "54b39c0ba2782526",
+      "url": "https://parti-socialiste.fr/communiques-de-presse/rentree-2026-neuf-annees-de-macronisme-ont-abime-lecole-luniversite-et-la-recherche/",
+      "person": "olivier-faure",
+      "why": "no AI term anywhere in the text; [] is the correct answer",
+      "claims": []
+    },
+    {
+      "url_hash": "5551d487dc02c59a",
+      "url": "https://republicains.fr/actualites/2026/07/31/la-libre-circulation-des-personnes-en-europe-doit-etre-suspendue-pour-lespagne/",
+      "person": "bruno-retailleau",
+      "why": "no AI term anywhere in the text; [] is the correct answer",
+      "claims": []
+    },
+    {
+      "url_hash": "56939ab6ddce0967",
+      "url": "https://lafranceinsoumise.fr/2026/09/15/dechets-nucleaires-eternels-aveu-de-mensonge-et-passage-en-force/",
+      "person": "jean-luc-melenchon",
+      "why": "no AI term anywhere in the text; [] is the correct answer",
+      "claims": []
+    },
+    {
+      "url_hash": "56bd6a3d97d4f0b8",
+      "url": "https://republicains.fr/actualites/2026/09/08/bruno-retailleau-presente-son-equipe-de-porte-paroles/",
+      "person": "bruno-retailleau",
+      "why": "no AI term anywhere in the text; [] is the correct answer",
+      "claims": []
+    },
+    {
+      "url_hash": "58567776ec410865",
+      "url": "https://republicains.fr/actualites/2026/07/24/incendies-face-a-lurgence-le-gouvernement-doit-agir-et-donner-a-nos-sapeurs-pompiers-les-moyens-de-nous-proteger/",
+      "person": "bruno-retailleau",
+      "why": "no AI term anywhere in the text; [] is the correct answer",
+      "claims": []
+    },
+    {
+      "url_hash": "5a13108cbef9e895",
+      "url": "https://lafranceinsoumise.fr/2026/09/16/fuites-sur-la-garde-a-vue-de-rima-hassan-les-revelations-de-complement-denquete-mettent-en-cause-laurent-nunez/",
+      "person": "jean-luc-melenchon",
+      "why": "no AI term anywhere in the text; [] is the correct answer",
+      "claims": []
+    },
+    {
+      "url_hash": "69fe0291d4504d3d",
+      "url": "https://parti-socialiste.fr/communiques-de-presse/leipzig-leurope-face-au-terrorisme-soutenu-par-letat-russe/",
+      "person": "olivier-faure",
+      "why": "no AI term anywhere in the text; [] is the correct answer",
+      "claims": []
+    },
+    {
+      "url_hash": "756711117ee0f136",
+      "url": "https://republicains.fr/actualites/2026/09/06/on-est-dans-un-gouvernement-des-juges/",
+      "person": "bruno-retailleau",
+      "why": "no AI term anywhere in the text; [] is the correct answer",
+      "claims": []
+    },
+    {
+      "url_hash": "7d436f406716b0e9",
+      "url": "https://lafranceinsoumise.fr/2026/09/11/mob-20-septembre-permis-de-tuer/",
+      "person": "jean-luc-melenchon",
+      "why": "no AI term anywhere in the text; [] is the correct answer",
+      "claims": []
+    },
+    {
+      "url_hash": "7e6ef84793efbe39",
+      "url": "https://parti-socialiste.fr/communiques-de-presse/reaction-du-parti-socialiste-a-la-disparition-dedouard-balladur/",
+      "person": "olivier-faure",
+      "why": "no AI term anywhere in the text; [] is the correct answer",
+      "claims": []
+    },
+    {
+      "url_hash": "8053be6177de376c",
+      "url": "https://parti-socialiste.fr/communiques-de-presse/deces-de-catherine-ringer-le-parti-socialiste-rend-hommage-a-une-artiste-iconoclaste-profondement-libre/",
+      "person": "olivier-faure",
+      "why": "no AI term anywhere in the text; [] is the correct answer",
+      "claims": []
+    }
+  ]
+}
