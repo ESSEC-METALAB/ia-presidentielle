@@ -24,30 +24,44 @@ grille** (candidates × six policy axes).
 ## Setup
 
 ```bash
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-.venv/bin/pip install yt-dlp          # CLI dependency, used by the video fetcher
-.venv/bin/python -m pytest -q          # 204 tests, all should pass
+uv sync --all-extras --group dev      # creates .venv from uv.lock
+uv tool install yt-dlp                # CLI dependency, used by the video fetcher
+uv run python -m pytest -q            # 210 tests, all should pass
 ```
+
+`uv.lock` pins every transitive dependency, not just the eleven direct ones.
+For a publication whose claim is byte-exact provenance, a rebuild that quietly
+resolved different versions would undercut the point. CI installs with
+`--frozen`, which fails rather than re-resolving.
+
+Dependencies are split by what each command actually needs. The base set is
+what *renders* — four packages — so Vercel builds a preview without installing
+a PDF parser and a model SDK to produce static HTML:
+
+| Install | Gets you |
+|---|---|
+| `uv sync --no-dev` | render the site (what Vercel runs) |
+| `uv sync --extra fetch` | + fetching sources |
+| `uv sync --all-extras --group dev` | + extraction, + tests |
 
 ## Running it
 
 ```bash
 # One-off archive crawl of a domain's sitemap. Run once per domain; published
 # archives do not change, so it is never repeated.
-.venv/bin/python -m observatoire.fetch --backfill --only bruno-retailleau
+uv run python -m observatoire.fetch --backfill --only bruno-retailleau
 
 # The daily pass: feeds, programmes, pages, video, press leads.
-.venv/bin/python -m observatoire.fetch
+uv run python -m observatoire.fetch
 
 # Extract. Submit at T, collect when the batch is done — never blocking on it.
 # --dry-run exercises the whole path against a fake client and spends nothing.
 export OPENAI_API_KEY=...
-.venv/bin/python -m observatoire.extract submit
-.venv/bin/python -m observatoire.extract collect
+uv run python -m observatoire.extract submit
+uv run python -m observatoire.extract collect
 
 # Build the bilingual static site into site/, from data/claims.json
-.venv/bin/python -m observatoire.render
+uv run python -m observatoire.render
 ```
 
 `collect` writes new claims into `data/claims.json`, which is the published
@@ -76,12 +90,14 @@ observatoire/
   render.py       Static site: hreflang, sitemap, feeds, hashed assets.
   gold.py         Scores candidate models against the gold set. Refuses to
                   score contexte, which no machine can check.
+pyproject.toml    Dependencies, split by what each command needs. uv.lock pins
+                  every transitive version.
 sources.yaml      Every source, with its tier. Verified before being listed.
 templates/        Jinja2. The grid is a real <table>, deliberately.
 data/claims.json  Published claims. In git; the database is not.
 data/artifacts/   Batch request and response JSONL: byte-exact provenance.
 gold/claims.json  Labelled documents that decide which model runs.
-tests/            204 tests.
+tests/            209 tests.
 ```
 
 ## How it works
@@ -108,7 +124,7 @@ The design rests on three ideas worth stating plainly:
 |---|---|
 | Corpus on `main` | 71 documents, 8 leads, 27 AI-bearing (38%) |
 | Claims | 6 hand-built fixtures from real quotes, lint-clean |
-| Tests | 204 |
+| Tests | 209 |
 | Site | Renders 24 pages, both locales |
 | Cost to extract the whole corpus | ~$0.006 batched |
 

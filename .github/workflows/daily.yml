@@ -86,22 +86,24 @@ jobs:
             echo "no review open; starting fresh from main"
           fi
 
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
         with:
-          python-version: "3.12"
-          cache: pip
+          enable-cache: true
 
+      # --frozen: install exactly what uv.lock pins and fail if it is stale.
+      # A morning that silently resolved different transitive versions from the
+      # ones reviewed is not the build anybody approved.
       - name: Install
         run: |
-          pip install -r requirements.txt
-          pip install yt-dlp          # CLI dependency of the video fetcher
+          uv sync --frozen --all-extras --group dev
+          uv tool install yt-dlp      # CLI dependency of the video fetcher
 
       # Yesterday's batch first. A batch is never waited on: if it is still
       # running this is a no-op and tomorrow collects it.
       - name: Collect yesterday's batch
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: python -m observatoire.extract collect
+        run: uv run python -m observatoire.extract collect
 
       # A source that returned nothing three runs running exits non-zero here.
       # That must not discard the morning's work, so it is recorded and
@@ -109,12 +111,12 @@ jobs:
       - name: Fetch
         id: fetch
         continue-on-error: true
-        run: python -m observatoire.fetch
+        run: uv run python -m observatoire.fetch
 
       - name: Submit today's batch
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: python -m observatoire.extract submit
+        run: uv run python -m observatoire.extract submit
 
       # Same reasoning as the fetch step: a failing gate must reach a human as
       # a diff they can fix, not as a job that vanished. The red check is what
@@ -128,12 +130,12 @@ jobs:
       - name: Quality gates
         id: gates
         continue-on-error: true
-        run: python -m observatoire.lint --check-links
+        run: uv run python -m observatoire.lint --check-links
 
       # Proves the site still builds. What ships is built by Vercel from the
       # pull request; site/ is gitignored and is not committed here.
       - name: Render
-        run: python -m observatoire.render
+        run: uv run python -m observatoire.render
 
       - name: Commit the morning and open the review
         run: |

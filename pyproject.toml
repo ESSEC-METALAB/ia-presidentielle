@@ -1,0 +1,43 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "observatoire"
+version = "0.1.0"
+description = "Observatoire IA & Présidentielle 2027 — ESSEC Metalab Institute"
+requires-python = ">=3.12"
+
+# The base set is deliberately what *rendering* needs, and nothing more.
+# Vercel builds the preview for every pull request — the reason it was chosen
+# over Pages — and making it install pymupdf, trafilatura and a model SDK to
+# produce static HTML is slower and more to go wrong. Proved by building the
+# whole site in a clean environment with only these four.
+dependencies = [
+    "Jinja2==3.1.6",
+    "PyYAML==6.0.3",
+    "feedgen==1.0.0",
+    "pydantic==2.13.5",
+]
+
+[project.optional-dependencies]
+# Reading the outside world: HTTP, article extraction, PDFs, feeds.
+fetch = [
+    "httpx==0.28.1",
+    "trafilatura==2.2.0",
+    "pymupdf==1.28.2",
+    "feedparser==6.0.14",
+]
+# Talking to a model. Only OpenAI: the anthropic SDK was declared for a year
+# and never imported once, so it is gone. `schema.py` stays provider-neutral,
+# and adding a Claude client is about twenty lines when one is needed.
+extract = ["openai==3.15.0"]
+
+[dependency-groups]
+dev = ["pytest==9.1.1"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["observatoire"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

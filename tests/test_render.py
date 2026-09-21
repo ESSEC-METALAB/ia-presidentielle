@@ -241,19 +241,3 @@ def test_a_claim_with_no_date_says_so_rather_than_inventing_one(site2):
 def test_an_unconfirmed_tier_is_marked_as_a_default(site2):
     doc = html(site2, PATHS["fil"]["fr"])
     assert "niveau par défaut, non confirmé" in doc
-
-
-def test_the_render_dependencies_match_the_full_set():
-    """Vercel builds every preview from requirements-render.txt, so a version
-    that drifts from requirements.txt means the page under review was built
-    against something production does not use."""
-    def pins(path):
-        return {line.split("==")[0]: line.strip()
-                for line in Path(path).read_text(encoding="utf-8").splitlines()
-                if "==" in line and not line.startswith("#")}
-
-    full, render = pins("requirements.txt"), pins("requirements-render.txt")
-    assert render, "requirements-render.txt pins nothing"
-    assert set(render) <= set(full), f"not in requirements.txt: {set(render) - set(full)}"
-    for package, pin in render.items():
-        assert pin == full[package], f"{package} pinned differently: {pin} vs {full[package]}"
