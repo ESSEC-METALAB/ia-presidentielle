@@ -4,6 +4,11 @@ __pycache__/
 .pytest_cache/
 .DS_Store
 
+# Secrets. The API key lives here locally and in GitHub Actions secrets in CI.
+# Never in the repo: this one is published under an institution's name.
+.env
+.env.*
+
 # Rendered output — rebuilt from data on every deploy.
 site/
 
