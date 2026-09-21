@@ -39,7 +39,11 @@ env:
 
 jobs:
   morning:
-    runs-on: ubuntu-latest
+    # Pinned, like the action SHAs above: GitHub warns that ubuntu-latest
+    # moves to Ubuntu 26 on 2026-10-19, and an image changing underneath a
+    # daily job during an election is the kind of surprise this repository
+    # spends effort avoiding. Move it deliberately, after a green run.
+    runs-on: ubuntu-24.04
     # OPENAI_API_KEY lives in this environment, not in the repository's
     # secrets. Without naming it here the secret resolves to empty and the
     # extraction steps fail on a missing credential. Checked: no protection
