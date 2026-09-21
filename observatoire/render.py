@@ -118,11 +118,14 @@ def render(claims: list[Claim], people: list[Person], out: Path,
         shutil.rmtree(out)
     out.mkdir(parents=True)
 
-    # Content-hashed stylesheet: the whole asset pipeline this site needs.
+    # Content-hashed assets keep browsers from reusing an outdated design.
     css = (assets / "style.css").read_bytes()
     css_name = f"style.{hashlib.sha256(css).hexdigest()[:10]}.css"
     (out / "assets").mkdir()
     (out / "assets" / css_name).write_bytes(css)
+    hero_image = (assets / "hero-creation.webp").read_bytes()
+    hero_image_name = f"hero-creation.{hashlib.sha256(hero_image).hexdigest()[:10]}.webp"
+    (out / "assets" / hero_image_name).write_bytes(hero_image)
 
     env = _env(templates)
     by_slug = {p.slug: p for p in people}
@@ -142,7 +145,8 @@ def render(claims: list[Claim], people: list[Person], out: Path,
             locale=locale, other_locale=other, default_locale=DEFAULT,
             page_key=page_key, page_title=page_title,
             alternates=alts, self_path=alts[locale],
-            base_url=BASE_URL, css_name=css_name, built_on=built_on.isoformat(),
+            base_url=BASE_URL, css_name=css_name, hero_image_name=hero_image_name,
+            built_on=built_on.isoformat(),
             paths=PATHS, people=by_slug, axes=AXES,
             t=lambda k: t(k, locale),
             axis_label=axis_label, person_path=person_path,
@@ -158,7 +162,7 @@ def render(claims: list[Claim], people: list[Person], out: Path,
         # le fil
         alts = alternates_for("fil")
         write(alts[locale], env.get_template("fil.html.j2").render(
-            **ctx(locale, "fil", t("fil_title", locale), alts, claims=ordered)))
+            **ctx(locale, "fil", t("fil_title", locale), alts, claims=ordered, home=True)))
         written.append((alts[locale], alts))
 
         # la grille

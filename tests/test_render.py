@@ -138,6 +138,23 @@ def test_translation_gloss_shows_only_where_it_helps(site):
     assert 'class="gloss"' not in html(site, PATHS["fil"]["fr"])
 
 
+def test_home_hero_links_to_the_grid_and_feed_with_local_artwork(site):
+    for locale in LOCALES:
+        doc = html(site, PATHS["fil"][locale])
+        assert '<body class="home">' in doc
+        assert len(re.findall(r"<h1\b", doc)) == 1
+        assert re.search(r'<h1\b[^>]*\bid="hero-title"', doc)
+        cta = re.search(r'<a\b[^>]*class="hero-cta"[^>]*>', doc).group(0)
+        assert f'href="{PATHS["grille"][locale]}"' in cta
+        assert 'href="#positions"' in doc and 'id="positions"' in doc
+        art = re.search(r'<img\b[^>]*class="hero-art"[^>]*>', doc).group(0)
+        src = re.search(r'src="([^"]+)"', art).group(1)
+        assert re.fullmatch(r"/assets/hero-creation\.[0-9a-f]{10}\.webp", src)
+        assert (site / src.lstrip("/")).read_bytes() == Path("assets/hero-creation.webp").read_bytes()
+        person = html(site, person_path(locale, PEOPLE[0].slug))
+        assert '<body class="home">' not in person and 'class="hero-art"' not in person
+
+
 # --- feeds, sitemap, assets -----------------------------------------------
 
 def test_sitemap_lists_every_page_with_alternates(site):

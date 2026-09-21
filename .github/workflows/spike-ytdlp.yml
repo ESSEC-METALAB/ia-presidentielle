@@ -1,0 +1,73 @@
+# Phase 0 spike 1: does yt-dlp get French auto-captions from a GitHub runner?
+#
+# The original test ran on a laptop. Runners use datacenter IP ranges, which
+# YouTube throttles for transcript requests, and the whole video source type
+# rests on this working. Dispatch-only, and kept rather than deleted: YouTube
+# changes this behaviour periodically, so the question gets re-asked.
+#
+# The channel is read from sources.yaml and the video is whichever is newest,
+# so this tests the real configured source rather than a URL pinned here that
+# would rot.
+name: spike-ytdlp
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  captions:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: pip install yt-dlp PyYAML
+
+      - name: Newest video on the configured channel
+        id: pick
+        run: |
+          set -euo pipefail
+          channel=$(python -c "
+          import yaml
+          cfg = yaml.safe_load(open('sources.yaml'))
+          print(next(s['channel']
+                     for p in cfg['people']
+                     for s in p.get('sources', [])
+                     if s['type'] == 'youtube'))
+          ")
+          echo "channel: $channel"
+          # The listing half. This already works in production — the daily run
+          # returned five items — so a failure here is a different problem
+          # from the one being tested.
+          video=$(yt-dlp --flat-playlist --print "%(id)s" --playlist-end 1 "$channel")
+          echo "video: https://youtu.be/$video"
+          echo "video=$video" >> "$GITHUB_OUTPUT"
+
+      # The half that has never been tested from a datacenter IP. Exit code is
+      # not swallowed here, unlike observatoire.fetch._ytdlp — the point of the
+      # spike is to see the failure if there is one.
+      - name: Download French auto-captions
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          yt-dlp --skip-download --write-auto-subs --sub-lang fr --sub-format vtt \
+                 -o "out/%(id)s.%(ext)s" "https://youtu.be/${{ steps.pick.outputs.video }}"
+
+      - name: What came back
+        run: |
+          set -euo pipefail
+          ls -la out/
+          vtt=$(find out -name '*.vtt' | head -1)
+          if [ -z "$vtt" ]; then
+            echo "::error::No VTT written. The captions path does not work from a runner."
+            exit 1
+          fi
+          echo "bytes: $(wc -c < "$vtt")"
+          echo "cues:  $(grep -c -- '-->' "$vtt")"
+          echo "--- first 20 lines ---"
+          head -20 "$vtt"
