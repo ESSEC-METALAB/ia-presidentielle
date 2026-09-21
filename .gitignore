@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+
+# Rendered output — rebuilt from data on every deploy.
+site/
+
+# Local fetch cache. Documents and leads are re-fetchable; the *claims* and the
+# batch provenance artifacts are the things that must be in git, because the
+# editorial review happens as a pull-request diff and a binary SQLite file
+# cannot be reviewed in one. See README § Known gaps.
+data/*.db
+data/*.db-journal
+backfill.log

@@ -1,0 +1,40 @@
+{% extends "base.html.j2" %}
+{% block content %}
+<h1>{{ t('grid_title') }}</h1>
+<p class="lede">{{ t('grid_intro') }}</p>
+<p class="coverage"><b>{{ t('coverage') }}:</b> {{ monitored_n }}/{{ people_list|length }}.
+   {{ t('not_monitored_help') }}</p>
+{# A real table, not CSS-grid divs: screen readers need the row/column
+   relationship. The scroller is focusable and named so keyboard users can
+   reach it — RGAA/WCAG both require that for a scrollable region. #}
+<div class="scroller" tabindex="0" role="region" aria-label="{{ t('grid_caption') }}. {{ t('scroll_grid') }}">
+<table>
+  <caption>{{ t('grid_caption') }}</caption>
+  <thead>
+    <tr>
+      <th scope="col">{{ t('candidate') }}</th>
+      {%- for axis in axes %}
+      <th scope="col">{{ axis_label(axis, locale) }}</th>
+      {%- endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {%- for person in people_list %}
+    <tr>
+      <th scope="row"><a href="{{ person_path(locale, person.slug) }}">{{ person.name }}</a></th>
+      {%- for axis in axes %}
+      {%- set cell = grid[person.slug][axis] %}
+      {%- if not person.monitored %}
+      <td class="unmonitored">{{ t('not_monitored') }}</td>
+      {%- elif cell %}
+      <td><div class="cell">{{ cell.position_fr if locale == 'fr' else cell.position_en }}</div></td>
+      {%- else %}
+      <td class="empty">{{ t('none_found') }}</td>
+      {%- endif %}
+      {%- endfor %}
+    </tr>
+    {%- endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

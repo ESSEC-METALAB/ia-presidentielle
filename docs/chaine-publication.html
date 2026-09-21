@@ -1,0 +1,461 @@
+<title>Chaîne de Publication</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --paper:#F5F5F3; --surface:#FFF; --ink:#16202E; --muted:#5A6676; --line:#D9DCE1; --faint:#EDEFF2;
+  --source:#2F6E6A; --machine:#3F6293; --claude:#A8762E; --human:#4F7245; --public:#7A4668; --reject:#A2453A;
+  --source-bg:#EAF2F1; --machine-bg:#EDF1F7; --claude-bg:#F8F2E7; --human-bg:#EFF4EC; --public-bg:#F6EFF3; --reject-bg:#F9EEEC;
+  --display:'Spectral',Georgia,serif; --body:'Archivo',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#12171F; --surface:#1A212B; --ink:#E7EAEE; --muted:#95A2B2; --line:#2A333F; --faint:#202833;
+  --source:#6FB3AD; --machine:#82A8DA; --claude:#D9AB5F; --human:#92B681; --public:#C48EB1; --reject:#D67B6E;
+  --source-bg:#17262A; --machine-bg:#1B2531; --claude-bg:#2A2419; --human-bg:#1D2820; --public-bg:#2A1F27; --reject-bg:#2B1D1B;
+}}
+:root[data-theme="dark"]{
+  --paper:#12171F; --surface:#1A212B; --ink:#E7EAEE; --muted:#95A2B2; --line:#2A333F; --faint:#202833;
+  --source:#6FB3AD; --machine:#82A8DA; --claude:#D9AB5F; --human:#92B681; --public:#C48EB1; --reject:#D67B6E;
+  --source-bg:#17262A; --machine-bg:#1B2531; --claude-bg:#2A2419; --human-bg:#1D2820; --public-bg:#2A1F27; --reject-bg:#2B1D1B;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;
+     padding-inline:16px;padding-block:40px 60px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:38px}
+svg.i{width:1em;height:1em;flex:none;vertical-align:-.13em;stroke:currentColor;fill:none;
+      stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+header{display:flex;flex-direction:column;gap:9px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(30px,6vw,44px);line-height:1.08;margin:0;letter-spacing:-.015em}
+.lede{font-family:var(--display);font-style:italic;font-size:17px;color:var(--muted);margin:0;max-width:60ch}
+
+section{display:flex;flex-direction:column;gap:14px}
+h2{font-family:var(--display);font-size:23px;font-weight:600;margin:0;display:flex;align-items:center;gap:9px}
+h2 .n{font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:500;letter-spacing:.1em}
+.say{font-size:14px;color:var(--muted);margin:0;max-width:74ch}
+.scroll{overflow-x:auto;padding-bottom:4px}
+
+/* ---------- 1. source landscape ---------- */
+.tier{display:grid;grid-template-columns:132px 1fr;gap:12px;align-items:stretch;
+      border:1.5px solid var(--line);border-radius:9px;background:var(--surface);padding:12px;margin-bottom:10px}
+.tier-h{display:flex;flex-direction:column;justify-content:center;gap:3px;border-right:1px dashed var(--line);padding-right:12px}
+.tier-n{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--c)}
+.tier-t{font-family:var(--display);font-size:17px;font-weight:600;line-height:1.15}
+.tier-s{font-size:11.5px;color:var(--muted);line-height:1.35}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(152px,1fr));gap:9px}
+.card{border:1.5px solid var(--line);border-left:3.5px solid var(--c);border-radius:6px;background:var(--cbg);
+      padding:9px 10px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.card .nm{font-weight:600;font-size:13.5px;display:flex;align-items:center;gap:6px;color:var(--c)}
+.card .st{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+          display:inline-flex;align-items:center;gap:4px;margin-left:auto;opacity:.75}
+.card .nm{justify-content:flex-start}
+.card.planned{opacity:.62;border-left-style:dotted}
+.runbar{display:flex;flex-wrap:wrap;gap:7px;align-items:center;font-family:var(--mono);font-size:11px;
+        color:var(--muted);border:1.5px solid var(--line);border-radius:8px;background:var(--surface);padding:10px 13px}
+.runbar b{color:var(--ink);font-weight:600}
+.runbar .sep{opacity:.4}
+.card .dt{font-family:var(--mono);font-size:10.5px;color:var(--muted);line-height:1.45;overflow-wrap:anywhere}
+@media(max-width:620px){.tier{grid-template-columns:1fr}.tier-h{border-right:0;border-bottom:1px dashed var(--line);padding:0 0 9px}}
+
+.out{border:1.5px dashed var(--reject);border-radius:9px;background:var(--reject-bg);padding:13px}
+.out h3{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--reject);margin:0 0 9px;
+        display:flex;align-items:center;gap:6px}
+.outg{display:grid;grid-template-columns:repeat(auto-fit,minmax(196px,1fr));gap:8px}
+.oc{font-size:12.5px;line-height:1.4}
+.oc b{display:block;color:var(--reject);font-size:13px}
+.oc span{color:var(--muted);font-family:var(--mono);font-size:10.5px}
+
+/* ---------- glossary & file map ---------- */
+.gloss{display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));gap:10px}
+.gt{border:1.5px solid var(--line);border-left:4px solid var(--c);border-radius:8px;
+    background:var(--surface);padding:11px 13px}
+.gt b{display:block;font-family:var(--display);font-size:16px;font-weight:600;color:var(--c);margin-bottom:2px}
+.gt span{font-size:13px;line-height:1.45;color:var(--ink)}
+.gt em{color:var(--muted);font-style:normal;font-family:var(--mono);font-size:10.5px;display:block;margin-top:4px}
+.files{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:8px}
+.fl{display:grid;grid-template-columns:132px 1fr;gap:10px;align-items:baseline;
+    border-bottom:1px solid var(--faint);padding:7px 0}
+.fl code{font-family:var(--mono);font-size:12px;color:var(--machine);font-weight:500}
+.fl span{font-size:13px;line-height:1.4}
+.big{font-size:16px;line-height:1.6;max-width:70ch;margin:0}
+.big b{font-weight:600}
+
+/* ---------- infrastructure ---------- */
+.infra{display:flex;flex-direction:column;gap:0}
+.zone{border:1.5px solid var(--c);border-radius:10px;background:var(--cbg);padding:13px 15px;
+      display:grid;grid-template-columns:150px 1fr auto;gap:14px;align-items:center}
+.zone .zh{display:flex;flex-direction:column;gap:2px}
+.zone .zn{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--c);
+          display:flex;align-items:center;gap:5px}
+.zone .zt{font-family:var(--display);font-size:17px;font-weight:600;line-height:1.1}
+.boxes{display:flex;flex-wrap:wrap;gap:7px}
+.bx{background:var(--surface);border:1.5px solid var(--line);border-radius:6px;padding:6px 10px;min-width:0}
+.bx b{display:block;font-size:12.5px}
+.bx span{font-family:var(--mono);font-size:9.5px;color:var(--muted)}
+.tag{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+     white-space:nowrap;padding:4px 9px;border-radius:99px;border:1.5px solid currentColor}
+.tag.free{color:var(--human)}
+.tag.paid{color:var(--claude)}
+.down{display:flex;align-items:center;justify-content:center;gap:7px;padding:7px 0;
+      font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+@media(max-width:700px){.zone{grid-template-columns:1fr}}
+
+/* ---------- 2a. one-off archive track ---------- */
+.once{display:grid;grid-template-columns:132px 1fr;gap:12px;border:1.5px dashed var(--source);
+      border-radius:9px;background:var(--source-bg);padding:12px;margin-bottom:6px}
+.once-h{display:flex;flex-direction:column;justify-content:center;gap:2px;
+        border-right:1px dashed var(--source);padding-right:12px}
+.once-h .n{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--source)}
+.once-h .t{font-family:var(--display);font-size:16px;font-weight:600;line-height:1.12}
+.once-steps{display:flex;flex-wrap:wrap;align-items:center;gap:7px;font-size:12.5px}
+.once-steps .s{background:var(--surface);border:1.5px solid var(--line);border-radius:6px;padding:6px 10px}
+.once-steps .s b{display:block;font-size:13px}
+.once-steps .s span{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.once-steps .ar{color:var(--source);font-weight:600}
+@media(max-width:620px){.once{grid-template-columns:1fr}.once-h{border-right:0;border-bottom:1px dashed var(--source);padding:0 0 8px}}
+
+/* ---------- 2. swimlanes ---------- */
+.lanes{min-width:880px;display:grid;grid-template-columns:106px repeat(5,1fr);gap:8px}
+.th{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);
+    padding:0 0 5px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:5px}
+.lane{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--c);
+      display:flex;align-items:center;gap:6px;padding:11px 0}
+.step{border:1.5px solid var(--line);border-top:3px solid var(--c);border-radius:6px;background:var(--cbg);
+      padding:9px 10px;display:flex;flex-direction:column;gap:3px}
+.step.gate{border-radius:0;clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%);padding:9px 15px}
+.step .t{font-weight:600;font-size:13.5px;line-height:1.2;display:flex;align-items:center;gap:6px}
+.step .d{font-family:var(--mono);font-size:10.5px;color:var(--muted);line-height:1.45}
+.blank{}
+
+/* ---------- 3. anatomy ---------- */
+.anat{display:grid;grid-template-columns:1.15fr 1fr;gap:18px}
+@media(max-width:780px){.anat{grid-template-columns:1fr}}
+.claim{border:1.5px solid var(--line);border-radius:9px;background:var(--surface);overflow:hidden}
+.row{padding:10px 13px;border-bottom:1px solid var(--faint);display:flex;flex-direction:column;gap:3px;border-left:4px solid var(--c)}
+.row:last-child{border-bottom:0}
+.row .k{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--c);
+        display:flex;align-items:center;gap:5px}
+.row .v{font-size:13.5px;line-height:1.45}
+.row .v.q{font-family:var(--display);font-style:italic;font-size:15px}
+.own{display:flex;flex-direction:column;gap:9px}
+.ow{border:1.5px solid var(--line);border-left:4px solid var(--c);border-radius:7px;background:var(--cbg);padding:10px 12px}
+.ow .w{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--c);
+       display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.ow .r{font-size:13px;line-height:1.45}
+.ow .r b{font-weight:600}
+
+/* ---------- schema inset ---------- */
+.schema{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;
+        border:1.5px solid var(--line);border-radius:9px;background:var(--surface);padding:14px}
+.sb{border:1.5px solid var(--c);border-radius:7px;background:var(--cbg);padding:9px 11px;text-align:center}
+.sb .t{font-weight:600;font-size:13px;color:var(--c)}
+.sb .d{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-top:2px}
+.fork{display:flex;flex-direction:column;gap:5px;align-items:center;color:var(--muted);font-family:var(--mono);font-size:10px}
+@media(max-width:700px){.schema{grid-template-columns:1fr}.fork{flex-direction:row}}
+
+@media print{
+  @page{size:A4 landscape;margin:11mm}
+  :root{
+    --paper:#FFF; --surface:#FFF; --ink:#16202E; --muted:#5A6676; --line:#C9CED6; --faint:#EFF1F4;
+    --source:#2F6E6A; --machine:#3F6293; --claude:#8A6220; --human:#3F6038; --public:#6B3D5C; --reject:#8E3A30;
+    --source-bg:#EAF2F1; --machine-bg:#EDF1F7; --claude-bg:#F8F2E7; --human-bg:#EFF4EC; --public-bg:#F6EFF3; --reject-bg:#F9EEEC;
+  }
+  body{padding:0;font-size:10.5px;line-height:1.42;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .wrap{max-width:none;gap:16px}
+  h1{font-size:30px}
+  h2{font-size:17px}
+  .lede{font-size:13px}
+  .say{font-size:10.5px}
+  section{break-inside:avoid;page-break-inside:avoid}
+  .tier,.zone,.once,.anat,.schema,.out{break-inside:avoid;page-break-inside:avoid}
+  .scroll{overflow:visible}
+  .lanes{min-width:0}
+  .step .d,.card .dt,.bx span,.oc span{font-size:8.5px}
+  footer{break-inside:avoid}
+}
+footer{border-top:1px solid var(--line);padding-top:16px;display:flex;flex-wrap:wrap;gap:6px 16px;
+       font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="doc" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></symbol>
+<symbol id="vid" viewBox="0 0 24 24"><path d="m23 7-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></symbol>
+<symbol id="mic" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></symbol>
+<symbol id="msg" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z"/></symbol>
+<symbol id="vote" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></symbol>
+<symbol id="rss" viewBox="0 0 24 24"><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.5"/></symbol>
+<symbol id="lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+<symbol id="ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M4.9 4.9l14.2 14.2"/></symbol>
+<symbol id="cpu" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></symbol>
+<symbol id="star" viewBox="0 0 24 24"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"/></symbol>
+<symbol id="user" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M16 11l2 2 4-4"/></symbol>
+<symbol id="globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/></symbol>
+<symbol id="shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></symbol>
+<symbol id="arch" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"/></symbol>
+<symbol id="clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+<symbol id="quote" viewBox="0 0 24 24"><path d="M7 7h4v4c0 3-2 5-4 5M15 7h4v4c0 3-2 5-4 5"/></symbol>
+<symbol id="scale" viewBox="0 0 24 24"><path d="M12 3v18M7 21h10M4 8l4-3 4 3M4 8a4 4 0 0 0 8 0M12 8l4-3 4 3M12 8a4 4 0 0 0 8 0"/></symbol>
+<symbol id="key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3L20 3l1.5 1.5-1.5 1.5 1.5 1.5-2 2-1.5-1.5-2.3 2.3"/></symbol>
+<symbol id="cloud" viewBox="0 0 24 24"><path d="M18 17a4 4 0 0 0-.9-7.9A6 6 0 0 0 5.2 10 3.5 3.5 0 0 0 6 17z"/></symbol>
+<symbol id="git" viewBox="0 0 24 24"><circle cx="18" cy="6" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a6 6 0 0 1-6 6H6M6 9v6"/></symbol>
+<symbol id="down" viewBox="0 0 24 24"><path d="M12 4v15M6 13l6 6 6-6"/></symbol>
+<symbol id="euro" viewBox="0 0 24 24"><path d="M17 5a7 7 0 1 0 0 14M4 10h9M4 14h9"/></symbol>
+<symbol id="live" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6"/></symbol>
+<symbol id="plan" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-dasharray="3 3"/></symbol>
+<symbol id="db" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/></symbol>
+</defs></svg>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">ESSEC Metalab · Observatoire IA 2027</div>
+  <h1>Chaîne de Publication</h1>
+  <p class="lede">How the Observatoire works, from a candidate's speech to a line on a public page.</p>
+</header>
+
+<!-- ============ the idea ============ -->
+<section>
+  <h2><span class="n">01</span> The idea</h2>
+  <p class="big">A candidate says something about artificial intelligence. It might be in a fifty page programme, a speech filmed at a tech conference, a post on X, or a vote in parliament. Six months later nobody can find it, and three newspapers have reported three different numbers.</p>
+  <p class="big">The Observatoire fixes one narrow thing. It watches a fixed list of places where candidates speak, pulls out what they said about AI, and publishes each position with the exact quote, the date and a link. In French and in English.</p>
+  <p class="big">You read it two ways. <b>Le fil</b> is a feed, newest first, for what changed this week. <b>La grille</b> is a table, candidates down the side and six policy themes across the top, for comparing them side by side.</p>
+  <p class="big">The hard part is not collecting the text. It is that an institution's name is on the result. So every rule below exists for one reason, which is that <b>a reader has to be able to check anything we publish without taking our word for it.</b></p>
+</section>
+
+<!-- ============ vocabulary ============ -->
+<section>
+  <h2><span class="n">02</span> The words we use</h2>
+  <p class="say">Six words that come up on every page below. Two minutes here saves confusion later.</p>
+  <div class="gloss">
+    <div class="gt" style="--c:var(--machine)"><b>Document</b><span>A piece of text we collected and kept. A programme, an article, the subtitles of a video.</span></div>
+    <div class="gt" style="--c:var(--claude)"><b>Lead</b><span>Something we noticed but will not publish from. A headline saying a candidate spoke about AI. It is a question for the editor, not an answer.</span></div>
+    <div class="gt" style="--c:var(--source)"><b>Position</b><span>One thing a candidate said. A quote, a theme, a date and a link. This is what appears on the site.</span></div>
+    <div class="gt" style="--c:var(--source)"><b>Tier</b><span>Whose words they are. <b>1</b> the candidate himself, <b>2</b> his party, <b>3</b> a journalist reporting on him. Not who hosts the page.</span></div>
+    <div class="gt" style="--c:var(--public)"><b>Axis</b><span>One of six policy themes: regulation, sovereignty, work, public services, surveillance, funding. Every claim gets exactly one.</span></div>
+    <div class="gt" style="--c:var(--human)"><b>Le fil · La grille</b><span>The two views of the same claims. A feed and a comparison table.</span></div>
+  </div>
+</section>
+
+<!-- ============ 1 ============ -->
+<section>
+  <h2><span class="n">03</span> Sources</h2>
+  <p class="say">What matters is <b>whose words they are</b>, not which website they sit on. A speech is the candidate's own words wherever it is published. Only his words and his party's become positions. A journalist writing <i>about</i> him becomes a lead instead, which is a question for the editor rather than something we publish. A press article is read once and filed under whichever candidate it names, by looking for the name. We never ask the model who was being quoted.</p>
+
+  <div class="tier" style="--c:var(--source);--cbg:var(--source-bg)">
+    <div class="tier-h"><div class="tier-n">Tier 1</div><div class="tier-t">Own words</div><div class="tier-s">→ claims</div></div>
+    <div class="cards">
+      <div class="card" style="--c:var(--source);--cbg:var(--source-bg)"><div class="nm"><svg class="i"><use href="#doc"/></svg>Programme PDF</div><div class="dt">his published programme</div></div>
+      <div class="card" style="--c:var(--source);--cbg:var(--source-bg)"><div class="nm"><svg class="i"><use href="#doc"/></svg>Page de campagne</div><div class="dt">a campaign page, revisited each time</div></div>
+      <div class="card planned" style="--c:var(--source);--cbg:var(--source-bg)"><div class="nm"><svg class="i"><use href="#vote"/></svg>Scrutins</div><div class="dt">how he voted, not what he said</div></div>
+      <div class="card planned" style="--c:var(--source);--cbg:var(--source-bg)"><div class="nm"><svg class="i"><use href="#msg"/></svg>X timeline</div><div class="dt">his own account, never a search</div></div>
+      <div class="card planned" style="--c:var(--source);--cbg:var(--source-bg)"><div class="nm"><svg class="i"><use href="#vid"/></svg>Speech video</div><div class="dt">a filmed speech, one voice only</div></div>
+    </div>
+  </div>
+
+  <div class="tier" style="--c:var(--machine);--cbg:var(--machine-bg)">
+    <div class="tier-h"><div class="tier-n">Tier 2</div><div class="tier-t">Party &amp; staff</div><div class="tier-s">→ claims</div></div>
+    <div class="cards">
+      <div class="card" style="--c:var(--machine);--cbg:var(--machine-bg)"><div class="nm"><svg class="i"><use href="#rss"/></svg>republicains.fr</div><div class="dt">the party news feed</div></div>
+      <div class="card" style="--c:var(--machine);--cbg:var(--machine-bg)"><div class="nm"><svg class="i"><use href="#rss"/></svg>lafranceinsoumise</div><div class="dt">the party news feed</div></div>
+      <div class="card" style="--c:var(--machine);--cbg:var(--machine-bg)"><div class="nm"><svg class="i"><use href="#rss"/></svg>parti-socialiste.fr</div><div class="dt">the party news feed</div></div>
+      <div class="card" style="--c:var(--machine);--cbg:var(--machine-bg)"><div class="nm"><svg class="i"><use href="#vid"/></svg>@lesrepublicains</div><div class="dt">several voices, so a lead</div></div>
+    </div>
+  </div>
+
+  <div class="tier" style="--c:var(--claude);--cbg:var(--claude-bg)">
+    <div class="tier-h"><div class="tier-n">Tier 3</div><div class="tier-t">Press</div><div class="tier-s">→ <b>leads</b> only</div></div>
+    <div class="cards">
+      <div class="card" style="--c:var(--claude);--cbg:var(--claude-bg)"><div class="nm"><svg class="i"><use href="#rss"/></svg>synthmedia.fr</div><div class="dt">specialist press, freely readable</div></div>
+      <div class="card" style="--c:var(--claude);--cbg:var(--claude-bg)"><div class="nm"><svg class="i"><use href="#rss"/></svg>next.ink</div><div class="dt">specialist press, freely readable</div></div>
+      <div class="card planned" style="--c:var(--claude);--cbg:var(--claude-bg)"><div class="nm"><svg class="i"><use href="#lock"/></svg>Paywalled majors</div><div class="dt">only the opening is visible, so we quote briefly and link</div></div>
+    </div>
+  </div>
+
+  <div class="out" style="border-style:solid;border-color:var(--claude);background:var(--claude-bg);margin-bottom:10px">
+    <h3 style="color:var(--claude)"><svg class="i"><use href="#msg"/></svg>Where social media stands</h3>
+    <div class="outg">
+      <div class="oc"><b style="color:var(--claude)">X</b><span>Reading it costs money, charged per message. Only a candidate's own account, never a search, because a search would sweep in ordinary people.</span></div>
+      <div class="oc"><b style="color:var(--claude)">YouTube</b><span>Usable, but several people usually talk in one video, so it becomes a lead rather than a position.</span></div>
+      <div class="oc"><b style="color:var(--claude)">Bluesky, Mastodon</b><span>Easy to read, but French candidates are barely there.</span></div>
+      <div class="oc"><b style="color:var(--claude)">TikTok, Instagram</b><span>Biggest audience, no lawful way to read them automatically, and short video carries personality rather than policy.</span></div>
+    </div>
+    <p class="say" style="margin-top:9px">So today no social media produces a claim. That is one deliberate choice and one open blocker.</p>
+  </div>
+
+  <div class="out">
+    <h3><svg class="i"><use href="#ban"/></svg>Tested and ruled out</h3>
+    <div class="outg">
+      <div class="oc"><b>GDELT DOC 2.0</b><span>returned nothing at all when we tested it</span></div>
+      <div class="oc"><b>Europresse / Factiva</b><span>the licence forbids automated reading</span></div>
+      <div class="oc"><b>Jina · Firecrawl</b><span>they meet the same paywalls we do</span></div>
+      <div class="oc"><b>Google News bodies</b><span>every link leads to a cookie wall, not the article</span></div>
+      <div class="oc"><b>nosdeputes.fr</b><span>the service answers, but with nothing in it</span></div>
+      <div class="oc"><b>numerama · usine-digitale</b><span>these sites ask not to be read automatically</span></div>
+      <div class="oc"><b>vie-publique.fr</b><span>it archives <i>government</i> speech, and our candidates are not in government</span></div>
+      <div class="oc"><b>TikTok · Instagram</b><span>no lawful automated access</span></div>
+      <div class="oc"><b>Bluesky · Mastodon</b><span>French politics is not there</span></div>
+      <div class="oc"><b>Academic papers</b><span>they do not contain what candidates said</span></div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============ 02 infrastructure ============ -->
+<section>
+  <h2><span class="n">04</span> Infrastructure</h2>
+  <p class="say">Five places. Only one costs money and only one holds a password. Everything else is free.</p>
+  <div class="infra">
+
+    <div class="zone" style="--c:var(--source);--cbg:var(--source-bg)">
+      <div class="zh"><div class="zn"><svg class="i"><use href="#globe"/></svg>Read only</div><div class="zt">The open web</div></div>
+      <div class="boxes">
+        <div class="bx"><b>Party sites</b><span>news feed and page list</span></div>
+        <div class="bx"><b>Programmes</b><span>published documents</span></div>
+        <div class="bx"><b>Campaign pages</b><span>no feed, so we revisit</span></div>
+        <div class="bx"><b>Video</b><span>automatic subtitles</span></div>
+        <div class="bx"><b>Specialist press</b><span>leads only</span></div>
+      </div>
+      <span class="tag free">free</span>
+    </div>
+    <div class="down"><svg class="i"><use href="#down"/></svg>read politely, one page per second, and only where the site allows it</div>
+
+    <div class="zone" style="--c:var(--machine);--cbg:var(--machine-bg)">
+      <div class="zh"><div class="zn"><svg class="i"><use href="#git"/></svg>Compute</div><div class="zt">Our own machine</div></div>
+      <div class="boxes">
+        <div class="bx"><b>A morning job</b><span>starts itself, every day</span></div>
+        <div class="bx"><b>Storage</b><span>positions, and a record of each run</span></div>
+        <div class="bx"><b>A proposed change</b><span>nobody can skip it</span></div>
+        <div class="bx"><b>An alarm</b><span>if the morning job stops</span></div>
+      </div>
+      <span class="tag free">free</span>
+    </div>
+    <div class="down"><svg class="i"><use href="#down"/></svg>calls out, results come back</div>
+
+    <div class="zone" style="--c:var(--claude);--cbg:var(--claude-bg)">
+      <div class="zh"><div class="zn"><svg class="i"><use href="#key"/></svg>Passwords live here</div><div class="zt">Paid services</div></div>
+      <div class="boxes">
+        <div class="bx"><b>Language model</b><span>read overnight, not live</span></div>
+        <div class="bx"><b>X</b><span>paid, per message read</span></div>
+        <div class="bx"><b>Web archive</b><span>keeps a dated copy, free</span></div>
+      </div>
+      <span class="tag paid">the only cost</span>
+    </div>
+    <div class="down"><svg class="i"><use href="#down"/></svg>on merge</div>
+
+    <div class="zone" style="--c:var(--human);--cbg:var(--human-bg)">
+      <div class="zh"><div class="zn"><svg class="i"><use href="#cloud"/></svg>Build and host</div><div class="zt">Cloudflare Pages</div></div>
+      <div class="boxes">
+        <div class="bx"><b>Preview</b><span>the editor sees the real page first</span></div>
+        <div class="bx"><b>Plain pages</b><span>nothing to break at read time</span></div>
+        <div class="bx"><b>Delivery</b><span>fast from anywhere</span></div>
+      </div>
+      <span class="tag free">free</span>
+    </div>
+    <div class="down"><svg class="i"><use href="#down"/></svg></div>
+
+    <div class="zone" style="--c:var(--public);--cbg:var(--public-bg)">
+      <div class="zh"><div class="zn"><svg class="i"><use href="#globe"/></svg>Output</div><div class="zt">Readers</div></div>
+      <div class="boxes">
+        <div class="bx"><b>The site</b><span>le fil and la grille, in both languages</span></div>
+        <div class="bx"><b>A feed to follow</b><span>one per language</span></div>
+      </div>
+      <span class="tag free">free</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section>
+  <h2><span class="n">05</span> The morning</h2>
+  <p class="say">Time runs left to right, and who does the work runs top to bottom. The gap in the middle is waiting. The work is sent off and collected later rather than sitting idle.</p>
+  <div class="once">
+    <div class="once-h"><div class="n">Run once</div><div class="t">Archive backfill</div></div>
+    <div class="once-steps">
+      <div class="s"><b>Page list</b><span>every page a site publishes</span></div>
+      <span class="ar">→</span>
+      <div class="s"><b>Read them</b><span>one a second, only where allowed</span></div>
+      <span class="ar">→</span>
+      <div class="s"><b>Drop the rest</b><span>anything not about AI</span></div>
+      <span class="ar">→</span>
+      <div class="s"><b>Documents</b><span>ready to read closely</span></div>
+    </div>
+  </div>
+  <p class="say" style="margin-top:-4px">What a site has already published does not change, so this is done once per site and never repeated. A news feed only carries the last few weeks, so without this pass an older speech stays invisible. That is exactly what happened with one candidate's July speech on artificial intelligence.</p>
+  <div class="scroll"><div class="lanes">
+    <div class="th"><svg class="i"><use href="#clock"/></svg>Actor</div>
+    <div class="th">06:00</div><div class="th">06:05</div><div class="th">~08:00</div><div class="th">Morning</div><div class="th">On merge</div>
+
+    <div class="lane" style="--c:var(--machine)"><svg class="i"><use href="#cpu"/></svg>Machine</div>
+    <div class="step" style="--c:var(--machine);--cbg:var(--machine-bg)"><div class="t"><svg class="i"><use href="#rss"/></svg>Fetch</div><div class="d">reads every source, puts it all in one shape, skips what it already has, and takes an archive copy</div></div>
+    <div class="step gate" style="--c:var(--machine);--cbg:var(--machine-bg)"><div class="t">Attribute · route · prefilter</div><div class="d">files each press article under the candidate it names, decides document or lead, and drops video that never mentions AI</div></div>
+    <div class="step gate" style="--c:var(--machine);--cbg:var(--machine-bg)"><div class="t"><svg class="i"><use href="#shield"/></svg>Automatic checks</div><div class="d">the quote really appears in the source, we described rather than judged, an archive copy exists, and every source is still alive</div></div>
+    <div class="blank"></div><div class="step" style="--c:var(--machine);--cbg:var(--machine-bg)"><div class="t">Build the pages</div><div class="d">builds both languages and publishes</div></div>
+
+    <div class="lane" style="--c:var(--claude)"><svg class="i"><use href="#star"/></svg>Model</div>
+    <div class="blank"></div>
+    <div class="step" style="--c:var(--claude);--cbg:var(--claude-bg)"><div class="t">Send for reading</div><div class="d">sent overnight, with a full record of what was asked</div></div>
+    <div class="step" style="--c:var(--claude);--cbg:var(--claude-bg)"><div class="t">Read the answers</div><div class="d">often nothing, which is the right answer</div></div>
+    <div class="blank"></div><div class="blank"></div>
+
+    <div class="lane" style="--c:var(--human)"><svg class="i"><use href="#user"/></svg>Human</div>
+    <div class="blank"></div><div class="blank"></div><div class="blank"></div>
+    <div class="step gate" style="--c:var(--human);--cbg:var(--human-bg)"><div class="t"><svg class="i"><use href="#user"/></svg>Verify &amp; merge</div><div class="d">reads the real page, and checks the wording <b>and who actually said it</b></div></div>
+    <div class="blank"></div>
+
+    <div class="lane" style="--c:var(--public)"><svg class="i"><use href="#globe"/></svg>Public</div>
+    <div class="blank"></div><div class="blank"></div><div class="blank"></div><div class="blank"></div>
+    <div class="step" style="--c:var(--public);--cbg:var(--public-bg)"><div class="t">Le fil · la grille</div><div class="d">the feed and the comparison table</div></div>
+  </div></div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section>
+  <h2><span class="n">06</span> Anatomy of a claim</h2>
+  <p class="say">Everything we publish keeps three voices apart and shows the reader which is which. That separation is the whole argument for trusting it.</p>
+  <div class="anat">
+    <div class="claim">
+      <div class="row" style="--c:var(--source)"><div class="k"><svg class="i"><use href="#quote"/></svg>His words</div><div class="v q">« Pour les Français, je propose un agent IA administratif unique, « Marianne », capable de simplifier toutes leurs démarches. »</div></div>
+      <div class="row" style="--c:var(--claude)"><div class="k"><svg class="i"><use href="#star"/></svg>What he committed to</div><div class="v">Propose un agent conversationnel unique, « Marianne », pour l'ensemble des démarches administratives.</div></div>
+      <div class="row" style="--c:var(--human)"><div class="k"><svg class="i"><use href="#user"/></svg>What it means</div><div class="v">Guichet unique piloté par IA. Le périmètre des démarches couvertes n'est pas précisé.</div></div>
+      <div class="row" style="--c:var(--machine)"><div class="k"><svg class="i"><use href="#arch"/></svg>The receipt</div><div class="v"><span style="font-family:var(--mono);font-size:11.5px">theme: public services · his party's site · 7 July 2026 · archived copy kept</span></div></div>
+    </div>
+    <div class="own">
+      <div class="ow" style="--c:var(--source);--cbg:var(--source-bg)"><div class="w"><svg class="i"><use href="#quote"/></svg>The candidate</div><div class="r">Exactly as he said it. <b>Never</b> edited, corrected or translated. Kept short, because French law allows quoting briefly when you say where it came from.</div></div>
+      <div class="ow" style="--c:var(--claude);--cbg:var(--claude-bg)"><div class="w"><svg class="i"><use href="#star"/></svg>Extraction</div><div class="r">One plain sentence saying what he committed to. It describes and never grades. Words of judgement are rejected automatically.</div></div>
+      <div class="ow" style="--c:var(--human);--cbg:var(--human-bg)"><div class="w"><svg class="i"><use href="#user"/></svg>Metalab</div><div class="r">What the position means in practice. This is where the institute adds something, and it carries a label so no reader mistakes it for his words.</div></div>
+      <div class="ow" style="--c:var(--machine);--cbg:var(--machine-bg)"><div class="w"><svg class="i"><use href="#arch"/></svg>Recorded automatically</div><div class="r">Where it came from, the date, and a link to an archived copy taken the day we read it. Pages get edited and deleted, so without that copy a quote becomes unprovable.</div></div>
+    </div>
+  </div>
+
+</section>
+
+<section>
+  <h2><span class="n">07</span> Approaches we rejected</h2>
+  <p class="say">Both were sensible suggestions. Neither survives what this publication has to promise a reader.</p>
+
+  <h3 style="font-family:var(--display);font-size:17px;font-weight:600;margin:6px 0 0">Sentiment analysis and EDA</h3>
+  <div class="outg">
+    <div class="oc"><b>The text is already concrete</b><span>Candidates give real figures and named plans. Billions of euros, numbers of civil servants, a scheme with a name. There is nothing to infer. You copy what is written.</span></div>
+    <div class="oc"><b>A score is a judgement</b><span>Sentiment produces a number. A number puts candidates in an order. An institution publishing an order of candidates during an election is the one thing everything here exists to avoid.</span></div>
+    <div class="oc"><b>It cannot be checked</b><span>A quote either appears in the source or it does not, and anyone can look. A score has no equivalent test, so a reader would simply have to trust us.</span></div>
+  </div>
+  <p class="say">Counting has one use, and it stays internal. Seeing which candidate and which theme we have little on tells the editor where to look next. It is never published as a finding.</p>
+
+  <h3 style="font-family:var(--display);font-size:17px;font-weight:600;margin:18px 0 0">A vision model reading the video</h3>
+  <p class="say"><b>We have not tried it, so we cannot tell you what it would cost.</b> Any figure we gave would be arithmetic rather than experience. None of the reasons below depend on the answer.</p>
+  <div class="outg">
+    <div class="oc"><b>It answers a different question</b><span>It tells you who is <i>on screen</i>. We need to know who is <i>talking</i>. French television cuts to the interviewer while the candidate is still speaking, and uses split screens and stock footage. Being on screen usually means you are speaking. Usually is not good enough when the whole product is knowing who said what.</span></div>
+    <div class="oc"><b>Wrong sense entirely</b><span>Telling voices apart is a sound problem, not a picture problem. Tools exist that separate speakers from the audio. That is the right instrument for the job.</span></div>
+    <div class="oc"><b>It cannot produce the evidence</b><span>A quote has to appear word for word in the source. A model looking at pictures describes what it saw, it does not transcribe. So you would still need the subtitles anyway.</span></div>
+    <div class="oc"><b>It breaks replay</b><span>How often you look at the video is a choice. Look at different moments and you get a different answer. Everything here is built so a result can be traced back and repeated.</span></div>
+    <div class="oc"><b>It saves the reviewer nothing</b><span>Someone still confirms before anything is published, and the subtitles already give the exact second, reliably and for nothing.</span></div>
+  </div>
+  <p class="say"><b>Where it would genuinely earn its place.</b> Text shown on screen and never spoken, such as a figure that appears only on a slide. And pages of a programme that are charts rather than words. That is a handful of images, not thousands, and it is cheap. Worth doing. Just not for working out who spoke.</p>
+</section>
+
+<footer>
+  <span><svg class="i"><use href="#scale"/></svg> courte citation · L122-5 3°a</span><span>·</span>
+  <span>freeze J-2 · art. L.49</span><span>·</span>
+  <span>coût dominé par X</span><span>·</span>
+  <span>un test par règle</span>
+</footer>
+</div>

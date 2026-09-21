@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="{{ locale }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ page_title }} — {{ t('site') }}</title>
+<meta name="description" content="{{ t('tagline') }}">
+{%- for loc, href in alternates.items() %}
+<link rel="alternate" hreflang="{{ loc }}" href="{{ base_url }}{{ href }}">
+{%- endfor %}
+<link rel="alternate" hreflang="x-default" href="{{ base_url }}{{ alternates[default_locale] }}">
+<link rel="canonical" href="{{ base_url }}{{ self_path }}">
+<link rel="alternate" type="application/rss+xml" title="{{ t('site') }}" href="/{{ locale }}/rss.xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/assets/{{ css_name }}">
+</head>
+<body>
+<div class="wrap{% if wide %} wide{% endif %}">
+<header class="site">
+  <div class="brand">
+    <b>{{ t('site') }}</b>
+    <span class="pub">{{ t('publisher') }}</span>
+  </div>
+  <nav aria-label="{{ t('site') }}">
+    {%- for key, label in navitems %}
+    <a href="{{ paths[key][locale] }}"{% if key == page_key %} aria-current="page"{% endif %}>{{ label }}</a>
+    {%- endfor %}
+    <a class="lang" href="{{ alternates[other_locale] }}" hreflang="{{ other_locale }}">{{ t('other_lang') }}</a>
+  </nav>
+</header>
+{% block content %}{% endblock %}
+<footer class="site">
+  <span>{{ t('publisher') }}</span><span>·</span>
+  <span>{{ t('updated') }} {{ built_on }}</span><span>·</span>
+  <a href="{{ paths['methodo'][locale] }}">{{ t('nav_methodo') }}</a><span>·</span>
+  <a href="{{ paths['legal'][locale] }}">{{ t('nav_legal') }}</a>
+</footer>
+</div>
+</body>
+</html>

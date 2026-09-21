@@ -1,0 +1,7 @@
+{% extends "base.html.j2" %}
+{% block content %}
+<h1>{{ person.name }}</h1>
+<p class="lede">{{ person.party }} — {{ claims|length }} {{ t('positions') }}.</p>
+{% for claim in claims %}{% include "_claim.html.j2" %}{% endfor %}
+{% if not claims %}<p class="lede">{{ t('none_found') }}.</p>{% endif %}
+{% endblock %}
