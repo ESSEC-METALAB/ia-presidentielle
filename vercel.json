@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "pip3 install -r requirements-render.txt",
+  "buildCommand": "python3 -m observatoire.render --out site",
+  "outputDirectory": "site"
+}
