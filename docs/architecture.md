@@ -22,7 +22,7 @@ comportement ne repose dessus.
 recevant ses dépendances par son constructeur. Détail des ports et des adapters du POC :
 [`PROMPT_BOOTSTRAP.md`](../PROMPT_BOOTSTRAP.md).
 
-## Emplacement dans le dépôt
+## Version précédente
 
-Le POC vit dans `observatoire-ia-2027/`, à côté du pipeline existant à la racine du dépôt.
-Voir [ADR 0001](adr/0001-poc-dans-un-sous-dossier.md).
+La branche `archi` ne contient que cette version. Le pipeline précédent reste sur la
+branche `daily`. Voir [ADR 0001](adr/0001-archi-version-autonome.md).

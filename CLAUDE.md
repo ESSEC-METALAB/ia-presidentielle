@@ -1,149 +1,154 @@
-# Working on this project
+# CLAUDE.md — Règles de travail sur ce dépôt
 
-Read [`README.md`](README.md) for what it is, and
-[`docs/superpowers/specs/2026-09-17-essec-ia-2027-design.md`](docs/superpowers/specs/2026-09-17-essec-ia-2027-design.md)
-for why. This file lists the things that look like bugs but are not, and the
-things that look safe to change but are not.
-
-This is a **publication under a named institution's byline**, during a French
-election. Credibility is the product. Most rules below trade convenience for
-defensibility on purpose.
+Ce fichier est lu automatiquement par Claude Code. Il définit **comment** on code ici.
+Le quoi (le périmètre du POC) est dans `PROMPT_BOOTSTRAP.md`.
 
 ---
 
-## Invariants — do not "fix" these
+## 1. Contexte du projet
 
-**`quote_fr` is never edited, translated, tidied or censored.**
-The neutrality lint (`lint.check_no_evaluative_language`) checks
-`position_*` and `contexte_*` and **deliberately skips the quote**. If a
-candidate calls his own plan *ambitieux*, that is his word and it is evidence.
-Applying the filter "everywhere" would corrupt the record.
-`tests/test_lint.py::test_the_candidates_own_judgement_words_are_never_censored`
-pins this.
+Observatoire des positions des candidats à l'élection présidentielle française de 2027
+sur les sujets liés à l'intelligence artificielle.
 
-**An empty extraction is a correct extraction.**
-`ExtractionResult.claims == []` is the expected answer for most documents and is
-the primary control against invented positions. Do not add retries, coaxing, or
-a "try harder" second pass when a document yields nothing.
+Le pipeline : collecter chaque matin des contenus publics → les attribuer à un candidat →
+les annoter par dimension (régulation, souveraineté, environnement, emploi, formation,
+services publics, surveillance et libertés, financement, sécurité de l'IA) → calculer un
+indicateur par candidat et par dimension → produire un rapport.
 
-**The model never reports provenance.**
-`person`, `tier`, `source_url`, `archive_url` are attached by `extract.to_claims`
-from the fetch context. `ExtractedClaim` uses `extra="forbid"` precisely so a
-model cannot inject them. Never widen that.
-
-**Tier from a source is a conservative DEFAULT, not a finding.**
-A party site publishes both its own communiqués and the candidate's own
-speeches, and no per-source setting can tell them apart. `tier_confirmed` is
-False until an editor decides at review, and the site marks unconfirmed tiers
-with an asterisk. Do not "fix" this by having the model classify tier, which
-would break the rule that the model never reports provenance.
-
-**Never invent a date.** trafilatura's default `extensive_search` guesses when a
-page carries none, with the signature 1 January. `fetch.NO_DATE_GUESSING` turns
-it off, `Claim.date` is nullable, and the site prints *date non précisée*. A
-date is part of the evidence.
-
-**An unmonitored candidate is not a candidate without policy.**
-`Person.monitored` is False when no source is configured, and the grid renders
-*Non suivi* on a hatched cell, distinct from *aucune position identifiée*. The
-pluralism gate guarantees a row per configured person, it does NOT guarantee
-the roster is fairly monitored, so the grid states its own coverage.
-
-**Tier is whose words, not who hosts.**
-A speech is tier 1 wherever it is published. Tier 3 (press) can never become a
-claim, however cleanly the body extracted — `fetch.route()` demotes it to a
-lead. This is enforced centrally; do not re-implement it per fetcher (it was a
-bug that only two of four fetchers applied it).
-
-**The grid renders every person × every axis.**
-Empty cells show *aucune position identifiée*. Absence is data. Hiding a gap
-would produce asymmetric coverage, which for an institution risks reading as an
-in-kind campaign benefit (code électoral art. L. 52-8).
-
-**`schema.py` stays provider-neutral.**
-One Pydantic model drives OpenAI's `strict: true` and Claude's
-`output_config.format`. The model is a config value. Keep it that way — it is
-what made switching providers cost zero code.
+**Exigence non négociable : neutralité et traçabilité.** Toute donnée affichée dans un
+rapport doit pouvoir être remontée jusqu'à son URL source, sa date de collecte et le
+passage exact qui la justifie. Pas de score sans preuve.
 
 ---
 
-## Gotchas with a reason behind them
+## 2. Architecture : hexagonale (ports & adapters)
 
-**`site` sources only run with `--backfill`.**
-Published archives do not change, so a sitemap crawl is one-off; RSS carries the
-delta. Re-crawling hundreds of unchanged pages every morning is wasteful and
-impolite. `fetch.BACKFILL_ONLY`.
+Trois couches, dépendances **toujours** dirigées vers l'intérieur :
 
-**Liveness counts items *fetched*, not items *kept*.**
-A tech feed returning 25 articles that name no candidate is healthy. Alerting on
-it trains people to ignore alerts. What this catches is the `nosdeputes.fr`
-failure: HTTP 200 with an empty array, indefinitely.
+```
+adapters  ──dépend de──►  application  ──dépend de──►  domain
+(monde extérieur)         (cas d'usage)                (règles métier)
+```
 
-**The AI prefilter is two-tier (one strong term, or two distinct weak ones).**
-A flat keyword list passed a pensions debate on *« c'est des calculs »* and a tax
-discussion on one stray *données*. Measured, not theoretical.
-
-**`Document.url_hash` includes the content fingerprint.**
-So a standing page that gets rewritten is re-read rather than skipped forever.
-trafilatura fingerprints extracted text, not boilerplate, so it does not churn.
-
-**Video sources require `speakers:`.**
-Auto-captions carry **no speaker labels**. On an interview, a journalist's
-question is indistinguishable from the candidate's answer, and the
-quote-in-source lint cannot catch it — the quote really is in the transcript, it
-is simply not his. `single` → documents, `multi` → leads.
-
-**No `computed_field` on models that round-trip through JSON.**
-Pydantic serialises computed fields, then `extra="forbid"` rejects them on
-read-back. `Claim.id` and `Document.url_hash` are plain properties for this
-reason.
-
-**Archiving is two calls, and the lint checks the shape.**
-Save-page-now is asynchronous and does not hand back the snapshot URL, so
-`fetch.archive` requests a capture and then resolves what exists via
-`/web/2/<url>`. A real capture redirects to a 14-digit timestamp path. The
-dated-query form `/web/2026/<url>` is only a *request* for the nearest capture,
-and Wayback answers HTTP 200 with a "not archived" page when there is none.
-`lint.check_archive_present` therefore matches on the timestamp, not on the
-field being non-empty. An earlier version checked presence alone and waved
-through six fabricated URLs.
-
-**No i18n library.** 26 chrome strings in `i18n.py`. The *content* is already
-bilingual on each claim record.
+- `domain/` : entités et **interfaces** (`typing.Protocol`). Aucune dépendance externe.
+  Interdit d'y importer `requests`, `mistralai`, `sqlite3`, `feedparser`, etc.
+- `application/` : les cas d'usage. Orchestrent le domaine. Reçoivent leurs dépendances
+  par injection dans le constructeur. Ne connaissent aucune implémentation concrète.
+- `adapters/` : tout ce qui touche au monde réel (HTTP, LLM, base, fichiers, rendu).
+  Chaque adapter implémente un Protocol du domaine.
+- `cli.py` est le **composition root** : c'est le seul endroit où l'on instancie les
+  implémentations concrètes et où on les câble.
 
 ---
 
-## Ruled out — with evidence. Do not re-add without new measurement.
+## 3. SOLID, appliqué concrètement ici
 
-| Rejected | Why |
-|---|---|
-| **GDELT DOC 2.0** | Benchmarked 2026-09-18: HTTP 200 with **0 articles** on every query including the control `France sourcelang:french` over 24h; 429s at 2× its documented rate limit |
-| **vie-publique.fr** | 2,876 speeches over 17 months, 188 AI-related — but **1 of 7 candidates**, 0 AI speeches. It is the *government* discourse archive; our subjects are opposition figures |
-| **Europresse / Factiva** | Cision's licence forbids scripts and TDM. Art. L122-5-3 CPI covers analysis, **not publication**. Quote from the teaser under *courte citation* (L122-5 3°a) instead |
-| **Jina Reader / Firecrawl** | Defeat **neither** wall. Le Monde via Jina: *"Il vous reste 60.87% de cet article à lire"* |
-| **Google News article bodies** | 4/4 redirect to `consent.google.com` |
-| **numerama, usine-digitale** | `robots.txt` disallows this crawler |
-| **Managed Agents / Agent SDK** | Context compaction means the prompt that reached the model is not one you wrote or can commit. Reproducibility is the requirement |
-| **Consumer Claude/ChatGPT subscriptions** | Anthropic: OAuth is for *"ordinary, individual usage"*, enforced *"without prior notice"*. OpenAI's ToS prohibits programmatic extraction |
-| **Open-web crawling** | An arbitrary page cannot tell you whose words it carries, and tier is the whole design. *Domain-scoped* sitemap crawling is fine and is implemented |
+**S — Responsabilité unique.**
+Un module = une raison de changer. Un collecteur collecte, il n'annote pas. Un annotateur
+annote, il n'écrit pas en base. Si une classe a « et » dans sa description, la scinder.
+
+**O — Ouvert/fermé.**
+Ajouter une nouvelle source (RSS, sitemap, API, PDF) ou un nouveau fournisseur de LLM doit
+se faire en **ajoutant** un fichier dans `adapters/`, jamais en modifiant un cas d'usage.
+Si tu te retrouves à ajouter un `if source_type == "..."` dans `application/`, c'est un
+signal : il faut un nouvel adapter et une entrée dans le registre.
+
+**L — Substitution de Liskov.**
+`FakeLLMClient` doit être interchangeable avec `MistralClient` sans changer un seul test
+du domaine. Les tests unitaires tournent **sans réseau et sans clé API**.
+
+**I — Ségrégation des interfaces.**
+Des Protocols petits et ciblés : `SourceReader`, `DocumentRepository`, `LLMClient`,
+`Annotator`, `ScoreCalculator`, `ReportRenderer`. Jamais un `IService` fourre-tout.
+Un consommateur ne doit pas dépendre de méthodes qu'il n'appelle pas.
+
+**D — Inversion des dépendances.**
+Les cas d'usage dépendent des Protocols, pas des classes concrètes. Toute dépendance
+arrive par le constructeur. Aucun `import` d'adapter dans `application/`.
 
 ---
 
-## Operational
+## 4. Règles de clean code
 
-**Never delete `data/observatoire.db` while a process holds it open.**
-Doing so, then starting a second writer on the same path, cost ~40 minutes and
-produced `sqlite3.OperationalError: disk I/O error` plus orphaned `seen` rows.
-`PRAGMA integrity_check` reported `ok` — that is a statement about file
-structure, not logical state.
+**Typage.** Tout est annoté. `mypy --strict` doit passer. Modèles de données en Pydantic v2,
+frozen quand c'est possible. Pas de `dict[str, Any]` qui traverse les couches : on parse
+tôt, on valide tôt.
 
-**Verify a URL before adding it to `sources.yaml`.** Fetch it, check
-`robots.txt`, confirm it extracts. Seven of twelve candidate feeds probed were
-usable; the rest are documented in the file as rejected, with reasons.
+**Fonctions.** Courtes (viser moins de 30 lignes), un seul niveau d'abstraction par
+fonction, maximum 4 paramètres positionnels. Retour anticipé plutôt qu'imbrication.
 
-**Do not guess API shapes.** `clients.py` was written against current provider
-documentation. `fetch_x` raises `NotImplementedError` rather than ship a guessed
-endpoint. A wrong shape fails on first contact, after you have paid for a key.
+**Nommage.** Code, identifiants, docstrings et commentaires **en anglais**.
+Contenu destiné aux utilisateurs (rapports, libellés, documentation) **en français**.
+Noms explicites : `fetch_articles_since`, pas `get_data`. Pas d'abréviations maison.
 
-**Long crawls commit per source** (`fetch.run`), so a crash partway keeps the
-work. This earned itself immediately.
+**Pureté.** Le calcul des scores est composé de fonctions pures et déterministes :
+mêmes annotations en entrée = mêmes scores en sortie. Aucun appel réseau, aucune horloge
+implicite. Le temps arrive par un port `Clock`.
+
+**Configuration.** Zéro valeur magique dans le code. Les seuils, pondérations, listes de
+sources, candidats et dimensions vivent dans `config/*.yaml`. Les secrets dans `.env`,
+jamais commités, chargés via `settings.py`.
+
+**Erreurs.** Exceptions métier dans `domain/errors.py`. Une source qui échoue ne fait
+jamais tomber le run entier : on log, on marque la source en échec, on continue.
+Pas de `except Exception: pass`.
+
+**Logs.** `structlog`, format JSON, un event par étape avec `run_id`, `source_id`,
+`document_id`, `duration_ms`. Chaque appel LLM logue les tokens consommés en entrée et en
+sortie. Jamais de secret ni de contenu intégral dans les logs.
+
+**Idempotence.** Relancer la collecte du même jour ne doit pas créer de doublons.
+Clé de déduplication = SHA-256 du texte normalisé. Chaque document stocke `source_url`,
+`fetched_at`, `content_hash`.
+
+---
+
+## 5. Tests
+
+- `pytest`, arrangement AAA (arrange / act / assert), un comportement testé par test.
+- Le domaine et les cas d'usage se testent avec des fakes, **sans réseau**.
+- Les fixtures HTML/RSS/JSON vivent dans `tests/fixtures/`, figées, versionnées.
+- Couverture minimale : 80 % sur `domain/` et `application/`.
+- Un test d'intégration de bout en bout qui rejoue le pipeline complet sur fixtures.
+- Pas de test qui dépend de la date du jour : injecter `FrozenClock`.
+
+---
+
+## 6. Qualité et outillage
+
+- Formatage et lint : `ruff format` + `ruff check`.
+- Types : `mypy --strict`.
+- Tout doit passer via `make check` avant de considérer une tâche terminée.
+- Commits conventionnels : `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`.
+- Python 3.11+, gestion des dépendances avec `uv` (fallback `pip` documenté).
+
+---
+
+## 7. Conformité — contraintes à respecter dans le code
+
+Ces points ne sont pas décoratifs, ils doivent être **implémentés** :
+
+1. Respect de `robots.txt` avant toute requête, via un `RobotsPolicy` centralisé.
+2. User-Agent explicite et identifiable, avec une adresse de contact.
+3. Limitation de débit : un délai minimal configurable entre deux requêtes sur un même
+   domaine.
+4. Priorité aux flux RSS et aux API officielles sur le crawl de pages HTML.
+5. Aucun stockage de données personnelles de tiers : on ne collecte que les prises de
+   parole des candidats et de leurs partis, pas les commentaires d'internautes.
+6. Chaque score exposé porte son nombre de segments sources. En dessous du seuil configuré,
+   on affiche « données insuffisantes » au lieu d'un chiffre.
+
+---
+
+## 8. Ce qu'il ne faut pas faire
+
+- Ne pas mettre d'appel LLM dans la boucle de collecte : la collecte est déterministe
+  (RSS, sélecteurs). Le LLM n'intervient qu'en extraction de repli, derrière un port dédié.
+- Ne pas inventer d'URL, de compte social ou d'identifiant de candidat. Tout vient de
+  `config/candidates.yaml` et `config/sources.yaml`.
+- Ne pas coder en dur une liste de candidats dans le Python.
+- Ne pas mélanger sentiment et positionnement : ce sont deux champs distincts du modèle.
+- Ne pas faire remonter dans un score une information de niveau 3 ou 4 (analyse de tiers)
+  sans citation directe attribuée au candidat.
+- Ne pas ajouter de dépendance lourde sans nécessité (pas de framework web, pas d'ORM
+  complet pour le POC).

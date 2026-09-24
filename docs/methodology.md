@@ -31,19 +31,20 @@ segments sous lequel on affiche « données insuffisantes », intervalle de conf
 
 ## Questions ouvertes
 
-Le pipeline existant à la racine du dépôt a pris des décisions contraires sur certains
+La version précédente (branche `daily`) a pris des décisions contraires sur certains
 points. Elles sont à trancher explicitement avant toute publication :
 
-1. **Score et tonalité.** La spécification du pipeline existant
-   (`../docs/superpowers/specs/2026-09-17-essec-ia-2027-design.md`, §1 « Non-goals ») exclut
+1. **Score et tonalité.** La spécification de la version précédente
+   (branche `daily`, `docs/superpowers/specs/2026-09-17-essec-ia-2027-design.md`,
+   §1 « Non-goals ») exclut
    tout score, classement et analyse de sentiment, au motif qu'un score est une évaluation
    et qu'une évaluation d'un candidat publiée sous le nom d'ESSEC est le risque de
    neutralité principal. L'indicateur de ce POC comprend une orientation chiffrée et une
    tonalité.
-2. **Presse (niveau 3).** Le pipeline existant n'en tire jamais une position, même avec
+2. **Presse (niveau 3).** La version précédente n'en tire jamais une position, même avec
    une citation propre ; il s'en sert seulement comme piste. Ce POC l'admet sous
    condition de citation directe attribuée.
-3. **Date de publication.** Le pipeline existant ne devine jamais une date absente
+3. **Date de publication.** La version précédente ne devine jamais une date absente
    (trafilatura invente un 1er janvier par défaut) et affiche « date non précisée ». Ce POC
    trace la date de collecte ; la date de publication reste à modéliser, et doit pouvoir
    être absente.

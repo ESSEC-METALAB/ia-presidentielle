@@ -1,26 +1,21 @@
+# Environments and caches
 .venv/
 __pycache__/
-*.pyc
+*.py[cod]
 .pytest_cache/
-.DS_Store
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+build/
+dist/
+*.egg-info/
 
-# Secrets. The API key lives here locally and in GitHub Actions secrets in CI.
-# Never in the repo: this one is published under an institution's name.
+# Secrets. `.env.*` also catches .env.local and the like; the template is the exception.
 .env
 .env.*
+!.env.example
 
-# Rendered output — rebuilt from data on every deploy.
-site/
-
-# The database IS committed (spec §8). Not because it is reviewable — it is
-# not — but because it is the pipeline's memory: what has already been seen,
-# how many items each source returned on each of its last runs, and the
-# documents a batch submitted yesterday will be collected against tomorrow.
-# None of that is re-derivable from a fresh checkout, and a daily job that
-# starts empty re-fetches everything and can never notice a feed going quiet.
-#
-# What a human reviews is data/claims.json. That separation is what made
-# committing the binary acceptable again.
-data/*.db-journal
-data/*.db-wal
-backfill.log
+# Collected content, database and reports: rebuilt by the pipeline, never committed.
+/data/

@@ -1,163 +1,190 @@
-# Observatoire IA & Présidentielle 2027
+# Observatoire IA — Présidentielle 2027
 
-Tracks what candidates in the April 2027 French presidential election say about
-artificial intelligence. Published by the **ESSEC Metalab Institute** in French
-and English.
+Outil d'analyse des positions des candidats à l'élection présidentielle française de 2027
+sur les sujets liés à l'intelligence artificielle.
 
-Two views of one dataset: **le fil** (reverse-chronological feed) and **la
-grille** (candidates × six policy axes).
+Le pipeline collecte des contenus publics, les attribue à un candidat, les annote par
+dimension, en calcule un indicateur de positionnement et produit un rapport traçable.
 
-> **Not yet published.** Several pre-launch items are human deliverables, not
-> code — see [§ Before launch](#before-launch).
+> **Statut : POC.** Périmètre réduit à 5 candidats, 3 dimensions et 5 sources.
+> Aucun chiffre produit à ce stade n'a vocation à être publié.
 
 ---
 
-## Start here
+## Principes
 
-| Document | What it is |
-|---|---|
-| [`docs/superpowers/specs/2026-09-17-essec-ia-2027-design.md`](docs/superpowers/specs/2026-09-17-essec-ia-2027-design.md) | **The spec.** Governance, data model, sources with tested verdicts, axes, gates, legal basis. Read this first. |
-| [`docs/IMPLEMENTATION-PLAN.md`](docs/IMPLEMENTATION-PLAN.md) | Build order, what was measured, what was ruled out and why. |
-| [`CLAUDE.md`](CLAUDE.md) | Invariants that are easy to break. Read before changing anything. |
-| `docs/chaine-publication.html` | Architecture diagrams: sources, the morning loop, anatomy of a claim. |
+1. **Traçabilité avant tout.** Aucun score sans les passages qui le justifient, avec URL et
+   date de collecte.
+2. **Neutralité.** Les axes de positionnement sont descriptifs, jamais normatifs. Tous les
+   candidats sont traités avec les mêmes sources et les mêmes règles.
+3. **Prudence statistique.** En dessous d'un seuil de segments, on affiche « données
+   insuffisantes » plutôt qu'un chiffre.
+4. **Le LLM assiste, il ne décide pas.** Un échantillon des annotations est relu par des
+   humains de sensibilités différentes.
 
-## Setup
+---
+
+## Architecture
+
+Architecture hexagonale. Les dépendances pointent toujours vers l'intérieur : les adapters
+connaissent le domaine, le domaine ne connaît personne.
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                          ADAPTERS                                │
+│  RSS · HTML · Trafilatura · SQLite · Mistral · Fake · Rendu      │
+└───────────────────────────┬──────────────────────────────────────┘
+                            │ implémentent les Protocols
+┌───────────────────────────▼──────────────────────────────────────┐
+│                        APPLICATION                               │
+│  collect_daily → annotate_documents → compute_scores → report    │
+└───────────────────────────┬──────────────────────────────────────┘
+                            │ dépendent des Protocols
+┌───────────────────────────▼──────────────────────────────────────┐
+│                          DOMAIN                                  │
+│  Modèles · Ports · Scoring (fonctions pures) · Erreurs           │
+│  Aucune dépendance externe                                       │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Le pipeline
+
+```
+ Sources          Collecte           Traitement          Analyse            Restitution
+┌─────────┐     ┌───────────┐     ┌─────────────┐     ┌────────────┐     ┌───────────┐
+│ RSS     │     │ fetch     │     │ extraction  │     │ dimension  │     │ scores    │
+│ Sites   │ ──► │ robots    │ ──► │ segmentation│ ──► │ position   │ ──► │ rapport   │
+│ Officiel│     │ dédup     │     │ attribution │     │ sentiment  │     │ md / html │
+└─────────┘     └───────────┘     └─────────────┘     └────────────┘     └───────────┘
+                      │                   │                  │                 │
+                      └─────────── SQLite (traçabilité, hash, horodatage) ─────┘
+```
+
+### Niveaux de source
+
+| Niveau | Contenu | Usage |
+|---|---|---|
+| 1 | Paroles propres du candidat (programme, discours, comptes officiels) | Alimente les scores |
+| 2 | Parti et équipe de campagne | Alimente, pondération réduite |
+| 3 | Médias, si citation directe attribuée | Alimente sous condition |
+| 4 | Analyses et commentaires de tiers | Contexte seulement |
+
+---
+
+## Structure des dossiers
+
+```
+observatoire-ia-2027/
+├── CLAUDE.md                   # règles de codage pour Claude Code
+├── PROMPT_BOOTSTRAP.md         # instruction de génération du squelette
+├── pyproject.toml
+├── Makefile
+├── .env.example
+│
+├── config/                     # tout le paramétrage métier, aucun code
+│   ├── candidates.yaml         # candidats, alias, sources officielles
+│   ├── sources.yaml            # flux et sites, avec niveau de confiance
+│   ├── taxonomy.yaml           # dimensions, définitions, axes
+│   └── scoring.yaml            # pondérations, seuils
+│
+├── src/observatoire/
+│   ├── domain/                 # modèles, ports, scoring pur, erreurs
+│   ├── application/            # les 4 cas d'usage
+│   ├── adapters/
+│   │   ├── sources/            # rss, page html, fixtures
+│   │   ├── extraction/         # trafilatura, repli LLM
+│   │   ├── llm/                # mistral, fake, prompts versionnés
+│   │   ├── storage/            # sqlite
+│   │   └── reporting/          # markdown, html
+│   ├── services/               # dédup, segmentation, matcher, robots
+│   ├── config/                 # settings, chargement des YAML
+│   ├── observability/          # logs, compteur de tokens
+│   └── cli.py                  # composition root
+│
+├── tests/
+│   ├── unit/                   # domaine et cas d'usage, sans réseau
+│   ├── integration/            # pipeline complet sur fixtures
+│   └── fixtures/               # RSS, HTML, réponses LLM figées
+│
+├── data/                       # ignoré par git
+│   ├── raw/ processed/ reports/
+│
+└── docs/
+    ├── architecture.md
+    ├── methodology.md          # codebook et règles de scoring
+    └── adr/                    # décisions d'architecture
+```
+
+---
+
+## Démarrage rapide
 
 ```bash
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-.venv/bin/pip install yt-dlp          # CLI dependency, used by the video fetcher
-.venv/bin/python -m pytest -q          # 172 tests, all should pass
+git clone <repo> && cd observatoire-ia-2027
+make install                 # environnement et dépendances
+cp .env.example .env         # la clé Mistral n'est pas requise pour la démo
+make demo                    # pipeline complet hors ligne sur fixtures
+open data/reports/latest.html
 ```
 
-## Running it
+Avec des sources réelles :
 
 ```bash
-# One-off archive crawl of a domain's sitemap. Run once per domain; published
-# archives do not change, so it is never repeated.
-.venv/bin/python -m observatoire.fetch --backfill --only bruno-retailleau
-
-# The daily pass: feeds, programmes, pages, video, press leads.
-.venv/bin/python -m observatoire.fetch
-
-# Extract. Submit at T, collect when the batch is done — never blocking on it.
-# --dry-run exercises the whole path against a fake client and spends nothing.
-export OPENAI_API_KEY=...
-.venv/bin/python -m observatoire.extract submit
-.venv/bin/python -m observatoire.extract collect
-
-# Build the bilingual static site into site/, from data/claims.json
-.venv/bin/python -m observatoire.render
+export MISTRAL_API_KEY=...
+export LLM_PROVIDER=mistral
+observatoire run-all --since 2026-09-01
+observatoire usage           # tokens consommés et coût estimé
 ```
 
-`collect` writes new claims into `data/claims.json`, which is the published
-record and the thing reviewed in the pull request. It never overwrites a claim
-the file already carries — once a claim is in there a human has been through
-it. `render` builds from that file and never opens the database, so CI needs
-no SQLite at all.
+---
 
-Extraction is not yet wired to a scheduler — see [§ Before launch](#before-launch).
+## Commandes
 
-## Layout
-
-```
-observatoire/
-  schema.py       Pydantic models. One source of truth: the same object is the
-                  model's structured-output contract AND the build-time gate.
-  prompt.py       The extraction prompt, versioned and hashed.
-  fetch.py        Source dispatch → documents (tier 1-2) and leads (tier 3).
-  transcript.py   YouTube caption cleaning, quote→timestamp, AI prefilter.
-  extract.py      Chunking, batch submit/collect, provenance artifacts.
-  clients.py      Provider batch clients. Shapes read from current API docs.
-  lint.py         The quality gates. Every one fails the build.
-  store.py        SQLite working cache, plus the claims.json the site is built
-                  from — the published record, reviewed as a diff.
-  i18n.py         Locale paths and ~26 chrome strings.
-  render.py       Static site: hreflang, sitemap, feeds, hashed assets.
-sources.yaml      Every source, with its tier. Verified before being listed.
-templates/        Jinja2. The grid is a real <table>, deliberately.
-data/claims.json  Published claims. In git; the database is not.
-data/artifacts/   Batch request and response JSONL: byte-exact provenance.
-tests/            172 tests.
-```
-
-## How it works
-
-A daily cron fetches configured sources, an LLM extracts structured claims with
-verbatim quotes, CI gates prove the quotes are real, **a human reviews the
-rendered preview**, and merging publishes.
-
-The design rests on three ideas worth stating plainly:
-
-1. **Tier is whose words, not who hosts.** A speech is tier 1 wherever it is
-   published. Only tiers 1–2 become claims; tier 3 (press) becomes a *lead* — a
-   question for the editor, never an auto-published claim.
-2. **The empty answer is the correct one, most of the time.** Most documents
-   contain no AI position. `claims: []` is expected, and the instruction saying
-   so is the primary control against invented positions.
-3. **Absence is data.** The grid renders *"aucune position identifiée"* rather
-   than hiding a gap. Asymmetric coverage by an institution could be read as an
-   in-kind campaign benefit under art. L. 52-8 du code électoral.
-
-## Current state
-
-| | |
+| Commande | Rôle |
 |---|---|
-| Corpus | 71 documents, 8 leads, 27 AI-bearing (38%) |
-| Claims | 6 hand-built fixtures from real quotes, lint-clean |
-| Chunks awaiting extraction | 100 |
-| Tests | 172 |
-| Site | Renders 24 pages, both locales |
-| Cost to extract the whole corpus | ~$0.006 batched |
+| `observatoire collect` | Récupère les contenus, dédoublonne, stocke avec provenance |
+| `observatoire annotate` | Segmente et annote par dimension, position, sentiment |
+| `observatoire score` | Calcule l'indicateur par candidat et par dimension |
+| `observatoire report` | Produit le rapport Markdown ou HTML |
+| `observatoire run-all` | Enchaîne les quatre étapes |
+| `observatoire usage` | Consommation de tokens par étape |
+| `make check` | ruff, mypy strict, pytest, couverture |
 
-**No model has produced a claim yet.** The six in `data/claims.json` were built
-by hand from real quotes to exercise the gates and the renderer.
+---
 
-## Blocked
+## L'indicateur
 
-| Blocker | Unblocks |
-|---|---|
-| X API key (~$90/mo) | The `x` fetcher, which raises `NotImplementedError` by design rather than shipping a guessed endpoint shape. Also Phase 0 spike 3, which measures the real posts/day behind the ~$90 estimate. |
+Cinq composantes, publiées séparément plutôt qu'agrégées en un chiffre unique opaque :
 
-## Known gaps
+| Composante | Question | Mesure |
+|---|---|---|
+| Orientation | Où se situe le candidat sur l'axe ? | Moyenne pondérée des positions, de −2 à +2 |
+| Saillance | En parle-t-il ? | Part de la parole, normalisée |
+| Concrétude | Est-il précis ? | Part de propositions chiffrées ou datées |
+| Cohérence | Tient-il la même ligne ? | Inverse de la variance dans le temps |
+| Tonalité | Sur quel ton ? | Sentiment moyen |
 
-- **No gold set, so no model has been chosen on evidence.** Spec §6c requires a
-  scored comparison table before any model is committed to, with the cheap tier
-  as the incumbent. Neither the 50 labelled claims nor the table exists, and
-  `clients.py` has no synchronous path to run the comparison with.
-- **The yt-dlp-in-CI spike is still untested.** It ran on a laptop; runners use
-  datacenter IPs, which YouTube throttles for transcripts. Load-bearing.
-- **Méthodologie and Mentions légales are placeholders.** Deliberately — that
-  prose needs the *directeur de la publication* and legal review.
-- **Link integrity is half-implemented.** Spec §7 asks that every `source_url`
-  resolves; `lint.py` checks the archive URL's shape but not that the original
-  still answers.
-- **Accessibility has never been measured.** The structural rules are asserted
-  in `tests/test_render.py`, but `axe` and Lighthouse have not been run once.
-- **Three of seven candidates have no wired source** — Attal, Le Pen and
-  Bardella. Renaissance publishes no working feed and Attal's France 2040 plan
-  has no document; the RN pair have none configured. All three are covered only
-  via press leads, and the grid says so: *Non suivi*, not *aucune position*.
-- **`check_grid_complete` lives in the renderer, not `lint.py`** — the rule is a
-  property of the rendered grid, so it is asserted in `tests/test_render.py`.
+Le calcul vit dans `domain/scoring.py`, en fonctions pures et déterministes, et les
+pondérations dans `config/scoring.yaml`.
 
-## Before launch
+---
 
-Non-code, and each blocks publication:
+## Conformité
 
-- [ ] *Directeur de la publication* named (LCEN art. 6)
-- [ ] Editorial charter written and approved
-- [ ] Mentions légales published
-- [ ] Méthodologie page written
-- [ ] Legal review of both
-- [ ] Contact address live for *droit de réponse* (LCEN art. 6-IV: 3-month
-      window, 3-day response)
+- Respect de `robots.txt`, user-agent identifiable, limitation de débit par domaine.
+- Priorité aux flux RSS et aux API officielles sur le crawl de pages.
+- Collecte limitée aux prises de parole des candidats et de leurs partis. Aucun
+  commentaire d'internaute, aucune donnée personnelle de tiers.
+- Les opinions politiques relèvent des données sensibles au sens du RGPD : le cadre
+  juridique doit être validé par un juriste avant toute publication.
+- Méthodologie et codebook publiés avec le rapport.
 
-Code, and each blocks publication too:
+---
 
-- [ ] `.github/workflows/daily.yml` — the cron, the PR, the Vercel preview
-- [ ] Dead-man's switch: GitHub gives *no* notification when a scheduled
-      workflow silently stops, which is the `nosdeputes.fr` failure again
-- [ ] J-2 publication freeze wired into the cron (code électoral art. L. 49),
-      with the election dates in config rather than in the workflow
-- [ ] A gold set, and a model chosen against it (spec §6c)
+## Feuille de route après le POC
+
+1. Élargir à 10 candidats, 9 à 11 dimensions, 40 sources.
+2. Ajouter la transcription audio et vidéo, et l'OCR des programmes en PDF.
+3. Mettre en place l'annotation humaine et la mesure d'accord inter-annotateurs.
+4. Orchestration quotidienne planifiée et supervision.
+5. Audit de biais, relecture pluraliste, puis publication.

@@ -1,6 +1,0 @@
-{% extends "base.html.j2" %}
-{% block content %}
-<h1>{{ t('fil_title') }}</h1>
-<p class="lede">{{ t('tagline') }} {{ t('fil_intro') }}</p>
-{% for claim in claims %}{% include "_claim.html.j2" %}{% endfor %}
-{% endblock %}
