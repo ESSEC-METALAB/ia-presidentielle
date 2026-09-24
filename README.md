@@ -1,5 +1,7 @@
 # Observatoire IA — Présidentielle 2027
 
+*[English version](README.en.md).*
+
 Outil d'analyse des positions des candidats à l'élection présidentielle française de 2027
 sur les sujets liés à l'intelligence artificielle.
 
