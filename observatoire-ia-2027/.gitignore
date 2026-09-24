@@ -1,0 +1,20 @@
+# Environments and caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# Secrets. The repository root ignores `.env.*`, which would also hide the template.
+.env
+!.env.example
+
+# Collected content, database and reports: rebuilt by the pipeline, never committed.
+/data/

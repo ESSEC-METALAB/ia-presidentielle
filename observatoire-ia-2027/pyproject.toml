@@ -1,0 +1,98 @@
+[project]
+name = "observatoire-ia-2027"
+version = "0.1.0"
+description = "Positions des candidats à la présidentielle 2027 sur l'intelligence artificielle (POC)."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "feedparser>=6.0",
+    "httpx>=0.28",
+    "jinja2>=3.1",
+    "pydantic>=2.13",
+    "pydantic-settings>=2.15",
+    "pyyaml>=6.0",
+    "structlog>=26.1",
+    "trafilatura>=2.2",
+]
+
+[project.optional-dependencies]
+# An extra rather than a PEP 735 group so that the pip fallback (`pip install -e ".[dev]"`)
+# works with any pip, not only pip >= 25.1.
+dev = [
+    "mypy>=2.3",
+    "pytest>=9.1",
+    "pytest-cov>=7.1",
+    "ruff>=0.16",
+    "types-pyyaml>=6.0.12",
+]
+
+[project.scripts]
+observatoire = "observatoire.cli:main"
+
+[build-system]
+requires = ["hatchling>=1.32"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/observatoire"]
+
+# --- ruff -----------------------------------------------------------------------------------
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W", "F",   # pycodestyle, pyflakes
+    "I",             # import order
+    "N",             # naming
+    "B",             # bugbear
+    "UP",            # pyupgrade
+    "SIM",           # simplifications
+    "C90",           # cyclomatic complexity
+    "DTZ",           # timezone-aware datetimes only
+    "PT",            # pytest style
+    "RUF",
+    "S110",          # try/except/pass (CLAUDE.md §4, "Erreurs")
+    "PLR0917",       # max positional parameters (CLAUDE.md §4, "Fonctions")
+]
+# PLR0917 is a preview rule. `explicit-preview-rules` enables it alone, not every preview rule.
+preview = true
+explicit-preview-rules = true
+
+[tool.ruff.lint.pylint]
+max-positional-args = 4
+
+[tool.ruff.lint.mccabe]
+max-complexity = 8
+
+# --- mypy -----------------------------------------------------------------------------------
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unreachable = true
+plugins = ["pydantic.mypy"]
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+# --- pytest and coverage --------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--import-mode=importlib", "-ra", "--strict-markers", "--strict-config"]
+
+[tool.coverage.run]
+branch = true
+# The 80 % floor applies to the domain and the use cases (CLAUDE.md §5).
+source_pkgs = ["observatoire.domain", "observatoire.application"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_empty = false

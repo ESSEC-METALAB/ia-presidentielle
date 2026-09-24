@@ -1,0 +1,9 @@
+# Feeds and sites to collect, each with its trust level (README, "Niveaux de source").
+# POC scope: five RSS sources. Adding a sixth must take one entry here and no code
+# (acceptance criterion 4).
+#
+# TODO(step 4): the entries, once the five candidates are chosen. Every URL is verified
+# before it is added: fetched, robots.txt checked, extraction confirmed. The existing
+# pipeline's ../sources.yaml lists feeds already verified that way, and the ones rejected
+# with the reason.
+sources: []

@@ -1,0 +1,3 @@
+-- SQLite schema for documents, segments, annotations and runs.
+-- TODO(step 4). Every document row carries source_url, fetched_at and content_hash
+-- (CLAUDE.md §4, "Idempotence").

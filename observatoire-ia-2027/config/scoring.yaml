@@ -1,0 +1,4 @@
+# Weights and thresholds of the indicator (README, "L'indicateur"). No number lives in code.
+#
+# TODO(step 2): the values, once docs/methodology.md settles them — weight per trust level,
+# minimum segment count below which "données insuffisantes" is shown, confidence level.

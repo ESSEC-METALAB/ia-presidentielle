@@ -1,0 +1,9 @@
+# Dimensions, their definitions and positioning axes. POC scope: three dimensions, whose
+# ids are fixed by PROMPT_BOOTSTRAP.md.
+#
+# TODO(step 2): French label, definition and the two poles of each axis, worded
+# descriptively and never normatively (README, "Neutralité").
+dimensions:
+  - id: regulation
+  - id: sovereignty
+  - id: environment

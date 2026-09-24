@@ -1,0 +1,10 @@
+# Candidate registry: the only place a candidate exists (CLAUDE.md §8 — never in Python).
+# POC scope: five candidates (PROMPT_BOOTSTRAP.md).
+#
+# TODO(step 2), editorial decision required: which five. The existing pipeline at the
+# repository root monitors seven people (../sources.yaml); choosing five of them is a
+# pluralism decision for the editors, not a technical default.
+#
+# No URL, social account or identifier is ever invented: each one is fetched, checked
+# against robots.txt and confirmed to extract before it is added here.
+candidates: []
