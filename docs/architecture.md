@@ -22,6 +22,22 @@ comportement ne repose dessus.
 recevant ses dépendances par son constructeur. Détail des ports et des adapters du POC :
 [`PROMPT_BOOTSTRAP.md`](../PROMPT_BOOTSTRAP.md).
 
+### Ce qui est implémenté : collecte et corpus brut
+
+| Commande | Cas d'usage | Adapters câblés dans `cli.py` |
+|---|---|---|
+| `observatoire collect` | `CollectDaily` | `RssReader`, `HtmlPageReader`, `PdfReader`, `AssembleeNationaleReader`, tous derrière `PoliteHttpClient` (robots.txt, délai par site, agent identifié) |
+| `observatoire import-legacy` | `CollectDaily` | `LegacyPipelineReader` : la base de la version précédente (branche `daily`) |
+| `observatoire corpus` | `InspectCorpus` | `SqliteRepository`, `AliasMatcher`, `CorpusHtmlRenderer` |
+
+`collect` et `import-legacy` exécutent le **même** cas d'usage avec des lecteurs
+différents : même clé de dédoublonnage, même stockage, même vue. Ajouter un type de source,
+c'est ajouter un lecteur dans `adapters/sources/` et l'enregistrer dans `cli.py`, sans
+toucher à `application/`.
+
+Annotation, scores et rapport restent à écrire : ils attendent les décisions de
+[`methodology.md`](methodology.md).
+
 ## Version précédente
 
 La branche `archi` ne contient que cette version. Le pipeline précédent reste sur la

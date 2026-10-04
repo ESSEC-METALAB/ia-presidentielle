@@ -1,9 +1,129 @@
-# Feeds and sites to collect, each with its trust level (README, "Niveaux de source").
-# POC scope: five RSS sources. Adding a sixth must take one entry here and no code
-# (acceptance criterion 4).
+# Official sources of the candidates' words, each with its trust level (README,
+# "Niveaux de source"): 1 = the person's own words, 2 = party or campaign team.
+# A source's level is a conservative default, confirmed by an editor at review.
 #
-# TODO(step 4): the entries, once the five candidates are chosen. Every URL is verified
-# before it is added: fetched, robots.txt checked, extraction confirmed. The previous
-# version's sources.yaml (branch `daily`) lists feeds already verified that way, and the
-# ones rejected with the reason.
-sources: []
+# Every URL below comes from the previous version (branch `daily`): each was probed on
+# 2026-09-18 and returned items, and that version's daily run on GitHub Actions read every
+# non-archive source again on 2026-10-04. Nothing is listed on the strength of a plausible
+# URL. A new entry is fetched, checked against robots.txt and confirmed to extract before
+# it is added.
+#
+# kind selects the reader: rss, page, pdf, assemblee_nationale. `sitemap` sources are
+# one-off archive crawls whose reader is not written yet: enabled: false, so only
+# `observatoire import-legacy` fills them, from what the previous version collected.
+
+crawler:
+  user_agent: "ESSECMetalabBot/1.0 (+https://metalab.essec.edu)"
+  min_delay_seconds: 1.0
+  timeout_seconds: 60
+  min_text_chars: 400       # below this, a page is a teaser, not a text
+  max_redirects: 5
+
+sources:
+  # --- Bruno Retailleau ---------------------------------------------------------------
+  - id: bruno-retailleau/pdf/programme-ia
+    candidate_id: bruno-retailleau
+    kind: pdf
+    url: https://republicains.fr/wp-content/uploads/2026/07/LR_IA.pdf
+    trust_level: 1
+    label: "L'IA au service des Français — progrès, souveraineté, vigilance"
+    options: {published_on: "2026-07-07"}
+
+  - id: bruno-retailleau/rss/republicains
+    candidate_id: bruno-retailleau
+    kind: rss
+    url: https://republicains.fr/feed/
+    trust_level: 2
+    label: Les Républicains — fil RSS
+    max_items: 15
+
+  - id: bruno-retailleau/sitemap/republicains
+    candidate_id: bruno-retailleau
+    kind: sitemap
+    url: https://republicains.fr
+    trust_level: 2
+    label: Les Républicains — archives du site (pages sur l'IA)
+    enabled: false
+
+  # Ministerial interventions; they stop in 2025. He returned to the Sénat on
+  # 13 November 2025, whose record needs its own reader.
+  - id: bruno-retailleau/an/PA2538
+    candidate_id: bruno-retailleau
+    kind: assemblee_nationale
+    url: https://data.assemblee-nationale.fr/static/openData/repository/17/vp/syceronbrut/syseron.xml.zip
+    trust_level: 1
+    label: Assemblée nationale — compte rendu intégral
+    options: {acteur: PA2538, legislature: "17"}
+
+  # --- Jean-Luc Mélenchon -------------------------------------------------------------
+  - id: jean-luc-melenchon/rss/lfi
+    candidate_id: jean-luc-melenchon
+    kind: rss
+    url: https://lafranceinsoumise.fr/feed/
+    trust_level: 2
+    label: La France insoumise — fil RSS
+    max_items: 15
+
+  - id: jean-luc-melenchon/sitemap/lfi
+    candidate_id: jean-luc-melenchon
+    kind: sitemap
+    url: https://lafranceinsoumise.fr
+    trust_level: 2
+    label: La France insoumise — archives du site (pages sur l'IA)
+    enabled: false
+
+  # --- Olivier Faure ------------------------------------------------------------------
+  - id: olivier-faure/an/PA609332
+    candidate_id: olivier-faure
+    kind: assemblee_nationale
+    url: https://data.assemblee-nationale.fr/static/openData/repository/17/vp/syceronbrut/syseron.xml.zip
+    trust_level: 1
+    label: Assemblée nationale — compte rendu intégral
+    options: {acteur: PA609332, legislature: "17"}
+
+  - id: olivier-faure/rss/ps
+    candidate_id: olivier-faure
+    kind: rss
+    url: https://parti-socialiste.fr/feed/
+    trust_level: 2
+    label: Parti socialiste — fil RSS
+    max_items: 15
+
+  - id: olivier-faure/sitemap/ps
+    candidate_id: olivier-faure
+    kind: sitemap
+    url: https://parti-socialiste.fr
+    trust_level: 2
+    label: Parti socialiste — archives du site (pages sur l'IA)
+    enabled: false
+
+  # --- Gabriel Attal ------------------------------------------------------------------
+  - id: gabriel-attal/an/PA722190
+    candidate_id: gabriel-attal
+    kind: assemblee_nationale
+    url: https://data.assemblee-nationale.fr/static/openData/repository/17/vp/syceronbrut/syseron.xml.zip
+    trust_level: 1
+    label: Assemblée nationale — compte rendu intégral
+    options: {acteur: PA722190, legislature: "17"}
+
+  # --- Édouard Philippe ---------------------------------------------------------------
+  # No feed on his site: a standing priorities page, re-read on every run.
+  - id: edouard-philippe/page/priorites
+    candidate_id: edouard-philippe
+    kind: page
+    url: https://www.edouardphilippe.fr/priorites/pour-une-france-plus-conquerante
+    trust_level: 1
+    label: Pour une France plus conquérante — priorités
+
+  # --- Marine Le Pen ------------------------------------------------------------------
+  - id: marine-le-pen/an/PA720614
+    candidate_id: marine-le-pen
+    kind: assemblee_nationale
+    url: https://data.assemblee-nationale.fr/static/openData/repository/17/vp/syceronbrut/syseron.xml.zip
+    trust_level: 1
+    label: Assemblée nationale — compte rendu intégral
+    options: {acteur: PA720614, legislature: "17"}
+
+  # --- Jordan Bardella ----------------------------------------------------------------
+  # No verified source yet. He is an MEP: his verbatim record is the European
+  # Parliament's (data.europarl.europa.eu, to verify, then a reader to write).

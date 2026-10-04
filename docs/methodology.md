@@ -44,7 +44,30 @@ points. Elles sont à trancher explicitement avant toute publication :
 2. **Presse (niveau 3).** La version précédente n'en tire jamais une position, même avec
    une citation propre ; il s'en sert seulement comme piste. Ce POC l'admet sous
    condition de citation directe attribuée.
-3. **Date de publication.** La version précédente ne devine jamais une date absente
-   (trafilatura invente un 1er janvier par défaut) et affiche « date non précisée ». Ce POC
-   trace la date de collecte ; la date de publication reste à modéliser, et doit pouvoir
-   être absente.
+3. **Date de publication.** Réglé : comme la version précédente, ce POC ne devine jamais
+   une date absente (`RawDocument.published_on` peut être vide, l'extraction désactive la
+   recherche heuristique de trafilatura) et la vue affiche « date non précisée ».
+4. **Dédoublonnage par le seul texte.** La clé imposée par `CLAUDE.md` (SHA-256 du texte
+   normalisé) fusionne deux interventions identiques prononcées dans deux séances
+   différentes : sur les données de la version précédente, cinq séances où Gabriel Attal n'a
+   dit que « Bravo ! », « Très bien ! » ou « Merci ! » sont ramenées à deux. Sans effet sur
+   les positions, mais le nombre de séances est sous-estimé. Option : inclure l'URL de la
+   source dans la clé.
+
+## Constats sur les données (import du 4 octobre 2026)
+
+Import de la base de la version précédente : 239 documents, 230 conservés après
+dédoublonnage, collectés entre le 18 septembre et le 4 octobre 2026.
+
+- **Bandeau de cookies pris pour un article.** Cinq documents du fil du Parti socialiste
+  contiennent le texte du bandeau de consentement (« Nous utilisons des cookies… ») au lieu
+  de l'article. Le dédoublonnage en élimine quatre ; il en reste un. L'extraction de
+  `parti-socialiste.fr` est à revérifier dès que le réseau le permet.
+- **Zéro intervention pour Olivier Faure et Bruno Retailleau** dans le compte rendu de la
+  XVIIe législature, déjà le 4 octobre dans la version précédente. Pour Bruno Retailleau,
+  c'est attendu (interventions ministérielles terminées, retour au Sénat) ; pour Olivier
+  Faure, l'identifiant d'acteur PA609332 est à revérifier.
+- **Jordan Bardella n'est pas suivi** : aucune source vérifiée. Député européen, son compte
+  rendu est celui du Parlement européen.
+- Les fils de parti (niveau 2) publient l'actualité de tout le parti : la vue indique pour
+  chaque document s'il cite le candidat.

@@ -9,7 +9,7 @@ UV ?= uv
 RUN ?= $(UV) run --extra dev
 DATA_DIRS := data/raw data/processed data/reports
 
-.PHONY: help install install-pip format lint typecheck test check demo clean
+.PHONY: help install install-pip format lint typecheck test check demo collect legacy-db import-legacy corpus clean
 
 help: ## List the targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) \
@@ -43,6 +43,21 @@ check: lint typecheck test ## Everything that must pass before a task is done
 demo: ## Full offline pipeline on fixtures, no network, no API key (works from step 6)
 	mkdir -p $(DATA_DIRS)
 	$(RUN) observatoire run-all --offline
+
+collect: ## Live collection from config/sources.yaml (network required)
+	mkdir -p $(DATA_DIRS)
+	$(RUN) observatoire collect
+
+legacy-db: ## Copy the previous version's database from branch `daily` to data/raw/
+	mkdir -p $(DATA_DIRS)
+	git fetch --quiet origin daily
+	git show origin/daily:data/observatoire.db > data/raw/legacy-daily.db
+
+import-legacy: legacy-db ## Import what the previous version collected, through the same use case
+	$(RUN) observatoire import-legacy --database data/raw/legacy-daily.db
+
+corpus: ## Write the raw-corpus page to data/reports/corpus.html
+	$(RUN) observatoire corpus --out data/reports/corpus.html
 
 clean: ## Remove caches and build output (never data/)
 	rm -rf .pytest_cache .mypy_cache .ruff_cache .coverage htmlcov build dist

@@ -10,6 +10,7 @@ dependencies = [
     "jinja2>=3.1",
     "pydantic>=2.13",
     "pydantic-settings>=2.15",
+    "pypdf>=6.19",
     "pyyaml>=6.0",
     "structlog>=26.1",
     "trafilatura>=2.2",
@@ -74,7 +75,13 @@ max-complexity = 8
 python_version = "3.11"
 strict = true
 warn_unreachable = true
+mypy_path = "tests"
 plugins = ["pydantic.mypy"]
+
+# feedparser ships no type information.
+[[tool.mypy.overrides]]
+module = ["feedparser", "feedparser.*"]
+ignore_missing_imports = true
 
 [tool.pydantic-mypy]
 init_forbid_extra = true
@@ -85,6 +92,8 @@ warn_required_dynamic_aliases = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# tests/support.py holds the shared fakes and builders.
+pythonpath = ["tests"]
 addopts = ["--import-mode=importlib", "-ra", "--strict-markers", "--strict-config"]
 
 [tool.coverage.run]

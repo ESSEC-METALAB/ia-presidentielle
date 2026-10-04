@@ -1,10 +1,44 @@
 # Candidate registry: the only place a candidate exists (CLAUDE.md §8 — never in Python).
-# POC scope: five candidates (PROMPT_BOOTSTRAP.md).
 #
-# TODO(step 2), editorial decision required: which five. The previous version (branch
-# `daily`, sources.yaml) monitors seven people; choosing five of them is a pluralism
-# decision for the editors, not a technical default.
+# Roster inherited from the previous version (branch `daily`, sources.yaml). The POC's
+# five-candidate scope is still an editorial decision; until it is made, every inherited
+# person is collected, so nobody is dropped by default.
 #
-# No URL, social account or identifier is ever invented: each one is fetched, checked
-# against robots.txt and confirmed to extract before it is added here.
-candidates: []
+# aliases: matched whole-word and case-insensitively, to show whether a document names
+# its candidate. Unambiguous forms only: "Olivier Faure", never "Faure"; "Marine Le Pen",
+# never "Le Pen"; "Édouard Philippe", never "Philippe".
+candidates:
+  - id: bruno-retailleau
+    name: Bruno Retailleau
+    party: LR
+    aliases: [Retailleau]
+
+  - id: jean-luc-melenchon
+    name: Jean-Luc Mélenchon
+    party: LFI
+    aliases: [Mélenchon, Melenchon]
+
+  - id: olivier-faure
+    name: Olivier Faure
+    party: PS
+    aliases: [Olivier Faure]
+
+  - id: gabriel-attal
+    name: Gabriel Attal
+    party: Renaissance
+    aliases: [Attal]
+
+  - id: edouard-philippe
+    name: Édouard Philippe
+    party: Horizons
+    aliases: [Édouard Philippe, Edouard Philippe]
+
+  - id: marine-le-pen
+    name: Marine Le Pen
+    party: RN
+    aliases: [Marine Le Pen]
+
+  - id: jordan-bardella
+    name: Jordan Bardella
+    party: RN
+    aliases: [Bardella]

@@ -1,0 +1,494 @@
+{% if standalone %}
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+{% endif %}
+<title>Corpus brut de l'Observatoire IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+/* Layout: a registry read top to bottom — summary line, coverage ledger, monthly strips,
+   source ledger, then the document explorer; one 72rem column. Candidates share one hue:
+   colour encodes the source level only, never a person or a party. */
+:root {
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --ink: #13171c;
+  --ink-2: #454e5a;
+  --ink-3: #66707d;
+  --rule: #d8dde4;
+  --wash: #eaeef3;
+  --accent: #1c5cab;
+  --level-1: #1c5cab;
+  --level-2: #86b6ef;
+  --hatch: #c3cad3;
+  --good: #0ca30c;
+  --warning: #fab219;
+  --critical: #d03b3b;
+  --font-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-read: "Spectral", Georgia, "Times New Roman", serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101317; --surface: #1a1d22; --ink: #eceff3; --ink-2: #b3bbc6; --ink-3: #8b94a0;
+    --rule: #2c323a; --wash: #232830; --accent: #86b6ef; --level-1: #86b6ef;
+    --level-2: #256abf; --hatch: #3b424c; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101317; --surface: #1a1d22; --ink: #eceff3; --ink-2: #b3bbc6; --ink-3: #8b94a0;
+  --rule: #2c323a; --wash: #232830; --accent: #86b6ef; --level-1: #86b6ef;
+  --level-2: #256abf; --hatch: #3b424c; color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 400 15px/1.55 var(--font-ui);
+}
+.wrap {
+  max-width: 72rem; margin-inline: auto;
+  padding-inline: clamp(16px, 4vw, 40px); padding-block: 40px 72px;
+  display: grid; gap: 56px;
+}
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible,
+summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2 { font-family: var(--font-read); font-weight: 600; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 2.6rem); line-height: 1.08; letter-spacing: -0.01em; }
+h2 { font-size: 1.5rem; line-height: 1.2; }
+h3 { font-size: 1rem; font-weight: 600; margin: 0; }
+p { margin: 0; }
+.eyebrow {
+  font-size: .75rem; font-weight: 500; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+.mono { font-family: var(--font-mono); font-size: .8rem; }
+.muted { color: var(--ink-3); }
+.num { font-variant-numeric: tabular-nums; }
+.prose { max-width: 65ch; color: var(--ink-2); }
+
+/* Header */
+header { display: grid; gap: 18px; }
+.lede { font-family: var(--font-read); font-size: 1.2rem; line-height: 1.45; max-width: 52ch; color: var(--ink-2); }
+.notice {
+  border: 1px solid var(--rule); background: var(--surface); padding: 14px 16px;
+  max-width: 72ch; color: var(--ink-2); font-size: .9rem;
+}
+.notice strong { color: var(--ink); }
+.summary {
+  display: flex; flex-wrap: wrap; gap: 12px 40px; margin: 6px 0 0;
+  border-top: 1px solid var(--rule); padding-top: 18px;
+}
+.summary div { display: grid; gap: 2px; }
+.summary dt { font-size: .78rem; color: var(--ink-3); }
+.summary dd { margin: 0; font-size: 1.35rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+section { display: grid; gap: 16px; min-width: 0; }
+.section-head { display: grid; gap: 6px; }
+
+/* Tables */
+.table-scroll { overflow-x: auto; border: 1px solid var(--rule); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-size: .74rem; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; }
+tbody tr:last-child td { border-bottom: 0; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.who { display: grid; }
+.who span { color: var(--ink-3); font-size: .8rem; }
+tr.unmonitored td.gap {
+  background-image: repeating-linear-gradient(45deg, var(--hatch) 0 1px, transparent 1px 7px);
+  color: var(--ink-2);
+}
+
+/* Status: icon + label, colour on the icon only */
+.status { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-size: .85rem; }
+.status::before { font-weight: 600; width: 1em; text-align: center; }
+.status.ok::before { content: "✓"; color: var(--good); }
+.status.failed::before { content: "✕"; color: var(--critical); }
+.status.disabled::before { content: "–"; color: var(--ink-3); }
+.status.never::before { content: "○"; color: var(--warning); }
+
+/* Chart */
+figure { margin: 0; display: grid; gap: 12px; min-width: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: .85rem; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.swatch.lvl-1 { background: var(--level-1); }
+.swatch.lvl-2 { background: var(--level-2); }
+.swatch.none {
+  background-image: repeating-linear-gradient(45deg, var(--hatch) 0 1px, transparent 1px 4px);
+  border: 1px solid var(--rule);
+}
+.chart-scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); padding: 16px 12px 8px; position: relative; }
+svg.chart { display: block; width: 100%; min-width: 620px; max-width: 900px; height: auto; }
+svg.chart text { font-family: var(--font-ui); }
+.row-label { font-size: 12px; fill: var(--ink); }
+.axis text { font-size: 10.5px; fill: var(--ink-3); }
+.baseline { stroke: var(--rule); stroke-width: 1; }
+.lvl-1 { fill: var(--level-1); }
+.lvl-2 { fill: var(--level-2); }
+.hit { fill: transparent; cursor: default; }
+.bar:hover path { opacity: .82; }
+.hatch-bg { fill: var(--surface); }
+.hatch-line { stroke: var(--hatch); stroke-width: 1.2; }
+.unmonitored-band { fill: url(#hatch); }
+.unmonitored-chip { fill: var(--surface); }
+.unmonitored-label { font-size: 11px; fill: var(--ink-2); }
+figcaption { font-size: .85rem; color: var(--ink-3); max-width: 72ch; }
+details.data { font-size: .85rem; }
+details.data summary { cursor: pointer; color: var(--accent); width: max-content; }
+details.data .table-scroll { margin-top: 10px; max-height: 22rem; }
+#tip {
+  position: absolute; pointer-events: none; z-index: 2; max-width: 260px;
+  background: var(--ink); color: var(--bg); font-size: .8rem; line-height: 1.35;
+  padding: 6px 9px; border-radius: 4px;
+}
+
+/* Sources ledger */
+.ledger { display: grid; gap: 22px; }
+.ledger-group { display: grid; gap: 8px; }
+.ledger-group h3 span { font-weight: 400; color: var(--ink-3); }
+.source {
+  display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) auto; gap: 4px 16px; align-items: baseline;
+  background: var(--surface); border: 1px solid var(--rule); padding: 10px 14px;
+}
+.source .what { min-width: 0; display: grid; gap: 2px; }
+.source .what a, .source .what b { overflow-wrap: anywhere; font-weight: 500; }
+.source .counts { text-align: right; font-size: .82rem; color: var(--ink-2); white-space: nowrap; }
+.source .error { grid-column: 2 / -1; color: var(--critical); font-family: var(--font-mono); font-size: .76rem; overflow-wrap: anywhere; }
+.none-configured { color: var(--ink-2); font-size: .9rem; padding: 10px 14px; border: 1px dashed var(--rule); }
+
+/* Document explorer */
+.filters {
+  display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: end;
+  background: var(--surface); border: 1px solid var(--rule); padding: 14px;
+}
+.filters label { display: grid; gap: 4px; font-size: .75rem; color: var(--ink-3); letter-spacing: .03em; }
+.filters select, .filters input {
+  font: inherit; font-size: .9rem; color: var(--ink); background: var(--bg);
+  border: 1px solid var(--rule); border-radius: 4px; padding: 6px 8px; min-width: 0;
+}
+.filters .grow { flex: 1 1 14rem; }
+.filters .grow input { width: 100%; }
+.count { font-size: .9rem; color: var(--ink-2); }
+.docs { display: grid; gap: 12px; }
+.doc {
+  background: var(--surface); border: 1px solid var(--rule); padding: 16px 18px;
+  display: grid; gap: 8px; min-width: 0;
+}
+.doc h3 { font-family: var(--font-read); font-size: 1.12rem; font-weight: 600; line-height: 1.3; }
+.doc h3 a { color: var(--ink); text-decoration-color: var(--rule); }
+.doc h3 a:hover { text-decoration-color: var(--accent); }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .8rem; color: var(--ink-3); }
+.meta b { color: var(--ink-2); font-weight: 500; }
+.chip {
+  display: inline-block; font-size: .74rem; padding: 1px 7px; border-radius: 3px;
+  background: var(--wash); color: var(--ink-2); white-space: nowrap;
+}
+.chip.lvl { font-weight: 500; }
+.chip.no { box-shadow: inset 0 0 0 1px var(--rule); background: transparent; }
+.excerpt { font-family: var(--font-read); font-size: 1rem; color: var(--ink-2); max-width: 70ch; }
+.doc details summary { cursor: pointer; font-size: .85rem; color: var(--accent); width: max-content; }
+.fulltext {
+  margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--rule);
+  font-family: var(--font-read); font-size: 1.02rem; line-height: 1.6; max-width: 70ch;
+  display: grid; gap: .7em; overflow-wrap: anywhere;
+}
+footer { font-size: .8rem; color: var(--ink-3); border-top: 1px solid var(--rule); padding-top: 16px; display: grid; gap: 4px; }
+
+@media (max-width: 640px) {
+  .source { grid-template-columns: minmax(0, 1fr); }
+  .source .counts { text-align: left; }
+  .source .error { grid-column: 1; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+{% if standalone %}
+</head>
+<body>
+{% endif %}
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">Observatoire IA 2027 · ESSEC Metalab</p>
+  <h1>Corpus brut</h1>
+  <p class="lede">Ce que la collecte a rapporté des sources officielles des candidats, avant toute analyse : textes, provenance et état de chaque source.</p>
+  <p class="notice"><strong>Données brutes, non relues, non publiables.</strong> Aucun texte n'est analysé ici. Le niveau de chaque source est un réglage par défaut, confirmé seulement à la relecture. Un fil de parti publie l'actualité de tout le parti : un document de niveau 2 n'est pas forcément une prise de parole du candidat.</p>
+  <dl class="summary">
+    <div><dt>Documents</dt><dd>{{ page.documents_total }}</dd></div>
+    <div><dt>Caractères</dt><dd>{{ page.characters_total }}</dd></div>
+    <div><dt>Candidats suivis</dt><dd>{{ page.monitored }} / {{ page.candidates_total }}</dd></div>
+    <div><dt>Sources configurées</dt><dd>{{ page.sources_total }}</dd></div>
+    <div><dt>Sources en échec</dt><dd>{{ page.sources_failed }}</dd></div>
+    <div><dt>Généré le</dt><dd style="font-size:1rem;padding-top:.3rem">{{ page.generated }}</dd></div>
+  </dl>
+</header>
+
+<section aria-labelledby="coverage-title">
+  <div class="section-head">
+    <h2 id="coverage-title">Couverture par candidat</h2>
+    <p class="prose">Chaque personne configurée a sa ligne, y compris sans source : <em>non suivi</em> n'est pas <em>aucune prise de parole</em>.</p>
+  </div>
+  <div class="table-scroll">
+    <table>
+      <thead><tr>
+        <th>Candidat</th><th class="n">Documents</th><th class="n">dont niveau 1</th>
+        <th class="n">Caractères</th><th>Période (dates de publication)</th><th class="n">Sources</th><th class="n">En échec</th>
+      </tr></thead>
+      <tbody>
+      {% for c in page.candidates %}
+        {% if c.monitored %}
+        <tr>
+          <td><div class="who"><b>{{ c.name }}</b><span>{{ c.party }}</span></div></td>
+          <td class="n">{{ c.documents }}</td>
+          <td class="n">{{ c.own_words }}</td>
+          <td class="n">{{ c.characters }}</td>
+          <td>{{ c.period }}</td>
+          <td class="n">{{ c.sources|length }}</td>
+          <td class="n">{{ c.failed }}</td>
+        </tr>
+        {% else %}
+        <tr class="unmonitored">
+          <td><div class="who"><b>{{ c.name }}</b><span>{{ c.party }}</span></div></td>
+          <td class="gap" colspan="6">Non suivi : aucune source vérifiée n'est configurée.</td>
+        </tr>
+        {% endif %}
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if page.unconfigured_documents %}
+  <p class="prose">{{ page.unconfigured_documents }} document(s) en base proviennent d'une source qui n'est plus configurée et ne figurent pas dans cette page.</p>
+  {% endif %}
+</section>
+
+<section aria-labelledby="chart-heading">
+  <div class="section-head">
+    <h2 id="chart-heading">Documents par mois</h2>
+    <p class="prose">Par date de publication, de {{ page.chart.first_month }} à {{ page.chart.last_month }}. Une ligne par candidat, toutes à la même échelle.</p>
+  </div>
+  <figure>
+    <div class="legend" aria-hidden="true">
+      <span><i class="swatch lvl-1"></i>Niveau 1 · paroles propres</span>
+      <span><i class="swatch lvl-2"></i>{{ page.chart.other_levels_label }}</span>
+      <span><i class="swatch none"></i>Non suivi</span>
+    </div>
+    <div class="chart-scroll" id="chart-box">
+      <svg class="chart" viewBox="0 0 {{ page.chart.width }} {{ page.chart.height }}" role="img" aria-labelledby="chart-svg-title chart-svg-desc">
+        <title id="chart-svg-title">Documents par mois et par candidat</title>
+        <desc id="chart-svg-desc">Barres empilées : niveau 1 en bas, autres niveaux au-dessus. La barre la plus haute vaut {{ page.chart.y_max }} documents. Les valeurs exactes sont dans le tableau sous le graphique.</desc>
+        <defs>
+          <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect class="hatch-bg" width="6" height="6"></rect>
+            <line class="hatch-line" x1="0" y1="0" x2="0" y2="6"></line>
+          </pattern>
+        </defs>
+        {% for row in page.chart.rows %}
+        <g>
+          <text class="row-label" x="0" y="{{ row.label_y }}">{{ row.name }}</text>
+          {% if row.monitored %}
+          <line class="baseline" x1="{{ page.chart.label_width }}" x2="{{ page.chart.width }}" y1="{{ row.baseline }}.5" y2="{{ row.baseline }}.5"></line>
+          {% for bar in row.bars %}
+          <g class="bar" data-tip="{{ bar.tip }}">
+            {% for s in bar.segments %}<path class="{{ s.level_class }}" d="{{ s.path }}"></path>{% endfor %}
+            <rect class="hit" x="{{ bar.hit_x }}" y="{{ bar.hit_y }}" width="{{ page.chart.slot }}" height="{{ page.chart.row }}"><title>{{ bar.tip }}</title></rect>
+          </g>
+          {% endfor %}
+          {% else %}
+          <rect class="unmonitored-band" x="{{ page.chart.label_width }}" y="{{ row.baseline - 40 }}" width="{{ page.chart.width - page.chart.label_width }}" height="40"></rect>
+          <rect class="unmonitored-chip" x="{{ page.chart.label_width + 6 }}" y="{{ row.baseline - 28 }}" width="226" height="16" rx="2"></rect>
+          <text class="unmonitored-label" x="{{ page.chart.label_width + 12 }}" y="{{ row.baseline - 16 }}">Non suivi : aucune source configurée</text>
+          {% endif %}
+        </g>
+        {% endfor %}
+        <g class="axis">
+          {% for tick in page.chart.ticks %}<text x="{{ tick.x }}" y="{{ page.chart.axis_y }}" text-anchor="middle">{{ tick.label }}</text>{% endfor %}
+        </g>
+      </svg>
+      <div id="tip" hidden></div>
+    </div>
+    <figcaption>
+      Échelle commune : la barre la plus haute vaut {{ page.chart.y_max }} documents dans le mois.
+      {% if page.chart.before_window %}{{ page.chart.before_window }} document(s) publiés avant {{ page.chart.first_month }} ne sont pas représentés. {% endif %}
+      {% if page.chart.undated %}{{ page.chart.undated }} document(s) sans date de publication ne sont pas représentés : la date n'est jamais devinée.{% endif %}
+    </figcaption>
+    <details class="data">
+      <summary>Voir les valeurs du graphique</summary>
+      <div class="table-scroll">
+        <table>
+          <thead><tr>{% for h in page.chart.table_header %}<th{% if not loop.first %} class="n"{% endif %}>{{ h }}</th>{% endfor %}</tr></thead>
+          <tbody>
+          {% for r in page.chart.table_rows %}<tr>{% for cell in r %}<td{% if not loop.first %} class="n"{% endif %}>{{ cell }}</td>{% endfor %}</tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </figure>
+</section>
+
+<section aria-labelledby="sources-title">
+  <div class="section-head">
+    <h2 id="sources-title">État des sources</h2>
+    <p class="prose">Dernier passage de chaque source. « Lus » compte ce que la source a renvoyé : une source qui ne renvoie plus rien est en panne, même sans erreur.</p>
+  </div>
+  <div class="ledger">
+  {% for c in page.candidates %}
+    <div class="ledger-group">
+      <h3>{{ c.name }} <span>· {{ c.party }}</span></h3>
+      {% for s in c.sources %}
+      <div class="source">
+        <span class="status {{ s.status }}">{{ s.status_label }}</span>
+        <div class="what">
+          {% if s.url %}<a href="{{ s.url }}" rel="noopener" target="_blank">{{ s.label }}</a>{% else %}<b>{{ s.label }}</b>{% endif %}
+          <span class="muted" style="font-size:.8rem">{{ s.kind_label }} · niveau {{ s.level }} ({{ s.level_label }}) · {{ s.run_label }}</span>
+        </div>
+        <span class="counts num">{{ s.documents }} documents · {{ s.characters }} car.<br>{{ s.fetched }} lus, {{ s.new }} nouveaux, {{ s.duplicates }} doublons</span>
+        {% if s.error %}<span class="error">{{ s.error }}</span>{% endif %}
+      </div>
+      {% else %}
+      <p class="none-configured">Aucune source vérifiée n'est configurée pour cette personne.</p>
+      {% endfor %}
+    </div>
+  {% endfor %}
+  </div>
+</section>
+
+<section aria-labelledby="docs-title">
+  <div class="section-head">
+    <h2 id="docs-title">Documents</h2>
+    <p class="prose">Les plus récents d'abord ; les documents sans date de publication viennent en dernier. Le texte intégral est celui qui a été collecté, sans retouche.</p>
+  </div>
+  <form class="filters" id="filters" role="search">
+    <label>Candidat
+      <select id="f-candidate">
+        <option value="">Tous</option>
+        {% for value, label in page.candidate_options %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Type de source
+      <select id="f-kind">
+        <option value="">Tous</option>
+        {% for value, label in page.kind_options %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Niveau
+      <select id="f-level">
+        <option value="">Tous</option>
+        <option value="1">1 · paroles propres</option>
+        <option value="2">2 · parti</option>
+      </select>
+    </label>
+    <label>Fils de parti
+      <select id="f-mentions">
+        <option value="">Tous les documents</option>
+        <option value="yes">Citent le candidat</option>
+        <option value="no">Ne le citent pas</option>
+      </select>
+    </label>
+    <label class="grow">Rechercher dans les textes
+      <input id="f-query" type="search" placeholder="ex. intelligence artificielle, souveraineté" autocomplete="off">
+    </label>
+  </form>
+  <p class="count" id="count" aria-live="polite">{{ page.documents|length }} documents</p>
+  <div class="docs">
+  {% for d in page.documents %}
+    <article class="doc" data-candidate="{{ d.candidate_id }}" data-kind="{{ d.kind }}" data-level="{{ d.level }}" data-mentions="{{ d.mentions }}">
+      <h3>{% if d.url %}<a href="{{ d.url }}" rel="noopener" target="_blank">{{ d.title }}</a>{% else %}{{ d.title }}{% endif %}</h3>
+      <div class="meta">
+        <b>{{ d.candidate_name }}</b>
+        <span>{{ d.source_label }}</span>
+        <span class="chip lvl">Niveau {{ d.level }} · {{ d.level_label }}</span>
+        {% if d.mentions != "na" %}<span class="chip {{ d.mentions }}">{{ d.mentions_label }}</span>{% endif %}
+      </div>
+      <div class="meta">
+        <span>Publié : <span class="num">{{ d.published }}</span></span>
+        <span>Collecté : <span class="num">{{ d.fetched }}</span></span>
+        <span class="num">{{ d.characters }} caractères</span>
+      </div>
+      <p class="excerpt">{{ d.excerpt }}</p>
+      <details>
+        <summary>Texte intégral</summary>
+        <div class="fulltext">{% for p in d.paragraphs %}<p>{{ p }}</p>{% endfor %}</div>
+      </details>
+    </article>
+  {% endfor %}
+  </div>
+</section>
+
+<footer>
+  <p>Généré le {{ page.generated }} par <span class="mono">observatoire corpus</span>. Collecte : robots.txt respecté, un délai minimal entre deux requêtes vers un même site, agent identifié.</p>
+  <p>Les textes appartiennent à leurs auteurs et éditeurs ; cette page sert à vérifier la collecte, pas à les diffuser.</p>
+</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  // Tooltip for the chart: one floating label, driven by the bar under the pointer.
+  var box = document.getElementById("chart-box");
+  var tip = document.getElementById("tip");
+  if (box && tip) {
+    box.addEventListener("pointermove", function (event) {
+      var bar = event.target.closest ? event.target.closest(".bar") : null;
+      if (!bar) { tip.hidden = true; return; }
+      tip.textContent = bar.dataset.tip;
+      tip.hidden = false;
+      var area = box.getBoundingClientRect();
+      var x = event.clientX - area.left + box.scrollLeft + 14;
+      var y = event.clientY - area.top + box.scrollTop + 14;
+      tip.style.left = Math.min(x, box.scrollWidth - tip.offsetWidth - 8) + "px";
+      tip.style.top = y + "px";
+    });
+    box.addEventListener("pointerleave", function () { tip.hidden = true; });
+  }
+
+  // Document filters. Search ignores case and accents, so "melenchon" finds "Mélenchon".
+  var docs = Array.prototype.slice.call(document.querySelectorAll(".doc"));
+  var fields = ["f-candidate", "f-kind", "f-level", "f-mentions", "f-query"].map(function (id) {
+    return document.getElementById(id);
+  });
+  var count = document.getElementById("count");
+  var form = document.getElementById("filters");
+  var haystacks = new Map();
+  function fold(text) {
+    return text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  }
+  function haystack(doc) {
+    if (!haystacks.has(doc)) { haystacks.set(doc, fold(doc.textContent)); }
+    return haystacks.get(doc);
+  }
+  function apply() {
+    var candidate = fields[0].value, kind = fields[1].value, level = fields[2].value;
+    var mentions = fields[3].value, query = fold(fields[4].value.trim());
+    var shown = 0;
+    docs.forEach(function (doc) {
+      var d = doc.dataset;
+      var keep = (!candidate || d.candidate === candidate) && (!kind || d.kind === kind) &&
+        (!level || d.level === level) && (!mentions || d.mentions === mentions) &&
+        (!query || haystack(doc).indexOf(query) !== -1);
+      doc.hidden = !keep;
+      if (keep) { shown += 1; }
+    });
+    count.textContent = shown === docs.length
+      ? docs.length + " documents"
+      : shown + " document" + (shown > 1 ? "s" : "") + " affiché" + (shown > 1 ? "s" : "") + " sur " + docs.length;
+  }
+  var timer = null;
+  form.addEventListener("submit", function (event) { event.preventDefault(); });
+  form.addEventListener("change", apply);
+  fields[4].addEventListener("input", function () {
+    clearTimeout(timer);
+    timer = setTimeout(apply, 150);
+  });
+})();
+</script>
+{% if standalone %}
+</body>
+</html>
+{% endif %}

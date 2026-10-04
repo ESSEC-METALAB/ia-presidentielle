@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Fictional feed for tests. -->
+<rss version="2.0">
+  <channel>
+    <title>Parti Exemple — actualités</title>
+    <link>https://parti-exemple.test/</link>
+    <description>Fil fictif</description>
+    <item>
+      <title>Discours sur le numérique (titre du fil)</title>
+      <link>https://parti-exemple.test/discours-numerique</link>
+      <pubDate>Tue, 15 Sep 2026 10:00:00 +0000</pubDate>
+    </item>
+    <item>
+      <title>Une brève</title>
+      <link>https://parti-exemple.test/breve</link>
+      <pubDate>Mon, 14 Sep 2026 10:00:00 +0000</pubDate>
+    </item>
+    <item>
+      <title>Page disparue</title>
+      <link>https://parti-exemple.test/disparue</link>
+      <pubDate>Sun, 13 Sep 2026 10:00:00 +0000</pubDate>
+    </item>
+    <item>
+      <title>Ancien communiqué</title>
+      <link>https://parti-exemple.test/ancien</link>
+      <pubDate>Wed, 01 Jan 2025 10:00:00 +0000</pubDate>
+    </item>
+  </channel>
+</rss>
