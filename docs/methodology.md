@@ -54,6 +54,32 @@ points. Elles sont à trancher explicitement avant toute publication :
    les positions, mais le nombre de séances est sous-estimé. Option : inclure l'URL de la
    source dans la clé.
 
+## Segmentation
+
+Découpage léger et déterministe, sans modèle de langage (`services/segmentation.py`,
+réglages dans `config/segmentation.yaml`). Un segment est un passage lisible seul ; son
+texte est celui du document sur ses plages de caractères, espaces près. Rien n'est écarté
+sans motif enregistré.
+
+| Règle | Motif enregistré | Raison, mesurée sur le corpus du 4 octobre 2026 |
+|---|---|---|
+| Ligne de 1 à 3 chiffres | numéro de page ou de section | pagination du programme PDF ; une année seule sur sa ligne (« 2030 ») reste du texte |
+| Ligne courte, sans ponctuation finale, d'au moins deux mots, répétée 3 fois dans un document | en-tête répété | titre courant du PDF ; les mots isolés par la mise en page (« la », « de ») restent |
+| Même ligne courte dans au moins 3 documents d'une source | ligne répétée dans la source | bloc signature de 16 des 24 billets des Républicains, étiquettes « Communiqué du groupe LFI » |
+| Tout ce qui suit « Découvrez aussi », « Lire aussi » | liens vers d'autres articles | listes d'articles liés en fin de billet |
+| Ligne ouvrant sur un texte d'interface configuré | texte d'interface | bandeau de cookies du site du Parti socialiste |
+| Parenthèse de didascalie, compte rendu de l'Assemblée seulement | didascalie | 403 « (Applaudissements…) », « (« Eh oui ! » sur les bancs…) » : les mots des sténographes, pas de l'orateur |
+| Passage de moins de 40 caractères | trop court | 186 des 671 prises de parole sont des interjections (« Bravo ! », « C'est faux ! ») |
+
+Les lignes d'un PDF sont réunies en paragraphes, y compris par-dessus un saut de page quand
+la phrase continue. Une ligne courte d'un billet est rattachée à la ligne suivante du même
+bloc (intertitres, puces). Un paragraphe de plus de 1 200 caractères est coupé entre deux
+phrases, jamais au milieu. Deux prises de parole séparées dans le compte rendu ne sont
+jamais fusionnées.
+
+Résultat : 1 887 segments pour 230 documents ; 68 documents sans contenu exploitable (60 séances
+faites d'interjections, 7 billets vidéo, 1 bandeau de cookies).
+
 ## Constats sur les données (import du 4 octobre 2026)
 
 Import de la base de la version précédente : 239 documents, 230 conservés après
@@ -61,8 +87,19 @@ dédoublonnage, collectés entre le 18 septembre et le 4 octobre 2026.
 
 - **Bandeau de cookies pris pour un article.** Cinq documents du fil du Parti socialiste
   contiennent le texte du bandeau de consentement (« Nous utilisons des cookies… ») au lieu
-  de l'article. Le dédoublonnage en élimine quatre ; il en reste un. L'extraction de
-  `parti-socialiste.fr` est à revérifier dès que le réseau le permet.
+  de l'article. Le dédoublonnage en élimine quatre ; la segmentation écarte le dernier comme
+  texte d'interface. L'extraction de `parti-socialiste.fr` est à revérifier dès que le
+  réseau le permet : l'article lui-même n'a jamais été collecté.
+- **Billets sans texte.** 7 des 24 billets du fil des Républicains ne contiennent que leur
+  titre, la signature et les liens associés : l'article est une vidéo. Ils restent dans le
+  corpus, marqués « aucun passage exploitable ».
+- **Séances sans prise de position.** Dans 60 séances, la seule intervention du candidat est
+  une interjection (43 pour Gabriel Attal, 17 pour Marine Le Pen).
+- **Questions des journalistes.** Les entretiens publiés sur le site des Républicains
+  contiennent les questions (« Le JDD. … ? ») : ces segments ne sont pas les mots du
+  candidat. À traiter avant l'annotation (étiquette d'orateur ou relecture).
+- **Graphique du programme PDF.** Les valeurs d'un graphique (« 2,5 3,3 7 18 31… »)
+  subsistent comme texte dans un segment : le PDF n'a pas de couche qui les distingue.
 - **Zéro intervention pour Olivier Faure et Bruno Retailleau** dans le compte rendu de la
   XVIIe législature, déjà le 4 octobre dans la version précédente. Pour Bruno Retailleau,
   c'est attendu (interventions ministérielles terminées, retour au Sénat) ; pour Olivier

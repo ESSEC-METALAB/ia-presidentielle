@@ -9,6 +9,12 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from urllib.parse import urlsplit
 
+from observatoire.adapters.reporting.segmentation_view import (
+    DocumentSegments,
+    SegmentationSummary,
+    document_segments,
+    summarize,
+)
 from observatoire.domain.models import (
     CandidateCorpus,
     CorpusOverview,
@@ -47,6 +53,7 @@ _GAP = 2
 _RADIUS = 4
 _MIN_SEGMENT = 3
 _TICK_EVERY = 4
+_RIGHT_MARGIN = 32  # room for the last month label, centred on the last column
 
 
 @dataclass(frozen=True)
@@ -81,7 +88,7 @@ class CandidateRow:
 
 
 @dataclass(frozen=True)
-class Segment:
+class BarPart:
     path: str
     level_class: str
 
@@ -90,7 +97,7 @@ class Segment:
 class Bar:
     hit_x: int
     hit_y: int
-    segments: tuple[Segment, ...]
+    parts: tuple[BarPart, ...]
     tip: str
 
 
@@ -112,6 +119,7 @@ class Tick:
 @dataclass(frozen=True)
 class Chart:
     width: int
+    plot_right: int
     height: int
     label_width: int
     slot: int
@@ -147,6 +155,7 @@ class DocumentItem:
     mentions_label: str
     excerpt: str
     paragraphs: tuple[str, ...]
+    segmentation: DocumentSegments
 
 
 @dataclass(frozen=True)
@@ -165,6 +174,7 @@ class CorpusPage:
     documents: tuple[DocumentItem, ...]
     candidate_options: tuple[tuple[str, str], ...]
     kind_options: tuple[tuple[str, str], ...]
+    segmentation: SegmentationSummary
 
 
 def build_page(overview: CorpusOverview, chart_months: int) -> CorpusPage:
@@ -186,6 +196,7 @@ def build_page(overview: CorpusOverview, chart_months: int) -> CorpusPage:
         documents=documents,
         candidate_options=tuple((c.candidate.id, c.candidate.name) for c in overview.candidates),
         kind_options=tuple(sorted({(d.kind, d.kind_label) for d in documents})),
+        segmentation=summarize(overview),
     )
 
 
@@ -286,11 +297,12 @@ def _documents(overview: CorpusOverview) -> tuple[DocumentItem, ...]:
     items.sort(key=lambda item: item[0].document.fetched_at, reverse=True)
     items.sort(key=lambda item: item[0].document.published_on or date.min, reverse=True)
     items.sort(key=lambda item: item[0].document.published_on is None)
-    return tuple(_document_item(view, corpus, source) for view, corpus, source in items)
+    names = {c.candidate.id: c.candidate.name for c in overview.candidates}
+    return tuple(_document_item(view, corpus, source, names) for view, corpus, source in items)
 
 
 def _document_item(
-    view: DocumentView, corpus: CandidateCorpus, source: SourceCorpus
+    view: DocumentView, corpus: CandidateCorpus, source: SourceCorpus, names: dict[str, str]
 ) -> DocumentItem:
     document = view.document
     level = int(document.trust_level)
@@ -312,6 +324,7 @@ def _document_item(
         mentions_label=mentions_label,
         excerpt=_excerpt(document.text),
         paragraphs=tuple(line.strip() for line in document.text.splitlines() if line.strip()),
+        segmentation=document_segments(view, names),
     )
 
 
@@ -356,7 +369,8 @@ def build_chart(overview: CorpusOverview, months: int) -> Chart:
     every = _all_documents(overview)
     levels = {int(d.trust_level) for d in every if d.trust_level != TrustLevel.OWN_WORDS}
     return Chart(
-        width=_LABEL_WIDTH + len(window) * _SLOT,
+        width=_LABEL_WIDTH + len(window) * _SLOT + _RIGHT_MARGIN,
+        plot_right=_LABEL_WIDTH + len(window) * _SLOT,
         height=len(rows) * _ROW + _AXIS,
         label_width=_LABEL_WIDTH,
         slot=_SLOT,
@@ -436,21 +450,17 @@ def _bar(
     x = _LABEL_WIDTH + slot * _SLOT + (_SLOT - _BAR) // 2
     own_h = _height(own, y_max)
     other_h = _height(other, y_max)
-    segments: list[Segment] = []
+    parts: list[BarPart] = []
     if own_h:
-        segments.append(
-            Segment(_rect_path(x, baseline - own_h, own_h, rounded=not other_h), "lvl-1")
-        )
+        parts.append(BarPart(_rect_path(x, baseline - own_h, own_h, rounded=not other_h), "lvl-1"))
     if other_h:
         top = baseline - own_h - (_GAP if own_h else 0) - other_h
-        segments.append(Segment(_rect_path(x, top, other_h, rounded=True), "lvl-2"))
+        parts.append(BarPart(_rect_path(x, top, other_h, rounded=True), "lvl-2"))
     total = own + other
     tip = (
         f"{label} : {total} document{'s' if total > 1 else ''} ({own} de niveau 1, {other} autres)"
     )
-    return Bar(
-        hit_x=_LABEL_WIDTH + slot * _SLOT, hit_y=row * _ROW, segments=tuple(segments), tip=tip
-    )
+    return Bar(hit_x=_LABEL_WIDTH + slot * _SLOT, hit_y=row * _ROW, parts=tuple(parts), tip=tip)
 
 
 def _height(count: int, y_max: int) -> int:

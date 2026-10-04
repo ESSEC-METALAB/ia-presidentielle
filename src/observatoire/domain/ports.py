@@ -5,13 +5,14 @@ TODO(step 2): LLMClient, Annotator, ScoreCalculator, ReportRenderer and
 UsageTracker, with the annotation and scoring use cases.
 """
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from datetime import date, datetime
 from typing import Protocol
 
 from observatoire.domain.models import (
     CandidateMention,
     CorpusOverview,
+    DocumentSegmentation,
     ExtractedText,
     RawDocument,
     Source,
@@ -63,3 +64,28 @@ class CandidateMatcher(Protocol):
 
 class CorpusRenderer(Protocol):
     def render(self, overview: CorpusOverview) -> str: ...
+
+
+class Segmenter(Protocol):
+    @property
+    def version(self) -> str:
+        """Changes whenever the rules or their settings change."""
+        ...
+
+    def segment(
+        self, source: Source, documents: Sequence[RawDocument]
+    ) -> list[DocumentSegmentation]:
+        """All documents of one source at once: boilerplate is what repeats across them."""
+        ...
+
+
+class SegmentStore(Protocol):
+    def segmented_versions(self) -> dict[str, str]:
+        """Document content hash -> version of the segmenter that last processed it."""
+        ...
+
+    def replace(self, segmentations: Sequence[DocumentSegmentation]) -> None: ...
+
+
+class SegmentReader(Protocol):
+    def list_segmentations(self) -> list[DocumentSegmentation]: ...

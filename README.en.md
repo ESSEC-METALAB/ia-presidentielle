@@ -145,6 +145,7 @@ observatoire usage           # tokens used and estimated cost
 | Command | Role |
 |---|---|
 | `observatoire collect` | Fetches content, deduplicates it, stores it with its provenance |
+| `observatoire segment` | Splits documents into segments; every passage set aside keeps its reason |
 | `observatoire annotate` | Segments and annotates by dimension, position and sentiment |
 | `observatoire score` | Computes the indicator per candidate and per dimension |
 | `observatoire report` | Produces the Markdown or HTML report |

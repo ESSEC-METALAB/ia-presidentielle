@@ -1,10 +1,17 @@
 """Fakes and builders shared by the tests. Every person and text here is fictional."""
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
-from observatoire.domain.models import Candidate, RawDocument, Source, SourceOutcome, TrustLevel
+from observatoire.domain.models import (
+    Candidate,
+    DocumentSegmentation,
+    RawDocument,
+    Source,
+    SourceOutcome,
+    TrustLevel,
+)
 from observatoire.services.dedup import content_hash
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -25,11 +32,23 @@ class FrozenClock:
 
 
 class InMemoryStore:
-    """DocumentRepository, CorpusReader, SourceRunLog and SourceRunHistory in memory."""
+    """Every storage port in memory: documents, run outcomes, segmentations."""
 
     def __init__(self, documents: Iterable[RawDocument] = ()) -> None:
         self.documents = {d.content_hash: d for d in documents}
         self.outcomes: list[SourceOutcome] = []
+        self.segmentations: dict[str, DocumentSegmentation] = {}
+        self.replace_calls = 0
+
+    def segmented_versions(self) -> dict[str, str]:
+        return {h: s.segmenter_version for h, s in self.segmentations.items()}
+
+    def replace(self, segmentations: Sequence[DocumentSegmentation]) -> None:
+        self.replace_calls += 1
+        self.segmentations.update({s.document_hash: s for s in segmentations})
+
+    def list_segmentations(self) -> list[DocumentSegmentation]:
+        return list(self.segmentations.values())
 
     def exists(self, content_hash: str) -> bool:
         return content_hash in self.documents

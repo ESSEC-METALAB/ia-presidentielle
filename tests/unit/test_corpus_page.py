@@ -5,8 +5,10 @@ from datetime import date
 from observatoire.adapters.reporting.corpus_html_renderer import CorpusHtmlRenderer
 from observatoire.adapters.reporting.corpus_page import build_chart, format_count, safe_href
 from observatoire.application.inspect_corpus import InspectCorpus
+from observatoire.application.segment_documents import SegmentDocuments
 from observatoire.domain.models import CorpusOverview, RawDocument, TrustLevel
 from observatoire.services.candidate_matcher import AliasMatcher
+from observatoire.services.segmentation import ParagraphSegmenter, SegmentationSettings
 from support import T0, FrozenClock, InMemoryStore, candidate, document, source
 
 CAMILLE = candidate()
@@ -68,3 +70,43 @@ def test_the_chart_scale_is_shared_and_out_of_window_documents_are_reported() ->
     assert (chart.y_max, chart.before_window, chart.undated) == (2, 1, 1)
     assert chart.last_month == "oct. 2026"
     assert overview.generated_at == T0
+
+
+def _segmented_overview(*documents_: RawDocument) -> CorpusOverview:
+    store = InMemoryStore(documents_)
+    settings = SegmentationSettings(
+        min_chars=40,
+        max_chars=400,
+        repeated_line_max_chars=120,
+        repeated_in_document_min=3,
+        repeated_in_document_min_words=2,
+        repeated_in_source_min_documents=3,
+    )
+    matcher = AliasMatcher([CAMILLE, DOMINIQUE])
+    SegmentDocuments(store, store, ParagraphSegmenter(settings), matcher).run([source()])
+    use_case = InspectCorpus(store, store, matcher, FrozenClock(), segments=store)
+    return use_case.build([CAMILLE, DOMINIQUE], [source()])
+
+
+def test_each_document_shows_its_segments_and_what_was_set_aside() -> None:
+    text = "Camille Exemple répond à Dominique Témoin sur le plan numérique.\nBravo !"
+
+    html = CorpusHtmlRenderer().render(_segmented_overview(document(text)))
+
+    assert "1 segment<" in html
+    assert "cite aussi Dominique Témoin" in html
+    assert "Passage trop court pour porter une position" in html
+
+
+def test_a_document_with_nothing_usable_says_so() -> None:
+    html = CorpusHtmlRenderer().render(_segmented_overview(document("Merci !")))
+
+    assert "aucun passage exploitable" in html
+    assert 'data-segmentation="empty"' in html
+
+
+def test_an_unsegmented_corpus_tells_how_to_segment_it() -> None:
+    html = CorpusHtmlRenderer().render(_overview(document("Pas encore découpé.")))
+
+    assert "observatoire segment" in html
+    assert 'data-segmentation="pending"' in html

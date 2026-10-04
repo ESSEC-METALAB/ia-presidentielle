@@ -28,12 +28,18 @@ recevant ses dépendances par son constructeur. Détail des ports et des adapter
 |---|---|---|
 | `observatoire collect` | `CollectDaily` | `RssReader`, `HtmlPageReader`, `PdfReader`, `AssembleeNationaleReader`, tous derrière `PoliteHttpClient` (robots.txt, délai par site, agent identifié) |
 | `observatoire import-legacy` | `CollectDaily` | `LegacyPipelineReader` : la base de la version précédente (branche `daily`) |
+| `observatoire segment` | `SegmentDocuments` | `ParagraphSegmenter` (règles de `config/segmentation.yaml`), `AliasMatcher`, `SqliteRepository` |
 | `observatoire corpus` | `InspectCorpus` | `SqliteRepository`, `AliasMatcher`, `CorpusHtmlRenderer` |
 
 `collect` et `import-legacy` exécutent le **même** cas d'usage avec des lecteurs
 différents : même clé de dédoublonnage, même stockage, même vue. Ajouter un type de source,
 c'est ajouter un lecteur dans `adapters/sources/` et l'enregistrer dans `cli.py`, sans
 toucher à `application/`.
+
+La segmentation ne modifie jamais un document : elle enregistre, pour chacun, ses segments
+(avec leurs plages de caractères dans le texte collecté) et ses passages écartés (avec leur
+motif). La version du segmenteur est l'empreinte de ses règles et de ses réglages : en
+changer redécoupe le corpus au prochain `observatoire segment`, sinon rien n'est refait.
 
 Annotation, scores et rapport restent à écrire : ils attendent les décisions de
 [`methodology.md`](methodology.md).

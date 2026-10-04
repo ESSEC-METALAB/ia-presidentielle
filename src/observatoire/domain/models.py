@@ -1,12 +1,11 @@
 """Domain entities, as frozen Pydantic v2 models.
 
-Collection and corpus inspection only, for now. TODO(step 2): Segment,
-DimensionAnnotation, DimensionScore and RunReport, once docs/methodology.md
-settles what a score is.
+Collection, segmentation and corpus inspection. TODO(step 2): DimensionAnnotation,
+DimensionScore and RunReport, once docs/methodology.md settles what a score is.
 """
 
 from datetime import date
-from enum import IntEnum
+from enum import IntEnum, StrEnum
 from typing import Literal
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
@@ -100,11 +99,80 @@ class CandidateMention(_Frozen):
     count: int = Field(ge=1)
 
 
+# A character range [start, end) in a RawDocument's text.
+Span = tuple[int, int]
+
+
+class ExclusionReason(StrEnum):
+    """Why a passage of a document is not part of any segment. Every exclusion is kept."""
+
+    PAGE_NUMBER = "page_number"
+    REPEATED_IN_DOCUMENT = "repeated_in_document"
+    REPEATED_IN_SOURCE = "repeated_in_source"
+    RELATED_LINKS = "related_links"
+    INTERFACE_TEXT = "interface_text"
+    STAGE_DIRECTION = "stage_direction"
+    TOO_SHORT = "too_short"
+
+
+class ExcludedPassage(_Frozen):
+    span: Span
+    reason: ExclusionReason
+
+
+class Segment(_Frozen):
+    """A passage small enough to be read, and later annotated, on its own.
+
+    `text` is the document's own text over `spans`, with runs of whitespace collapsed
+    to one space and nothing else changed, so every segment points at its exact source
+    passage.
+    """
+
+    document_hash: str
+    index: int = Field(ge=0)
+    text: str = Field(min_length=1)
+    spans: tuple[Span, ...] = Field(min_length=1)
+    mentions: tuple[CandidateMention, ...] = ()
+
+    @property
+    def id(self) -> str:
+        """Plain property, not a computed field: models round-trip through JSON."""
+        return f"{self.document_hash[:16]}-{self.index:03d}"
+
+
+class DocumentSegmentation(_Frozen):
+    document_hash: str
+    segmenter_version: str
+    segments: tuple[Segment, ...]
+    excluded: tuple[ExcludedPassage, ...]
+
+    @property
+    def is_empty(self) -> bool:
+        """Nothing usable remains: interface text only, interjections only..."""
+        return not self.segments
+
+
+class SourceSegmentation(_Frozen):
+    source_id: str
+    resegmented: bool  # False when every document was already segmented by this version
+    documents: int = Field(ge=0)
+    empty_documents: int = Field(ge=0)
+    segments: int = Field(ge=0)
+    excluded: dict[ExclusionReason, int]
+
+
+class SegmentationReport(_Frozen):
+    segmenter_version: str
+    outcomes: tuple[SourceSegmentation, ...]
+    unconfigured_documents: int = Field(ge=0)
+
+
 class DocumentView(_Frozen):
     document: RawDocument
     # How often the text names its own candidate. Zero is common on party feeds,
     # which carry the whole party's news: attribution by source is a default.
     mentions_of_candidate: int = Field(ge=0)
+    segmentation: DocumentSegmentation | None = None
 
 
 class SourceCorpus(_Frozen):

@@ -1,0 +1,60 @@
+# Light segmentation: deterministic rules, no model (services/segmentation.py).
+# Any change here changes the segmenter version: `observatoire segment` then segments
+# every document again. Documents themselves are never modified.
+#
+# Every value below was set by reading the corpus collected on 2026-10-04, not by guess.
+
+# Shorter than this, a passage carries no position. Measured on the Assemblée nationale
+# record: 186 of 671 turns are under 40 characters, nearly all interjections ("Bravo !",
+# "C'est faux !"); from 40 characters up, turns start to state something.
+min_chars: 40
+
+# Longer paragraphs are cut between sentences, never inside one.
+max_chars: 1200
+
+# Sources whose line breaks are page layout, not paragraphs: lines are joined back
+# into one paragraph per block between blank lines.
+wrapped_kinds: [pdf]
+
+# Page furniture: a short unpunctuated line that recurs is a header or a signature,
+# not text. Repeated in one document: running header (the PDF's page title). Repeated
+# in several documents of one source: signatures and labels (16 of 24 Les Républicains
+# posts end with the same five-line signature block).
+repeated_line_max_chars: 120
+repeated_in_document_min: 3
+# A repeated line must hold at least this many words to count within one document: the
+# PDF's wrapping leaves "la", "de" or "et" alone on a line dozens of times, and those
+# are sentence fragments, not headers.
+repeated_in_document_min_words: 2
+repeated_in_source_min_documents: 3
+
+# Everything from such a line to the end of the document is a list of other articles.
+section_cut_markers:
+  - Découvrez aussi
+  - Lire aussi
+  - À lire aussi
+
+# Lines opening with these words are site interface, not text. Five Parti socialiste
+# documents of the previous version hold the cookie-consent banner instead of the article.
+interface_line_prefixes:
+  - Nous utilisons des cookies
+  - L’accès ou le stockage technique
+  - L'accès ou le stockage technique
+  - Le stockage ou l’accès technique
+  - Le stockage ou l'accès technique
+
+# Stage directions of the parliamentary record are the stenographers' words, not the
+# speaker's: about 380 in the corpus. Acronyms in parentheses, "(UE)", are the speaker's
+# and stay.
+stage_direction_patterns:
+  assemblee_nationale:
+    # Reactions: (Applaudissements…), (Vives exclamations…), (Mêmes mouvements.)
+    - '(?i)\(\s*(?:vifs? |vives? |nouveaux |nouvelles |mêmes |quelques |plusieurs |les )?(?:applaudissements?|exclamations|protestations|rires|sourires|murmures|mouvements|huées|brouhaha|interruptions?|bruits?)\b[^()]*\)'
+    # Anything describing the benches, including heckles the record quotes:
+    # (« Eh oui ! » sur les bancs du groupe EPR.)
+    - '\([^()]*\bbancs\b[^()]*\)'
+    # What named members or groups do: (M. X applaudit.), (Les députés du groupe RN se lèvent.)
+    - '\((?:M\.|Mme|MM\.|Mmes|Les députés|Plusieurs députés|L’orat|L''orat)[^()]*\)'
+
+# A full stop after these is not the end of a sentence.
+abbreviations: [M., Mme., MM., Mmes., Dr., Pr., art., etc., cf., p., n°., vol., av., env., ex.]

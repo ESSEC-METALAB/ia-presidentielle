@@ -1,5 +1,6 @@
 """SQLite storage and config loading."""
 
+import shutil
 from datetime import timedelta
 from pathlib import Path
 
@@ -10,7 +11,14 @@ from observatoire.adapters.storage.sqlite_repository import SqliteRepository
 from observatoire.cli import _live_readers
 from observatoire.config.registry import CrawlerSettings, load_registry
 from observatoire.domain.errors import ConfigurationError
-from observatoire.domain.models import SourceOutcome
+from observatoire.domain.models import (
+    CandidateMention,
+    DocumentSegmentation,
+    ExcludedPassage,
+    ExclusionReason,
+    Segment,
+    SourceOutcome,
+)
 from support import T0, FrozenClock, document
 
 CONFIG = Path(__file__).resolve().parents[2] / "config"
@@ -36,6 +44,36 @@ def test_the_latest_outcome_per_source_wins(tmp_path: Path) -> None:
         ))  # fmt: skip
 
     assert repository.latest_by_source()["s"].run_id == "run-24"
+
+
+def _segmentation(text: str, version: str) -> DocumentSegmentation:
+    owner = document(text)
+    return DocumentSegmentation(
+        document_hash=owner.content_hash,
+        segmenter_version=version,
+        segments=(
+            Segment(
+                document_hash=owner.content_hash,
+                index=0,
+                text=text[:20],
+                spans=((0, 20),),
+                mentions=(CandidateMention(candidate_id="camille-exemple", count=1),),
+            ),
+        ),
+        excluded=(ExcludedPassage(span=(21, 30), reason=ExclusionReason.TOO_SHORT),),
+    )
+
+
+def test_a_segmentation_round_trips_and_replacing_it_leaves_no_stale_rows(tmp_path: Path) -> None:
+    repository = SqliteRepository(tmp_path / "corpus.db")
+    text = "Camille Exemple parle. Un ajout fictif."
+
+    repository.replace([_segmentation(text, "v1")])
+    newer = _segmentation(text, "v2")
+    repository.replace([newer])
+
+    assert repository.list_segmentations() == [newer]
+    assert repository.segmented_versions() == {newer.document_hash: "v2"}
 
 
 def test_the_shipped_configuration_is_valid() -> None:
@@ -69,6 +107,7 @@ def _write_config(directory: Path, sources: str) -> Path:
         "          timeout_seconds: 5, min_text_chars: 10, max_redirects: 2}\n" + sources,
         encoding="utf-8",
     )
+    shutil.copy(CONFIG / "segmentation.yaml", directory)
     return directory
 
 

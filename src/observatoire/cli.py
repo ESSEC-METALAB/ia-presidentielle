@@ -1,7 +1,7 @@
 """Composition root: the only module that instantiates concrete adapters and wires them.
 
-Implemented: collect, import-legacy, corpus. TODO(step 5): annotate, score, report,
-run-all and usage, with the analysis use cases.
+Implemented: collect, import-legacy, segment, corpus. TODO(step 5): annotate, score,
+report, run-all and usage, with the analysis use cases.
 """
 
 import argparse
@@ -25,14 +25,16 @@ from observatoire.adapters.storage.sqlite_repository import SqliteRepository
 from observatoire.adapters.system_clock import SystemClock
 from observatoire.application.collect_daily import CollectDaily
 from observatoire.application.inspect_corpus import InspectCorpus
+from observatoire.application.segment_documents import SegmentDocuments
 from observatoire.config.registry import CrawlerSettings, Registry, load_registry
 from observatoire.config.settings import Settings
 from observatoire.domain.errors import ConfigurationError
-from observatoire.domain.models import CollectionReport, Source
+from observatoire.domain.models import CollectionReport, SegmentationReport, Source
 from observatoire.domain.ports import Clock, SourceReader
 from observatoire.observability.logging import configure_logging
 from observatoire.services.candidate_matcher import AliasMatcher
 from observatoire.services.robots_policy import RobotsPolicy
+from observatoire.services.segmentation import ParagraphSegmenter
 
 Handler = Callable[[argparse.Namespace, Settings, Registry], int]
 
@@ -65,6 +67,13 @@ def _parser() -> argparse.ArgumentParser:
     )
     legacy.add_argument("--database", type=Path, default=Path("data/raw/legacy-daily.db"))
     legacy.set_defaults(handler=_import_legacy)
+    segment = commands.add_parser("segment", help="découpe les documents collectés en passages")
+    segment.add_argument(
+        "--rebuild",
+        action="store_true",
+        help="tout redécouper, même si les règles n'ont pas changé",
+    )
+    segment.set_defaults(handler=_segment)
     corpus = commands.add_parser("corpus", help="écrit la vue HTML du corpus brut")
     corpus.add_argument("--out", type=Path, default=Path("data/reports/corpus.html"))
     corpus.add_argument(
@@ -107,10 +116,21 @@ def _import_legacy(args: argparse.Namespace, settings: Settings, registry: Regis
     return 0
 
 
+def _segment(args: argparse.Namespace, settings: Settings, registry: Registry) -> int:
+    segmenter = ParagraphSegmenter(registry.segmentation)
+    matcher = AliasMatcher(registry.candidates)
+    with closing(SqliteRepository(settings.database_path)) as repository:
+        use_case = SegmentDocuments(repository, repository, segmenter, matcher)
+        report = use_case.run(registry.sources, rebuild=args.rebuild)
+    _print_segmentation(report)
+    return 0
+
+
 def _corpus(args: argparse.Namespace, settings: Settings, registry: Registry) -> int:
     clock = SystemClock()
+    matcher = AliasMatcher(registry.candidates)
     with closing(SqliteRepository(settings.database_path)) as repository:
-        use_case = InspectCorpus(repository, repository, AliasMatcher(registry.candidates), clock)
+        use_case = InspectCorpus(repository, repository, matcher, clock, segments=repository)
         overview = use_case.build(registry.candidates, registry.sources)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     renderer = CorpusHtmlRenderer(standalone=not args.fragment)
@@ -156,3 +176,23 @@ def _print_report(report: CollectionReport) -> None:
         print(f"  {status:6} {outcome.source_id:42} {counts}")
         if outcome.error:
             print(f"         {outcome.error}")
+
+
+def _print_segmentation(report: SegmentationReport) -> None:
+    changed = [o for o in report.outcomes if o.resegmented]
+    segments = sum(o.segments for o in changed)
+    version = report.segmenter_version
+    print(f"Segmenteur {version} : {len(changed)} source(s) découpée(s), {segments} segments")
+    for outcome in report.outcomes:
+        if not outcome.resegmented:
+            print(f"  {outcome.source_id:42} inchangée")
+            continue
+        counts = f"{outcome.documents} documents, {outcome.segments} segments"
+        print(
+            f"  {outcome.source_id:42} {counts}, {outcome.empty_documents} sans contenu exploitable"
+        )
+        reasons = ", ".join(f"{reason.value} {n}" for reason, n in sorted(outcome.excluded.items()))
+        if reasons:
+            print(f"  {'':42} exclus : {reasons}")
+    if report.unconfigured_documents:
+        print(f"  {report.unconfigured_documents} document(s) d'une source non configurée, ignorés")

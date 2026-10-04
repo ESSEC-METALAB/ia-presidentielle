@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from observatoire.domain.errors import ConfigurationError
 from observatoire.domain.models import Candidate, Source
+from observatoire.services.segmentation import SegmentationSettings
 
 _Model = TypeVar("_Model", bound=BaseModel)
 
@@ -32,6 +33,7 @@ class Registry(BaseModel):
     candidates: tuple[Candidate, ...]
     sources: tuple[Source, ...]
     crawler: CrawlerSettings
+    segmentation: SegmentationSettings
 
 
 class _CandidatesFile(BaseModel):
@@ -57,6 +59,7 @@ def load_registry(config_dir: Path) -> Registry:
         candidates=tuple(candidates),
         sources=tuple(sources_file.sources),
         crawler=sources_file.crawler,
+        segmentation=_load(config_dir / "segmentation.yaml", SegmentationSettings),
     )
 
 

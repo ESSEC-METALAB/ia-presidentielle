@@ -193,6 +193,20 @@ details.data .table-scroll { margin-top: 10px; max-height: 22rem; }
 }
 .chip.lvl { font-weight: 500; }
 .chip.no { box-shadow: inset 0 0 0 1px var(--rule); background: transparent; }
+.chip.seg-empty, .chip.seg-pending { background: transparent; box-shadow: inset 0 0 0 1px var(--ink-3); }
+section h3 { font-size: .95rem; margin-top: 4px; }
+.segments { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 10px; max-width: 74ch; }
+.segments li {
+  display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); gap: 2px 10px; align-items: baseline;
+  padding: 10px 12px; background: var(--bg);
+}
+.segments p { font-family: var(--font-read); font-size: 1rem; line-height: 1.55; overflow-wrap: anywhere; }
+.segments .chip { grid-column: 2; width: max-content; max-width: 100%; white-space: normal; }
+.seg-number { font-size: .78rem; color: var(--ink-3); text-align: right; }
+.excluded { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: .85rem; max-width: 74ch; }
+.excluded li { display: grid; gap: 2px; padding: 6px 10px; border: 1px dashed var(--rule); }
+.excluded .why { font-size: .74rem; color: var(--ink-3); letter-spacing: .02em; }
+.excluded q { color: var(--ink-2); quotes: none; overflow-wrap: anywhere; }
 .excerpt { font-family: var(--font-read); font-size: 1rem; color: var(--ink-2); max-width: 70ch; }
 .doc details summary { cursor: pointer; font-size: .85rem; color: var(--accent); width: max-content; }
 .fulltext {
@@ -226,6 +240,8 @@ footer { font-size: .8rem; color: var(--ink-3); border-top: 1px solid var(--rule
     <div><dt>Candidats suivis</dt><dd>{{ page.monitored }} / {{ page.candidates_total }}</dd></div>
     <div><dt>Sources configurées</dt><dd>{{ page.sources_total }}</dd></div>
     <div><dt>Sources en échec</dt><dd>{{ page.sources_failed }}</dd></div>
+    <div><dt>Segments</dt><dd>{{ page.segmentation.segments }}</dd></div>
+    <div><dt>Sans contenu exploitable</dt><dd>{{ page.segmentation.empty_documents }}</dd></div>
     <div><dt>Généré le</dt><dd style="font-size:1rem;padding-top:.3rem">{{ page.generated }}</dd></div>
   </dl>
 </header>
@@ -293,15 +309,15 @@ footer { font-size: .8rem; color: var(--ink-3); border-top: 1px solid var(--rule
         <g>
           <text class="row-label" x="0" y="{{ row.label_y }}">{{ row.name }}</text>
           {% if row.monitored %}
-          <line class="baseline" x1="{{ page.chart.label_width }}" x2="{{ page.chart.width }}" y1="{{ row.baseline }}.5" y2="{{ row.baseline }}.5"></line>
+          <line class="baseline" x1="{{ page.chart.label_width }}" x2="{{ page.chart.plot_right }}" y1="{{ row.baseline }}.5" y2="{{ row.baseline }}.5"></line>
           {% for bar in row.bars %}
           <g class="bar" data-tip="{{ bar.tip }}">
-            {% for s in bar.segments %}<path class="{{ s.level_class }}" d="{{ s.path }}"></path>{% endfor %}
+            {% for part in bar.parts %}<path class="{{ part.level_class }}" d="{{ part.path }}"></path>{% endfor %}
             <rect class="hit" x="{{ bar.hit_x }}" y="{{ bar.hit_y }}" width="{{ page.chart.slot }}" height="{{ page.chart.row }}"><title>{{ bar.tip }}</title></rect>
           </g>
           {% endfor %}
           {% else %}
-          <rect class="unmonitored-band" x="{{ page.chart.label_width }}" y="{{ row.baseline - 40 }}" width="{{ page.chart.width - page.chart.label_width }}" height="40"></rect>
+          <rect class="unmonitored-band" x="{{ page.chart.label_width }}" y="{{ row.baseline - 40 }}" width="{{ page.chart.plot_right - page.chart.label_width }}" height="40"></rect>
           <rect class="unmonitored-chip" x="{{ page.chart.label_width + 6 }}" y="{{ row.baseline - 28 }}" width="226" height="16" rx="2"></rect>
           <text class="unmonitored-label" x="{{ page.chart.label_width + 12 }}" y="{{ row.baseline - 16 }}">Non suivi : aucune source configurée</text>
           {% endif %}
@@ -330,6 +346,58 @@ footer { font-size: .8rem; color: var(--ink-3); border-top: 1px solid var(--rule
       </div>
     </details>
   </figure>
+</section>
+
+<section aria-labelledby="segmentation-title">
+  <div class="section-head">
+    <h2 id="segmentation-title">Découpage en segments</h2>
+    <p class="prose">Chaque document est découpé en passages lisibles seuls, par des règles fixes et sans modèle de langage : <span class="mono">config/segmentation.yaml</span>. Un segment reproduit le texte collecté, espaces près. Ce qui est écarté est conservé avec son motif, ci-dessous et dans chaque document.</p>
+  </div>
+  {% if page.segmentation.version %}
+  <div class="table-scroll">
+    <table>
+      <thead><tr>
+        <th>Candidat</th><th class="n">Documents</th><th class="n">Avec segments</th>
+        <th class="n">Sans contenu exploitable</th><th class="n">Segments</th>
+        <th class="n">Longueur médiane</th><th class="n">Citant un autre candidat</th>
+      </tr></thead>
+      <tbody>
+      {% for c in page.segmentation.candidates %}
+        {% if c.monitored %}
+        <tr>
+          <td><b>{{ c.name }}</b></td>
+          <td class="n">{{ c.documents }}</td>
+          <td class="n">{{ c.segmented }}</td>
+          <td class="n">{{ c.empty }}</td>
+          <td class="n">{{ c.segments }}</td>
+          <td class="n">{{ c.median_chars }} car.</td>
+          <td class="n">{{ c.naming_others }}</td>
+        </tr>
+        {% else %}
+        <tr class="unmonitored"><td><b>{{ c.name }}</b></td><td class="gap" colspan="6">Non suivi</td></tr>
+        {% endif %}
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if page.segmentation.pending_documents %}
+  <p class="prose">{{ page.segmentation.pending_documents }} document(s) ne sont pas encore découpés : lancer <span class="mono">observatoire segment</span>.</p>
+  {% endif %}
+  <h3>Passages écartés, par motif</h3>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Motif</th><th class="n">Passages</th><th class="n">Caractères</th></tr></thead>
+      <tbody>
+      {% for row in page.segmentation.exclusions %}
+        <tr><td>{{ row.label }}</td><td class="n">{{ row.passages }}</td><td class="n">{{ row.characters }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="prose muted">Règles <span class="mono">{{ page.segmentation.version }}</span>. Tout changement de règle ou de réglage change cette version et redécoupe le corpus.</p>
+  {% else %}
+  <p class="none-configured">Le corpus n'est pas encore découpé : lancer <span class="mono">observatoire segment</span>.</p>
+  {% endif %}
 </section>
 
 <section aria-labelledby="sources-title">
@@ -391,6 +459,14 @@ footer { font-size: .8rem; color: var(--ink-3); border-top: 1px solid var(--rule
         <option value="no">Ne le citent pas</option>
       </select>
     </label>
+    <label>Découpage
+      <select id="f-segmentation">
+        <option value="">Tous</option>
+        <option value="segmented">Avec segments</option>
+        <option value="empty">Sans contenu exploitable</option>
+        <option value="pending">Non découpés</option>
+      </select>
+    </label>
     <label class="grow">Rechercher dans les textes
       <input id="f-query" type="search" placeholder="ex. intelligence artificielle, souveraineté" autocomplete="off">
     </label>
@@ -398,13 +474,14 @@ footer { font-size: .8rem; color: var(--ink-3); border-top: 1px solid var(--rule
   <p class="count" id="count" aria-live="polite">{{ page.documents|length }} documents</p>
   <div class="docs">
   {% for d in page.documents %}
-    <article class="doc" data-candidate="{{ d.candidate_id }}" data-kind="{{ d.kind }}" data-level="{{ d.level }}" data-mentions="{{ d.mentions }}">
+    <article class="doc" data-candidate="{{ d.candidate_id }}" data-kind="{{ d.kind }}" data-level="{{ d.level }}" data-mentions="{{ d.mentions }}" data-segmentation="{{ d.segmentation.status }}">
       <h3>{% if d.url %}<a href="{{ d.url }}" rel="noopener" target="_blank">{{ d.title }}</a>{% else %}{{ d.title }}{% endif %}</h3>
       <div class="meta">
         <b>{{ d.candidate_name }}</b>
         <span>{{ d.source_label }}</span>
         <span class="chip lvl">Niveau {{ d.level }} · {{ d.level_label }}</span>
         {% if d.mentions != "na" %}<span class="chip {{ d.mentions }}">{{ d.mentions_label }}</span>{% endif %}
+        <span class="chip seg-{{ d.segmentation.status }}">{{ d.segmentation.label }}</span>
       </div>
       <div class="meta">
         <span>Publié : <span class="num">{{ d.published }}</span></span>
@@ -416,6 +493,26 @@ footer { font-size: .8rem; color: var(--ink-3); border-top: 1px solid var(--rule
         <summary>Texte intégral</summary>
         <div class="fulltext">{% for p in d.paragraphs %}<p>{{ p }}</p>{% endfor %}</div>
       </details>
+      {% if d.segmentation.segments %}
+      <details>
+        <summary>Segments ({{ d.segmentation.segments|length }})</summary>
+        <ol class="segments">
+        {% for s in d.segmentation.segments %}
+          <li><span class="seg-number num">{{ s.number }}</span><p>{{ s.text }}</p>{% if s.others %}<span class="chip">cite aussi {{ s.others }}</span>{% endif %}</li>
+        {% endfor %}
+        </ol>
+      </details>
+      {% endif %}
+      {% if d.segmentation.excluded %}
+      <details>
+        <summary>Passages écartés ({{ d.segmentation.excluded|length }})</summary>
+        <ul class="excluded">
+        {% for e in d.segmentation.excluded %}
+          <li><span class="why">{{ e.label }}</span><q>{{ e.excerpt }}</q></li>
+        {% endfor %}
+        </ul>
+      </details>
+      {% endif %}
     </article>
   {% endfor %}
   </div>
@@ -450,14 +547,14 @@ footer { font-size: .8rem; color: var(--ink-3); border-top: 1px solid var(--rule
 
   // Document filters. Search ignores case and accents, so "melenchon" finds "Mélenchon".
   var docs = Array.prototype.slice.call(document.querySelectorAll(".doc"));
-  var fields = ["f-candidate", "f-kind", "f-level", "f-mentions", "f-query"].map(function (id) {
+  var fields = ["f-candidate", "f-kind", "f-level", "f-mentions", "f-query", "f-segmentation"].map(function (id) {
     return document.getElementById(id);
   });
   var count = document.getElementById("count");
   var form = document.getElementById("filters");
   var haystacks = new Map();
   function fold(text) {
-    return text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+    return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   }
   function haystack(doc) {
     if (!haystacks.has(doc)) { haystacks.set(doc, fold(doc.textContent)); }
@@ -465,12 +562,13 @@ footer { font-size: .8rem; color: var(--ink-3); border-top: 1px solid var(--rule
   }
   function apply() {
     var candidate = fields[0].value, kind = fields[1].value, level = fields[2].value;
-    var mentions = fields[3].value, query = fold(fields[4].value.trim());
+    var mentions = fields[3].value, query = fold(fields[4].value.trim()), split = fields[5].value;
     var shown = 0;
     docs.forEach(function (doc) {
       var d = doc.dataset;
       var keep = (!candidate || d.candidate === candidate) && (!kind || d.kind === kind) &&
         (!level || d.level === level) && (!mentions || d.mentions === mentions) &&
+        (!split || d.segmentation === split) &&
         (!query || haystack(doc).indexOf(query) !== -1);
       doc.hidden = !keep;
       if (keep) { shown += 1; }

@@ -145,6 +145,7 @@ observatoire usage           # tokens consommés et coût estimé
 | Commande | Rôle |
 |---|---|
 | `observatoire collect` | Récupère les contenus, dédoublonne, stocke avec provenance |
+| `observatoire segment` | Découpe les documents en segments ; chaque passage écarté garde son motif |
 | `observatoire annotate` | Segmente et annote par dimension, position, sentiment |
 | `observatoire score` | Calcule l'indicateur par candidat et par dimension |
 | `observatoire report` | Produit le rapport Markdown ou HTML |

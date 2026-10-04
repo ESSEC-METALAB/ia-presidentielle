@@ -4,6 +4,7 @@ Fictional roster and texts; no network.
 """
 
 import json
+import shutil
 import sqlite3
 from pathlib import Path
 
@@ -16,6 +17,7 @@ candidates:
   - {id: camille-exemple, name: Camille Exemple, party: Parti Exemple, aliases: [Camille Exemple]}
   - {id: dominique-temoin, name: Dominique Témoin, party: Parti Témoin}
 """
+REPOSITORY = Path(__file__).resolve().parents[2]
 SOURCES = """
 crawler: {user_agent: "Test/1.0 (+https://example.test)", min_delay_seconds: 0,
           timeout_seconds: 5, min_text_chars: 10, max_redirects: 2}
@@ -31,6 +33,7 @@ def workspace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     config.mkdir()
     (config / "candidates.yaml").write_text(CANDIDATES, encoding="utf-8")
     (config / "sources.yaml").write_text(SOURCES, encoding="utf-8")
+    shutil.copy(REPOSITORY / "config" / "segmentation.yaml", config)
     monkeypatch.setenv("CONFIG_DIR", str(config))
     monkeypatch.setenv("DATABASE_PATH", str(tmp_path / "corpus.db"))
     monkeypatch.chdir(tmp_path)  # no stray .env from the repository

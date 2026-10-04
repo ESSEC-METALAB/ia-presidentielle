@@ -9,7 +9,7 @@ UV ?= uv
 RUN ?= $(UV) run --extra dev
 DATA_DIRS := data/raw data/processed data/reports
 
-.PHONY: help install install-pip format lint typecheck test check demo collect legacy-db import-legacy corpus clean
+.PHONY: help install install-pip format lint typecheck test check demo collect legacy-db import-legacy segment corpus clean
 
 help: ## List the targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) \
@@ -55,6 +55,9 @@ legacy-db: ## Copy the previous version's database from branch `daily` to data/r
 
 import-legacy: legacy-db ## Import what the previous version collected, through the same use case
 	$(RUN) observatoire import-legacy --database data/raw/legacy-daily.db
+
+segment: ## Split stored documents into segments (rules in config/segmentation.yaml)
+	$(RUN) observatoire segment
 
 corpus: ## Write the raw-corpus page to data/reports/corpus.html
 	$(RUN) observatoire corpus --out data/reports/corpus.html
