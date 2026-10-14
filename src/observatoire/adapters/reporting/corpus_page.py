@@ -16,6 +16,8 @@ from observatoire.adapters.reporting.segmentation_view import (
     summarize,
 )
 from observatoire.domain.models import (
+    Candidacy,
+    CandidacyStatus,
     CandidateCorpus,
     CorpusOverview,
     DocumentView,
@@ -79,6 +81,10 @@ class CandidateRow:
     name: str
     party: str
     monitored: bool
+    candidacy: str  # "Déclaré le 17 sept. 2026", "Ne se présente plus", "" when unknown
+    candidacy_status: str
+    candidacy_note: str
+    candidacy_sources: tuple[str, ...]
     documents: int
     characters: str
     own_words: int
@@ -242,6 +248,16 @@ def _candidate_row(corpus: CandidateCorpus) -> CandidateRow:
         name=corpus.candidate.name,
         party=corpus.candidate.party,
         monitored=corpus.monitored,
+        candidacy=_candidacy_label(corpus.candidate.candidacy),
+        candidacy_status=corpus.candidate.candidacy.status if corpus.candidate.candidacy else "",
+        candidacy_note=(corpus.candidate.candidacy.note or "")
+        if corpus.candidate.candidacy
+        else "",
+        candidacy_sources=tuple(
+            href
+            for url in (corpus.candidate.candidacy.sources if corpus.candidate.candidacy else ())
+            if (href := safe_href(url))
+        ),
         documents=len(views),
         characters=format_count(sum(len(v.document.text) for v in views)),
         own_words=sum(1 for v in views if v.document.trust_level == TrustLevel.OWN_WORDS),
@@ -249,6 +265,20 @@ def _candidate_row(corpus: CandidateCorpus) -> CandidateRow:
         sources=sources,
         failed=sum(1 for s in sources if s.status == "failed"),
     )
+
+
+_CANDIDACY_LABELS = {
+    CandidacyStatus.DECLARED: "Candidature déclarée",
+    CandidacyStatus.DESIGNATED: "Désigné par son parti",
+    CandidacyStatus.WITHDRAWN: "Ne se présente plus",
+}
+
+
+def _candidacy_label(candidacy: Candidacy | None) -> str:
+    if candidacy is None:
+        return ""
+    label = _CANDIDACY_LABELS[candidacy.status]
+    return f"{label} ({format_day(candidacy.since)})" if candidacy.since else label
 
 
 def _source_row(corpus: SourceCorpus) -> SourceRow:

@@ -134,3 +134,20 @@ sources:
   # --- Jordan Bardella ----------------------------------------------------------------
   # No verified source yet. He is an MEP: his verbatim record is the European
   # Parliament's (data.europarl.europa.eu, to verify, then a reader to write).
+  # No longer running since 2026-07-07 (config/candidates.yaml).
+
+  # --- Added on 2026-10-14: no verified source yet --------------------------------------
+  # Nathalie Arthaud, Nicolas Dupont-Aignan, Raphaël Glucksmann, David Lisnard, Fabien
+  # Roussel, François Ruffin, Marine Tondelier, Éric Zemmour. Nothing is listed for them
+  # because nothing could be fetched from this environment, and a source is fetched,
+  # checked against robots.txt and confirmed to extract before it is added. They show as
+  # "non suivi" until then. What to verify first, by person:
+  #   - each person's own site and party site: an RSS feed of their texts (rss), or a
+  #     standing programme or priorities page (page);
+  #   - François Ruffin, député de la Somme: his Assemblée nationale actor id (PA…), read
+  #     on his assemblee-nationale.fr page, for the existing assemblee_nationale reader;
+  #   - Raphaël Glucksmann, député européen: the European Parliament record, which needs
+  #     a reader of its own (as for Jordan Bardella).
+  # The Parti socialiste feed stays attributed to Olivier Faure: its texts from July to
+  # 11 October predate Raphaël Glucksmann's designation as the joint PS–Place publique
+  # candidate. Re-attributing it from that date is an editorial decision.

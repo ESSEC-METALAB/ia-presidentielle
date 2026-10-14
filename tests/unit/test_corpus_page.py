@@ -6,7 +6,13 @@ from observatoire.adapters.reporting.corpus_html_renderer import CorpusHtmlRende
 from observatoire.adapters.reporting.corpus_page import build_chart, format_count, safe_href
 from observatoire.application.inspect_corpus import InspectCorpus
 from observatoire.application.segment_documents import SegmentDocuments
-from observatoire.domain.models import CorpusOverview, RawDocument, TrustLevel
+from observatoire.domain.models import (
+    Candidacy,
+    CandidacyStatus,
+    CorpusOverview,
+    RawDocument,
+    TrustLevel,
+)
 from observatoire.services.candidate_matcher import AliasMatcher
 from observatoire.services.segmentation import ParagraphSegmenter, SegmentationSettings
 from support import T0, FrozenClock, InMemoryStore, candidate, document, source
@@ -121,3 +127,26 @@ def test_the_page_states_its_window_and_charts_from_its_first_month() -> None:
 
     assert "depuis le 1 juil. 2026" in html
     assert "de juil. 2026 à oct. 2026" in html
+
+
+def test_a_candidate_no_longer_running_is_shown_as_such_with_its_sources() -> None:
+    withdrawn = candidate("dominique-temoin", "Dominique Témoin").model_copy(
+        update={
+            "candidacy": Candidacy(
+                status=CandidacyStatus.WITHDRAWN,
+                since=date(2026, 10, 11),
+                checked_on=date(2026, 10, 14),
+                sources=("https://example.test/primaire", "javascript:alert(1)"),
+                note="Battu à une primaire fictive.",
+            )
+        }
+    )
+    store = InMemoryStore()
+    use_case = InspectCorpus(store, store, AliasMatcher([withdrawn]), FrozenClock())
+
+    html = CorpusHtmlRenderer().render(use_case.build([withdrawn], []))
+
+    assert "Ne se présente plus (11 oct. 2026)" in html
+    assert "Battu à une primaire fictive." in html
+    assert 'href="https://example.test/primaire"' in html
+    assert "javascript:alert" not in html

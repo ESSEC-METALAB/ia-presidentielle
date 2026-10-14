@@ -7,12 +7,15 @@ from pathlib import Path
 
 import httpx
 import pytest
+from pydantic import ValidationError
 
 from observatoire.adapters.storage.sqlite_repository import SqliteRepository
 from observatoire.cli import _live_readers, effective_since
 from observatoire.config.registry import CrawlerSettings, load_registry
 from observatoire.domain.errors import ConfigurationError
 from observatoire.domain.models import (
+    Candidacy,
+    CandidacyStatus,
     CandidateMention,
     DocumentSegmentation,
     ExcludedPassage,
@@ -160,3 +163,16 @@ def test_duplicate_source_ids_are_rejected(tmp_path: Path) -> None:
 
     with pytest.raises(ConfigurationError, match="duplicate source"):
         load_registry(config)
+
+
+def test_every_shipped_candidate_carries_a_sourced_candidacy() -> None:
+    registry = load_registry(CONFIG)
+
+    for candidate in registry.candidates:
+        assert candidate.candidacy is not None, candidate.id
+        assert all(url.startswith("https://") for url in candidate.candidacy.sources)
+
+
+def test_a_candidacy_without_any_source_is_rejected() -> None:
+    with pytest.raises(ValidationError):
+        Candidacy(status=CandidacyStatus.DECLARED, checked_on=date(2026, 10, 14), sources=())

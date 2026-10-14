@@ -23,7 +23,58 @@ antérieurs au 1er juillet et n'entrent pas ; 88 documents restent après dédou
 
 ### Candidats
 
-À définir : la règle d'inclusion et la liste qui en découle.
+**Règle d'inclusion**, appliquée le 14 octobre 2026. Une personne est suivie si :
+
+1. elle a publiquement déclaré sa candidature à l'élection présidentielle de 2027, ou a
+   été désignée par son parti ou par une primaire, et ne s'est pas retirée ;
+2. et, soit son parti dispose d'un groupe parlementaire à l'Assemblée nationale ou au
+   Sénat, soit elle a été créditée d'au moins 2 % des intentions de vote au premier tour
+   dans un sondage dont le terrain s'achève le 1er juillet 2026 ou après.
+
+Les sept personnes de la version précédente sont conservées ; celles qui ne se présentent
+plus sont marquées comme telles, pas retirées de la liste : retirer une personne est une
+décision éditoriale. L'ordre est alphabétique par nom.
+
+| Personne | Statut au 14 octobre 2026 | Critère 2 | Décision |
+|---|---|---|---|
+| Nathalie Arthaud (LO) | déclarée, 8 décembre 2025 | 2 % (Elabe, juillet) | ajoutée |
+| Gabriel Attal (Renaissance) | déclaré, 22 mai 2026 | groupe EPR ; 17 % | conservé |
+| Jordan Bardella (RN) | ne se présente pas, 7 juillet 2026 | — | conservé, marqué |
+| Nicolas Dupont-Aignan (DLF) | déclaré, mars 2025 | 4 % (Cluster17, 22-24 juillet) | ajouté |
+| Olivier Faure (PS) | battu à la primaire du 11 octobre 2026 | — | conservé, marqué |
+| Raphaël Glucksmann (Place publique) | désigné, primaire du 11 octobre 2026 (66,13 %) | groupe socialiste ; 18 % | ajouté |
+| Marine Le Pen (RN) | déclarée, 7 juillet 2026 | groupe RN ; 38 % | conservée |
+| David Lisnard (Nouvelle Énergie) | déclaré, 31 mars 2026 | 5,2 % (Cluster17, septembre) | ajouté |
+| Jean-Luc Mélenchon (LFI) | déclaré, 3 mai 2026 | groupe LFI-NFP ; 19,8 % | conservé |
+| Édouard Philippe (Horizons) | déclaré, 3 septembre 2024 | groupe HOR ; 24 % | conservé |
+| Bruno Retailleau (LR) | désigné, 19 avril 2026 | groupe DR ; 12 % | conservé |
+| Fabien Roussel (PCF) | désigné, 6 septembre 2026 | groupe GDR ; 4,5 % | ajouté |
+| François Ruffin (Debout !) | déclaré (date non établie) | 6 % (Elabe, juillet) | ajouté |
+| Marine Tondelier (Les Écologistes) | déclarée, 22 octobre 2025 | groupe EcoS ; 7 % | ajoutée |
+| Éric Zemmour (Reconquête) | déclaré, 17 septembre 2026 | 6 % (YouGov, septembre) | ajouté |
+
+**Non retenus pour l'instant, à surveiller :** Dominique de Villepin (« presque
+candidat », pas de déclaration formelle trouvée ; 4,3 %), Xavier Bertrand (dit qu'il sera
+candidat, en indépendant, déclaration annoncée pour la fin de l'année ; 1 % dans le seul
+sondage depuis juillet), François Hollande (testé à 12 %, non déclaré). Ont renoncé ou
+perdu la primaire : Gérald Darmanin, Laurent Wauquiez, François Bayrou, Clémentine Autain,
+Sandrine Rousseau, Ségolène Royal, Emmanuel Maurel, Jérôme Guedj. Bernard Cazeneuve,
+déclaré, n'apparaît dans aucun sondage depuis juillet et n'a pas de groupe.
+
+**Sur quoi repose cette liste.** Les sondages viennent du jeu de données communautaire
+MieuxVoter (`github.com/MieuxVoter/presidentielle2027`, état du 13 octobre 2026), qui cite
+pour chaque sondage sa notice à la Commission des sondages. Les statuts reposent sur des
+résumés de résultats de recherche des articles cités dans `config/candidates.yaml` : depuis
+cet environnement, aucune page de presse n'a pu être ouverte. Avant toute publication,
+chaque statut est à relire sur ces pages. Les groupes parlementaires sont ceux de la
+XVIIe législature, toujours en cours : le compte rendu de l'Assemblée d'octobre 2026 porte
+encore son numéro. La déclaration de Nathalie Arthaud n'est établie
+que par des sources secondaires ; le statut de Marine Tondelier après la primaire du
+11 octobre est à reconfirmer.
+
+**Sources des personnes ajoutées.** Aucune n'a encore de source vérifiée : elles
+apparaissent « non suivi ». Ce qu'il faut vérifier en premier est listé dans
+`config/sources.yaml`.
 
 ## Dimensions et axes
 
@@ -115,10 +166,11 @@ dédoublonnage, collectés entre le 18 septembre et le 4 octobre 2026.
   candidat. À traiter avant l'annotation (étiquette d'orateur ou relecture).
 - **Graphique du programme PDF.** Les valeurs d'un graphique (« 2,5 3,3 7 18 31… »)
   subsistent comme texte dans un segment : le PDF n'a pas de couche qui les distingue.
-- **Zéro intervention pour Olivier Faure et Bruno Retailleau** dans le compte rendu de la
-  XVIIe législature, déjà le 4 octobre dans la version précédente. Pour Bruno Retailleau,
-  c'est attendu (interventions ministérielles terminées, retour au Sénat) ; pour Olivier
-  Faure, l'identifiant d'acteur PA609332 est à revérifier.
+- **Zéro intervention pour Bruno Retailleau** dans le compte rendu de la XVIIe législature :
+  c'est attendu (interventions ministérielles terminées, retour au Sénat, dont le compte
+  rendu demande son propre lecteur). Olivier Faure, à zéro le 4 octobre, a deux séances
+  dans les données du 14 octobre, après la rentrée parlementaire du 1er octobre :
+  l'identifiant PA609332 est donc le bon.
 - **Jordan Bardella n'est pas suivi** : aucune source vérifiée. Député européen, son compte
   rendu est celui du Parlement européen.
 - Les fils de parti (niveau 2) publient l'actualité de tout le parti : la vue indique pour

@@ -101,6 +101,11 @@ tbody tr:last-child td { border-bottom: 0; }
 td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .who { display: grid; }
 .who span { color: var(--ink-3); font-size: .8rem; }
+.who { gap: 2px; max-width: 26rem; }
+.who .candidacy { color: var(--ink-2); }
+.who .candidacy.withdrawn { color: var(--ink-3); font-style: italic; }
+.who .candidacy a { font-size: .74rem; text-decoration: none; }
+.who .candidacy-note { font-size: .76rem; line-height: 1.35; }
 tr.unmonitored td.gap {
   background-image: repeating-linear-gradient(45deg, var(--hatch) 0 1px, transparent 1px 7px);
   color: var(--ink-2);
@@ -262,7 +267,7 @@ footer { font-size: .8rem; color: var(--ink-3); border-top: 1px solid var(--rule
       {% for c in page.candidates %}
         {% if c.monitored %}
         <tr>
-          <td><div class="who"><b>{{ c.name }}</b><span>{{ c.party }}</span></div></td>
+          <td><div class="who"><b>{{ c.name }}</b><span>{{ c.party }}</span>{% if c.candidacy %}<span class="candidacy {{ c.candidacy_status }}">{{ c.candidacy }}{% for href in c.candidacy_sources %} <a href="{{ href }}" rel="noopener" target="_blank" title="Source {{ loop.index }}">[{{ loop.index }}]</a>{% endfor %}</span>{% if c.candidacy_note %}<span class="candidacy-note">{{ c.candidacy_note }}</span>{% endif %}{% endif %}</div></td>
           <td class="n">{{ c.documents }}</td>
           <td class="n">{{ c.own_words }}</td>
           <td class="n">{{ c.characters }}</td>
@@ -272,7 +277,7 @@ footer { font-size: .8rem; color: var(--ink-3); border-top: 1px solid var(--rule
         </tr>
         {% else %}
         <tr class="unmonitored">
-          <td><div class="who"><b>{{ c.name }}</b><span>{{ c.party }}</span></div></td>
+          <td><div class="who"><b>{{ c.name }}</b><span>{{ c.party }}</span>{% if c.candidacy %}<span class="candidacy {{ c.candidacy_status }}">{{ c.candidacy }}{% for href in c.candidacy_sources %} <a href="{{ href }}" rel="noopener" target="_blank" title="Source {{ loop.index }}">[{{ loop.index }}]</a>{% endfor %}</span>{% if c.candidacy_note %}<span class="candidacy-note">{{ c.candidacy_note }}</span>{% endif %}{% endif %}</div></td>
           <td class="gap" colspan="6">Non suivi : aucune source vérifiée n'est configurée.</td>
         </tr>
         {% endif %}

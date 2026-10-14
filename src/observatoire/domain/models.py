@@ -24,11 +24,28 @@ class _Frozen(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
 
+class CandidacyStatus(StrEnum):
+    DECLARED = "declared"
+    DESIGNATED = "designated"  # chosen by a party or a primary
+    WITHDRAWN = "withdrawn"  # no longer running; kept so that past coverage stays readable
+
+
+class Candidacy(_Frozen):
+    """Where a person stands in the race, with the public sources that establish it."""
+
+    status: CandidacyStatus
+    since: date | None = None  # date of the declaration, designation or withdrawal
+    checked_on: date
+    sources: tuple[str, ...] = Field(min_length=1)
+    note: str | None = None  # French, shown on the corpus page
+
+
 class Candidate(_Frozen):
     id: str = Field(pattern=r"^[a-z0-9-]+$")
     name: str
     party: str
     aliases: tuple[str, ...] = ()
+    candidacy: Candidacy | None = None
 
 
 class Source(_Frozen):

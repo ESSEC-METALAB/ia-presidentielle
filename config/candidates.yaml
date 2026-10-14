@@ -1,44 +1,208 @@
 # Candidate registry: the only place a candidate exists (CLAUDE.md §8 — never in Python).
 #
-# Roster inherited from the previous version (branch `daily`, sources.yaml). The POC's
-# five-candidate scope is still an editorial decision; until it is made, every inherited
-# person is collected, so nobody is dropped by default.
+# Inclusion rule, applied on 2026-10-14 (docs/methodology.md, "Candidats"). A person is
+# added when they
+#   (a) have publicly declared a candidacy for the 2027 presidential election, or been
+#       designated by their party or a primary, and have not withdrawn; and
+#   (b) either their party has a parliamentary group in the Assemblée nationale or the
+#       Sénat, or they were credited with at least 2 % of first-round voting intentions
+#       in a poll with fieldwork ending on or after 2026-07-01.
+# The seven people inherited from the previous version are kept. Those no longer running
+# are marked `withdrawn`, not removed: removing a person is an editorial decision.
 #
-# aliases: matched whole-word and case-insensitively, to show whether a document names
-# its candidate. Unambiguous forms only: "Olivier Faure", never "Faure"; "Marine Le Pen",
-# never "Le Pen"; "Édouard Philippe", never "Philippe".
+# Each `candidacy` records the public sources that establish it. Polls come from the
+# MieuxVoter dataset (github.com/MieuxVoter/presidentielle2027, state of 2026-10-13),
+# which cites each poll's Commission des sondages notice. News pages could not be opened
+# from this environment: statuses rest on search-result summaries of the sources listed,
+# and every entry is to be re-read against those pages before anything is published.
+#
+# Order: alphabetical by surname.
+#
+# aliases: matched whole-word and case-insensitively. Unambiguous forms only: "Olivier
+# Faure", never "Faure"; "Fabien Roussel", never "Roussel"; "Nathalie Arthaud", never
+# "Arthaud".
 candidates:
-  - id: bruno-retailleau
-    name: Bruno Retailleau
-    party: LR
-    aliases: [Retailleau]
-
-  - id: jean-luc-melenchon
-    name: Jean-Luc Mélenchon
-    party: LFI
-    aliases: [Mélenchon, Melenchon]
-
-  - id: olivier-faure
-    name: Olivier Faure
-    party: PS
-    aliases: [Olivier Faure]
+  - id: nathalie-arthaud
+    name: Nathalie Arthaud
+    party: Lutte ouvrière
+    aliases: [Nathalie Arthaud]
+    candidacy:
+      status: declared
+      since: 2025-12-08
+      checked_on: 2026-10-14
+      note: Déclaration établie par des sources secondaires seulement ; 2 % au mieux depuis juillet (Elabe, 9-10 juillet).
+      sources:
+        - https://raw.githubusercontent.com/MieuxVoter/presidentielle2027/main/candidats.csv
+        - https://votons-2027.fr/candidats
 
   - id: gabriel-attal
     name: Gabriel Attal
     party: Renaissance
     aliases: [Attal]
-
-  - id: edouard-philippe
-    name: Édouard Philippe
-    party: Horizons
-    aliases: [Édouard Philippe, Edouard Philippe]
-
-  - id: marine-le-pen
-    name: Marine Le Pen
-    party: RN
-    aliases: [Marine Le Pen]
+    candidacy:
+      status: declared
+      since: 2026-05-22
+      checked_on: 2026-10-14
+      sources:
+        - https://raw.githubusercontent.com/MieuxVoter/presidentielle2027/main/candidats.csv
 
   - id: jordan-bardella
     name: Jordan Bardella
     party: RN
     aliases: [Bardella]
+    candidacy:
+      status: withdrawn
+      since: 2026-07-07
+      checked_on: 2026-10-14
+      note: Ne se présente pas ; Marine Le Pen est candidate depuis la décision d'appel du 7 juillet 2026.
+      sources:
+        - https://raw.githubusercontent.com/MieuxVoter/presidentielle2027/main/candidats.csv
+        - https://www.parismatch.be/actualites/monde/2026/07/07/marine-le-pen-condamnee-a-15-mois-ferme-dineligibilite-et-un-an-de-bracelet-electronique-K23HT444CZB4TK7AI7QZLWSCFA/
+
+  - id: nicolas-dupont-aignan
+    name: Nicolas Dupont-Aignan
+    party: Debout la France
+    aliases: [Dupont-Aignan]
+    candidacy:
+      status: declared
+      since: 2025-03-08
+      checked_on: 2026-10-14
+      sources:
+        - https://www.slate.fr/politique/election-presidentielle-2027-liste-candidats-declares-interesses-primaire-gauche-droite-extreme-lfi-rn-lr-ps-macron
+        - https://www.sudradio.fr/sud-radio/presidentielle-2027-qui-sont-les-candidats-declares
+
+  - id: olivier-faure
+    name: Olivier Faure
+    party: PS
+    aliases: [Olivier Faure]
+    candidacy:
+      status: withdrawn
+      since: 2026-10-11
+      checked_on: 2026-10-14
+      note: Battu à la primaire de la gauche sociale-démocrate du 11 octobre 2026 (14,48 %) ; soutient Raphaël Glucksmann.
+      sources:
+        - https://lematin.ma/monde/france-glucksmann-gagne-la-primaire-de-gauche-pour-la-presidentielle/369807
+        - https://www.lagazettefrance.fr/article/victorieux-a-la-primaire-les-choses-serieuses-commencent-pour-raphael-glucksmann
+
+  - id: raphael-glucksmann
+    name: Raphaël Glucksmann
+    party: Place publique
+    aliases: [Glucksmann]
+    candidacy:
+      status: designated
+      since: 2026-10-11
+      checked_on: 2026-10-14
+      note: Vainqueur de la primaire du 11 octobre 2026 (66,13 % au premier tour) ; candidat commun du Parti socialiste et de Place publique.
+      sources:
+        - https://lematin.ma/monde/france-glucksmann-gagne-la-primaire-de-gauche-pour-la-presidentielle/369807
+        - https://www.parismatch.be/actualites/monde/2026/10/12/largement-elu-candidat-de-la-gauche-sociale-democrate-a-la-presidentielle-francaise-raphael-glucksmann-enfarine-dans-les-rues-de-paris-video-TEQ6BAP5RZAO3H43KTQKEH52JA/
+        - https://www.lagazettefrance.fr/article/victorieux-a-la-primaire-les-choses-serieuses-commencent-pour-raphael-glucksmann
+
+  - id: marine-le-pen
+    name: Marine Le Pen
+    party: RN
+    aliases: [Marine Le Pen]
+    candidacy:
+      status: declared
+      since: 2026-07-07
+      checked_on: 2026-10-14
+      note: Candidature confirmée après la décision d'appel du 7 juillet 2026 ; pourvoi en cassation annoncé.
+      sources:
+        - https://www.parismatch.be/actualites/monde/2026/07/07/marine-le-pen-condamnee-a-15-mois-ferme-dineligibilite-et-un-an-de-bracelet-electronique-K23HT444CZB4TK7AI7QZLWSCFA/
+        - https://www.slate.fr/politique/condamnation-appel-marine-le-pen-jugement-sans-consequences-politiques-decision-citoyens-gagnante-sequence-justice-rn-bardella-election-presidentielle-2027
+
+  - id: david-lisnard
+    name: David Lisnard
+    party: Nouvelle Énergie
+    aliases: [Lisnard]
+    candidacy:
+      status: declared
+      since: 2026-03-31
+      checked_on: 2026-10-14
+      sources:
+        - https://www.europe1.fr/node/966048
+        - https://www.europe1.fr/politique/david-lisnard-a-officiellement-quitte-les-republicains-avec-lelysee-en-ligne-de-mire-919492
+
+  - id: jean-luc-melenchon
+    name: Jean-Luc Mélenchon
+    party: LFI
+    aliases: [Mélenchon, Melenchon]
+    candidacy:
+      status: declared
+      since: 2026-05-03
+      checked_on: 2026-10-14
+      sources:
+        - https://raw.githubusercontent.com/MieuxVoter/presidentielle2027/main/candidats.csv
+
+  - id: edouard-philippe
+    name: Édouard Philippe
+    party: Horizons
+    aliases: [Édouard Philippe, Edouard Philippe]
+    candidacy:
+      status: declared
+      since: 2024-09-03
+      checked_on: 2026-10-14
+      sources:
+        - https://raw.githubusercontent.com/MieuxVoter/presidentielle2027/main/candidats.csv
+
+  - id: bruno-retailleau
+    name: Bruno Retailleau
+    party: LR
+    aliases: [Retailleau]
+    candidacy:
+      status: designated
+      since: 2026-04-19
+      checked_on: 2026-10-14
+      note: Désigné par un vote des adhérents des Républicains le 19 avril 2026.
+      sources:
+        - https://www.brut.media/fr/articles/retailleau-annonce-sa-candidature-a-la-presidentielle-dans-un-message-a-des-elus-lr
+        - https://www.letemps.ch/articles/en-france-bruno-retailleau-annonce-sa-candidature-a-la-presidentielle
+
+  - id: fabien-roussel
+    name: Fabien Roussel
+    party: PCF
+    aliases: [Fabien Roussel]
+    candidacy:
+      status: designated
+      since: 2026-09-06
+      checked_on: 2026-10-14
+      note: Candidature validée par les adhérents du PCF (vote du 3 au 6 septembre 2026, 72 %).
+      sources:
+        - https://lcp.fr/actualites/fabien-roussel-officiellement-candidat-du-pcf-a-l-election-presidentielle-de-2027-441389
+
+  - id: francois-ruffin
+    name: François Ruffin
+    party: Debout !
+    aliases: [Ruffin]
+    candidacy:
+      status: declared
+      checked_on: 2026-10-14
+      note: Date de déclaration non établie (2025 ou 2026 selon les sources) ; premier meeting de campagne à Lyon.
+      sources:
+        - https://www.lyonmag.com/article/151368/presidentielle-2027-francois-ruffin-candidat-son-premier-meeting-entretien-d-embauche-programme-a-lyon
+        - https://www.slate.fr/politique/election-presidentielle-2027-comment-francois-ruffin-retrouve-marginalise-gauche-lfi-france-insoumise-melenchon-candidat
+
+  - id: marine-tondelier
+    name: Marine Tondelier
+    party: Les Écologistes
+    aliases: [Tondelier]
+    candidacy:
+      status: declared
+      since: 2025-10-22
+      checked_on: 2026-10-14
+      note: Aucun retrait trouvé après la primaire du 11 octobre 2026 ; statut à reconfirmer.
+      sources:
+        - https://www.brut.media/fr/articles/marine-tondelier-la-patronne-des-ecologistes-officiellement-candidate-a-la-presidentielle-de-2027
+        - https://www.lagazettefrance.fr/article/marine-tondelier-plus-que-jamais-en-campagne-pour-2027
+
+  - id: eric-zemmour
+    name: Éric Zemmour
+    party: Reconquête
+    aliases: [Zemmour]
+    candidacy:
+      status: declared
+      since: 2026-09-17
+      checked_on: 2026-10-14
+      sources:
+        - https://lcp.fr/actualites/presidentielle-2027-eric-zemmour-officialise-sa-candidature-441871
+        - https://www.publicsenat.fr/actualites/politique/eric-zemmour-officialise-sa-candidature-a-la-presidentielle-2027
