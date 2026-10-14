@@ -5,7 +5,13 @@ from datetime import date, datetime
 
 import structlog
 
-from observatoire.domain.models import CollectionReport, RawDocument, Source, SourceOutcome
+from observatoire.domain.models import (
+    CollectionReport,
+    RawDocument,
+    Source,
+    SourceOutcome,
+    in_window,
+)
 from observatoire.domain.ports import Clock, DocumentRepository, SourceReader, SourceRunLog
 
 _log = structlog.get_logger(__name__)
@@ -16,7 +22,8 @@ class CollectDaily:
     """Reads each source, keeps what is new, records how every source behaved.
 
     A failing source never stops the run (CLAUDE.md §4): it is logged, recorded as
-    failed, and the next source is read.
+    failed, and the next source is read. The collection window is enforced here, for
+    every reader, whatever each reader does with `since`.
     """
 
     def __init__(
@@ -48,8 +55,14 @@ class CollectDaily:
         except Exception as failure:  # one failing source never stops the run
             error = f"{type(failure).__name__}: {failure}"[:_MAX_ERROR_CHARS]
             return self._finish(source, run_id, started_at, error=error)
-        new, duplicates = self._store(documents)
-        counts = {"fetched": len(documents), "new": new, "duplicates": duplicates}
+        in_scope = [d for d in documents if in_window(d.published_on, since)]
+        new, duplicates = self._store(in_scope)
+        counts = {
+            "fetched": len(documents),
+            "new": new,
+            "duplicates": duplicates,
+            "out_of_window": len(documents) - len(in_scope),
+        }
         return self._finish(source, run_id, started_at, counts=counts)
 
     def _store(self, documents: list[RawDocument]) -> tuple[int, int]:
@@ -80,6 +93,7 @@ class CollectDaily:
             fetched=(counts or {}).get("fetched", 0),
             new=(counts or {}).get("new", 0),
             duplicates=(counts or {}).get("duplicates", 0),
+            out_of_window=(counts or {}).get("out_of_window", 0),
             error=error,
         )
         self._run_log.record(outcome)

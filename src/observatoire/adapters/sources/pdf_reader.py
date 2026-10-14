@@ -10,10 +10,10 @@ from datetime import date
 import pypdf
 from pypdf.errors import PdfReadError
 
-from observatoire.adapters.sources.documents import make_document, on_or_after
+from observatoire.adapters.sources.documents import make_document
 from observatoire.adapters.sources.http_client import PoliteHttpClient
 from observatoire.domain.errors import SourceUnavailableError
-from observatoire.domain.models import RawDocument, Source
+from observatoire.domain.models import RawDocument, Source, in_window
 from observatoire.domain.ports import Clock
 from observatoire.services.dates import parse_date_prefix
 
@@ -27,7 +27,7 @@ class PdfReader:
         text = _pdf_text(self._http.get(source.url).content, source.url)
         # A PDF rarely states its own date reliably; the configured one was checked by hand.
         published_on = parse_date_prefix(source.options.get("published_on"))
-        if not on_or_after(published_on, since):
+        if not in_window(published_on, since):
             return []
         document = make_document(
             source,

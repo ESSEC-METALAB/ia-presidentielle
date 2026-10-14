@@ -68,3 +68,22 @@ def test_every_source_outcome_is_logged_with_its_duration() -> None:
     _collect({"rss": FakeReader([])}, store, source("a"), source("b"))
 
     assert [(o.source_id, o.duration_ms) for o in store.outcomes] == [("a", 250), ("b", 250)]
+
+
+def test_documents_published_before_the_window_are_counted_not_stored() -> None:
+    store = InMemoryStore()
+    reader = FakeReader([
+        document("Juin, hors fenêtre.", published_on=date(2026, 6, 30)),
+        document("Juillet, dans la fenêtre.", published_on=date(2026, 7, 1)),
+        document("Sans date, conservé.", published_on=None),
+    ])  # fmt: skip
+    use_case = CollectDaily({"rss": reader}, store, store, FrozenClock())
+
+    report = use_case.run([source()], run_id="run-1", since=date(2026, 7, 1))
+
+    (outcome,) = report.outcomes
+    assert (outcome.fetched, outcome.new, outcome.out_of_window) == (3, 2, 1)
+    assert sorted(d.text for d in store.documents.values()) == [
+        "Juillet, dans la fenêtre.",
+        "Sans date, conservé.",
+    ]

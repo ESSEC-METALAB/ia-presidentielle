@@ -1,5 +1,7 @@
 """SegmentDocuments, with the real segmenter and an in-memory store."""
 
+from datetime import date
+
 from observatoire.application.segment_documents import SegmentDocuments
 from observatoire.domain.models import ExclusionReason
 from observatoire.services.candidate_matcher import AliasMatcher
@@ -79,3 +81,15 @@ def test_documents_of_unconfigured_sources_are_counted_not_segmented() -> None:
     report = _use_case(store).run([FEED])
 
     assert (report.outcomes, report.unconfigured_documents) == ((), 1)
+
+
+def test_documents_before_the_window_are_left_unsegmented_and_counted() -> None:
+    store = InMemoryStore([
+        document("Un texte fictif de juin, hors de la fenêtre.", published_on=date(2026, 6, 1)),
+        document("Un texte fictif de septembre, dans la fenêtre.", published_on=date(2026, 9, 1)),
+    ])  # fmt: skip
+
+    report = _use_case(store).run([FEED], since=date(2026, 7, 1))
+
+    assert (report.outcomes[0].documents, report.out_of_window_documents) == (1, 1)
+    assert len(store.segmentations) == 1

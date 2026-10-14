@@ -2,6 +2,7 @@
 
 from collections import Counter, defaultdict
 from collections.abc import Sequence
+from datetime import date
 
 import structlog
 
@@ -12,6 +13,7 @@ from observatoire.domain.models import (
     SegmentationReport,
     Source,
     SourceSegmentation,
+    in_window,
 )
 from observatoire.domain.ports import CandidateMatcher, CorpusReader, Segmenter, SegmentStore
 
@@ -37,10 +39,17 @@ class SegmentDocuments:
         self._segmenter = segmenter
         self._matcher = matcher
 
-    def run(self, sources: Sequence[Source], *, rebuild: bool = False) -> SegmentationReport:
+    def run(
+        self, sources: Sequence[Source], *, rebuild: bool = False, since: date | None = None
+    ) -> SegmentationReport:
+        """Documents published before `since` stay stored but are not segmented."""
         by_source: dict[str, list[RawDocument]] = defaultdict(list)
+        out_of_window = 0
         for document in self._corpus.list_documents():
-            by_source[document.source_id].append(document)
+            if in_window(document.published_on, since):
+                by_source[document.source_id].append(document)
+            else:
+                out_of_window += 1
         done = {} if rebuild else self._store.segmented_versions()
         outcomes = tuple(
             self._segment_source(source, by_source[source.id], done)
@@ -53,6 +62,7 @@ class SegmentDocuments:
             segmenter_version=self._segmenter.version,
             outcomes=outcomes,
             unconfigured_documents=unconfigured,
+            out_of_window_documents=out_of_window,
         )
 
     def _segment_source(

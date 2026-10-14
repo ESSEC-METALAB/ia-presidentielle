@@ -13,9 +13,9 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
 
-from observatoire.adapters.sources.documents import make_document, on_or_after
+from observatoire.adapters.sources.documents import make_document
 from observatoire.domain.errors import SourceUnavailableError
-from observatoire.domain.models import RawDocument, Source
+from observatoire.domain.models import RawDocument, Source, in_window
 from observatoire.services.dates import parse_date_prefix
 
 # Source kind in this version -> `kind` field of the previous version's payloads.
@@ -58,7 +58,7 @@ class LegacyPipelineReader:
             for payload, fetched_at in self._rows(source.candidate_id)
             if payload.kind == legacy_kind and payload.text.strip()
         ]
-        return [d for d in documents if on_or_after(d.published_on, since)]
+        return [d for d in documents if in_window(d.published_on, since)]
 
     def _rows(self, person: str) -> list[tuple[_LegacyPayload, datetime]]:
         if not self._database.is_file():

@@ -8,7 +8,22 @@ publié avec chaque rapport (README, « Conformité »).
 
 ## Périmètre
 
-À définir : les cinq candidats du POC et la raison de ce choix.
+### Période
+
+Le corpus couvre les textes publiés **depuis le 1er juillet 2026**
+(`config/sources.yaml`, `collection.since`). La règle est appliquée à un seul endroit, le
+cas d'usage de collecte, quel que soit le lecteur ; `--since` peut la resserrer, jamais
+l'élargir. Les textes sans date sont conservés et affichés « date non précisée » : une date
+absente ne prouve pas qu'un texte est ancien. Déplacer la fenêtre laisse les textes plus
+anciens en base, hors du périmètre : ils sont comptés sur la page du corpus, jamais effacés
+sans trace.
+
+Effet sur l'import du 14 octobre 2026 : sur 283 documents de la version précédente, 192 sont
+antérieurs au 1er juillet et n'entrent pas ; 88 documents restent après dédoublonnage.
+
+### Candidats
+
+À définir : la règle d'inclusion et la liste qui en découle.
 
 ## Dimensions et axes
 

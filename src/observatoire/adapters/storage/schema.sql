@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS source_runs (
     fetched     INTEGER NOT NULL,    -- what the source returned: the liveness signal
     new         INTEGER NOT NULL,
     duplicates  INTEGER NOT NULL,
+    out_of_window INTEGER NOT NULL DEFAULT 0,  -- returned but published before the window
     error       TEXT,
     PRIMARY KEY (run_id, source_id)
 );

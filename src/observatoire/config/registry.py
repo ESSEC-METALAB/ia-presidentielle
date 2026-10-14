@@ -2,6 +2,7 @@
 
 from collections import Counter
 from collections.abc import Sequence
+from datetime import date
 from pathlib import Path
 from typing import TypeVar
 
@@ -27,12 +28,21 @@ class CrawlerSettings(BaseModel):
     max_redirects: int = Field(ge=0, le=10)
 
 
+class CollectionSettings(BaseModel):
+    """What period the corpus covers. Texts published before `since` are not collected."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    since: date
+
+
 class Registry(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     candidates: tuple[Candidate, ...]
     sources: tuple[Source, ...]
     crawler: CrawlerSettings
+    collection: CollectionSettings
     segmentation: SegmentationSettings
 
 
@@ -46,6 +56,7 @@ class _SourcesFile(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     crawler: CrawlerSettings
+    collection: CollectionSettings
     sources: list[Source]
 
 
@@ -59,6 +70,7 @@ def load_registry(config_dir: Path) -> Registry:
         candidates=tuple(candidates),
         sources=tuple(sources_file.sources),
         crawler=sources_file.crawler,
+        collection=sources_file.collection,
         segmentation=_load(config_dir / "segmentation.yaml", SegmentationSettings),
     )
 

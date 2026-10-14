@@ -110,3 +110,14 @@ def test_an_unsegmented_corpus_tells_how_to_segment_it() -> None:
 
     assert "observatoire segment" in html
     assert 'data-segmentation="pending"' in html
+
+
+def test_the_page_states_its_window_and_charts_from_its_first_month() -> None:
+    store = InMemoryStore([document("Septembre.", published_on=date(2026, 9, 1))])
+    use_case = InspectCorpus(store, store, AliasMatcher([CAMILLE]), FrozenClock())
+    overview = use_case.build([CAMILLE], [source()], since=date(2026, 7, 1))
+
+    html = CorpusHtmlRenderer().render(overview)
+
+    assert "depuis le 1 juil. 2026" in html
+    assert "de juil. 2026 à oct. 2026" in html

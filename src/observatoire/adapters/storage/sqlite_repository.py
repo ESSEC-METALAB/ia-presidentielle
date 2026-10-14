@@ -25,7 +25,10 @@ _SCHEMA = resources.files(__package__).joinpath("schema.sql").read_text(encoding
 _DOCUMENT_COLUMNS = (
     "content_hash, source_id, candidate_id, url, title, text, published_on, fetched_at, trust_level"
 )
-_RUN_COLUMNS = "run_id, source_id, started_at, duration_ms, status, fetched, new, duplicates, error"
+_RUN_COLUMNS = (
+    "run_id, source_id, started_at, duration_ms, status, fetched, new, duplicates, out_of_window,"
+    " error"
+)
 _MENTIONS = TypeAdapter(tuple[CandidateMention, ...])
 
 
@@ -42,6 +45,18 @@ class SqliteRepository:
         self._connection = sqlite3.connect(path)
         self._connection.row_factory = sqlite3.Row
         self._connection.executescript(_SCHEMA)
+        self._migrate()
+
+    def _migrate(self) -> None:
+        """Columns added after a database was created. Additive only: nothing is dropped."""
+        columns = {
+            row["name"] for row in self._connection.execute("PRAGMA table_info(source_runs)")
+        }
+        if "out_of_window" not in columns:
+            with self._connection:
+                self._connection.execute(
+                    "ALTER TABLE source_runs ADD COLUMN out_of_window INTEGER NOT NULL DEFAULT 0"
+                )
 
     def close(self) -> None:
         self._connection.close()
@@ -82,11 +97,12 @@ class SqliteRepository:
             outcome.fetched,
             outcome.new,
             outcome.duplicates,
+            outcome.out_of_window,
             outcome.error,
         )
         with self._connection:
             self._connection.execute(
-                f"INSERT OR REPLACE INTO source_runs ({_RUN_COLUMNS}) VALUES (?,?,?,?,?,?,?,?,?)",
+                f"INSERT OR REPLACE INTO source_runs ({_RUN_COLUMNS}) VALUES (?,?,?,?,?,?,?,?,?,?)",
                 values,
             )
 
@@ -195,5 +211,6 @@ def _outcome(row: sqlite3.Row) -> SourceOutcome:
         fetched=row["fetched"],
         new=row["new"],
         duplicates=row["duplicates"],
+        out_of_window=row["out_of_window"],
         error=row["error"],
     )

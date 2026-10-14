@@ -169,6 +169,8 @@ class CorpusPage:
     sources_failed: int
     sources_never: int
     unconfigured_documents: int
+    window_label: str | None
+    out_of_window_documents: int
     candidates: tuple[CandidateRow, ...]
     chart: Chart
     documents: tuple[DocumentItem, ...]
@@ -191,8 +193,12 @@ def build_page(overview: CorpusOverview, chart_months: int) -> CorpusPage:
         sources_failed=sum(1 for s in sources if s.status == "failed"),
         sources_never=sum(1 for s in sources if s.status == "never"),
         unconfigured_documents=overview.unconfigured_documents,
+        window_label=f"depuis le {format_day(overview.window_start)}"
+        if overview.window_start
+        else None,
+        out_of_window_documents=overview.out_of_window_documents,
         candidates=rows,
-        chart=build_chart(overview, chart_months),
+        chart=build_chart(overview, _chart_months(overview, chart_months)),
         documents=documents,
         candidate_options=tuple((c.candidate.id, c.candidate.name) for c in overview.candidates),
         kind_options=tuple(sorted({(d.kind, d.kind_label) for d in documents})),
@@ -351,6 +357,15 @@ def _excerpt(text: str) -> str:
 def _month_window(end: date, months: int) -> list[tuple[int, int]]:
     index = end.year * 12 + end.month - 1
     return [divmod(i, 12) for i in range(index - months + 1, index + 1)]
+
+
+def _chart_months(overview: CorpusOverview, default: int) -> int:
+    """From the start of the collection window to now, or `default` months without one."""
+    start = overview.window_start
+    if start is None:
+        return default
+    end = overview.generated_at.date()
+    return max(1, (end.year - start.year) * 12 + end.month - start.month + 1)
 
 
 def build_chart(overview: CorpusOverview, months: int) -> Chart:

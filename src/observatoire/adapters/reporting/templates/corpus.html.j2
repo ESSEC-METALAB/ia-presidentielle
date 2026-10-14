@@ -235,6 +235,7 @@ footer { font-size: .8rem; color: var(--ink-3); border-top: 1px solid var(--rule
   <p class="lede">Ce que la collecte a rapporté des sources officielles des candidats, avant toute analyse : textes, provenance et état de chaque source.</p>
   <p class="notice"><strong>Données brutes, non relues, non publiables.</strong> Aucun texte n'est analysé ici. Le niveau de chaque source est un réglage par défaut, confirmé seulement à la relecture. Un fil de parti publie l'actualité de tout le parti : un document de niveau 2 n'est pas forcément une prise de parole du candidat.</p>
   <dl class="summary">
+    {% if page.window_label %}<div><dt>Fenêtre de collecte</dt><dd style="font-size:1rem;padding-top:.3rem">{{ page.window_label }}</dd></div>{% endif %}
     <div><dt>Documents</dt><dd>{{ page.documents_total }}</dd></div>
     <div><dt>Caractères</dt><dd>{{ page.characters_total }}</dd></div>
     <div><dt>Candidats suivis</dt><dd>{{ page.monitored }} / {{ page.candidates_total }}</dd></div>
@@ -279,6 +280,9 @@ footer { font-size: .8rem; color: var(--ink-3); border-top: 1px solid var(--rule
       </tbody>
     </table>
   </div>
+  {% if page.out_of_window_documents %}
+  <p class="prose">{{ page.out_of_window_documents }} document(s) en base sont publiés avant le début de la fenêtre de collecte : ils restent stockés mais ne figurent pas dans cette page.</p>
+  {% endif %}
   {% if page.unconfigured_documents %}
   <p class="prose">{{ page.unconfigured_documents }} document(s) en base proviennent d'une source qui n'est plus configurée et ne figurent pas dans cette page.</p>
   {% endif %}

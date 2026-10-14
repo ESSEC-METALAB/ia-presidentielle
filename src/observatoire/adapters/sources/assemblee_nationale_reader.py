@@ -16,10 +16,10 @@ from xml.etree import ElementTree
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from observatoire.adapters.sources.documents import make_document, on_or_after
+from observatoire.adapters.sources.documents import make_document
 from observatoire.adapters.sources.http_client import PoliteHttpClient
 from observatoire.domain.errors import SourceUnavailableError
-from observatoire.domain.models import RawDocument, Source
+from observatoire.domain.models import RawDocument, Source, in_window
 from observatoire.domain.ports import Clock
 from observatoire.services.dates import parse_date_prefix
 
@@ -54,7 +54,7 @@ class AssembleeNationaleReader:
         fetched_at = self._clock.now()
         for seance in self._seances(source.url):
             text = seance.speeches.get(options.acteur)
-            if not text or not on_or_after(seance.held_on, since):
+            if not text or not in_window(seance.held_on, since):
                 continue
             yield make_document(
                 source,

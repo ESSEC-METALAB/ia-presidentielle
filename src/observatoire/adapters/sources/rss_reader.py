@@ -9,10 +9,10 @@ import feedparser
 import structlog
 from pydantic import BaseModel
 
-from observatoire.adapters.sources.documents import make_document, on_or_after
+from observatoire.adapters.sources.documents import make_document
 from observatoire.adapters.sources.http_client import PoliteHttpClient
 from observatoire.domain.errors import SourceUnavailableError
-from observatoire.domain.models import RawDocument, Source
+from observatoire.domain.models import RawDocument, Source, in_window
 from observatoire.domain.ports import Clock, TextExtractor
 
 _log = structlog.get_logger(__name__)
@@ -45,7 +45,7 @@ class RssReader:
         if not entries and feed.get("bozo"):
             raise SourceUnavailableError(source.url, "unparseable feed")
         for entry in entries:
-            if not on_or_after(entry.published_on, since):
+            if not in_window(entry.published_on, since):
                 continue
             document = self._read(source, entry)
             if document is not None:

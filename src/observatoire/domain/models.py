@@ -46,6 +46,12 @@ class Source(_Frozen):
     options: dict[str, str] = Field(default_factory=dict)
 
 
+def in_window(published_on: date | None, since: date | None) -> bool:
+    """Published on or after `since`. Undated documents are kept: a missing date is
+    not evidence of age, and the view says *date non précisée*."""
+    return since is None or published_on is None or published_on >= since
+
+
 class ExtractedText(_Frozen):
     text: str
     title: str | None
@@ -78,6 +84,8 @@ class SourceOutcome(_Frozen):
     fetched: int = Field(ge=0)
     new: int = Field(ge=0)
     duplicates: int = Field(ge=0)
+    # Returned by the source but published before the collection window: not stored.
+    out_of_window: int = Field(default=0, ge=0)
     error: str | None = None
 
 
@@ -165,6 +173,7 @@ class SegmentationReport(_Frozen):
     segmenter_version: str
     outcomes: tuple[SourceSegmentation, ...]
     unconfigured_documents: int = Field(ge=0)
+    out_of_window_documents: int = Field(default=0, ge=0)
 
 
 class DocumentView(_Frozen):
@@ -196,3 +205,6 @@ class CorpusOverview(_Frozen):
     candidates: tuple[CandidateCorpus, ...]
     # Stored documents whose source is no longer configured. Counted, never dropped silently.
     unconfigured_documents: int = Field(ge=0)
+    # Collection window, and stored documents published before it (kept, not shown).
+    window_start: date | None = None
+    out_of_window_documents: int = Field(default=0, ge=0)

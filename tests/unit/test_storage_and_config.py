@@ -1,14 +1,15 @@
 """SQLite storage and config loading."""
 
 import shutil
-from datetime import timedelta
+import sqlite3
+from datetime import date, timedelta
 from pathlib import Path
 
 import httpx
 import pytest
 
 from observatoire.adapters.storage.sqlite_repository import SqliteRepository
-from observatoire.cli import _live_readers
+from observatoire.cli import _live_readers, effective_since
 from observatoire.config.registry import CrawlerSettings, load_registry
 from observatoire.domain.errors import ConfigurationError
 from observatoire.domain.models import (
@@ -76,10 +77,38 @@ def test_a_segmentation_round_trips_and_replacing_it_leaves_no_stale_rows(tmp_pa
     assert repository.segmented_versions() == {newer.document_hash: "v2"}
 
 
+def test_an_older_database_gains_the_out_of_window_column(tmp_path: Path) -> None:
+    path = tmp_path / "old.db"
+    with sqlite3.connect(path) as connection:
+        connection.execute(
+            "CREATE TABLE source_runs (run_id TEXT NOT NULL, source_id TEXT NOT NULL,"
+            " started_at TEXT NOT NULL, duration_ms INTEGER NOT NULL, status TEXT NOT NULL,"
+            " fetched INTEGER NOT NULL, new INTEGER NOT NULL, duplicates INTEGER NOT NULL,"
+            " error TEXT, PRIMARY KEY (run_id, source_id))"
+        )
+        connection.execute(
+            "INSERT INTO source_runs VALUES ('old', 's', '2026-10-04T06:00:00+00:00', 1, 'ok',"
+            " 3, 3, 0, NULL)"
+        )
+
+    repository = SqliteRepository(path)
+
+    assert repository.latest_by_source()["s"].out_of_window == 0
+
+
 def test_the_shipped_configuration_is_valid() -> None:
     registry = load_registry(CONFIG)
 
     assert {s.candidate_id for s in registry.sources} <= {c.id for c in registry.candidates}
+    assert registry.collection.since == date(2026, 7, 1)
+
+
+def test_since_can_narrow_the_window_but_never_widen_it() -> None:
+    window = date(2026, 7, 1)
+
+    assert effective_since(None, window) == window
+    assert effective_since(date(2026, 1, 1), window) == window
+    assert effective_since(date(2026, 9, 1), window) == date(2026, 9, 1)
 
 
 def test_every_enabled_source_kind_has_a_live_reader() -> None:
@@ -103,6 +132,7 @@ def _write_config(directory: Path, sources: str) -> Path:
         encoding="utf-8",
     )
     (directory / "sources.yaml").write_text(
+        "collection: {since: 2026-07-01}\n"
         "crawler: {user_agent: 'Test/1.0 (+https://example.test)', min_delay_seconds: 1,\n"
         "          timeout_seconds: 5, min_text_chars: 10, max_redirects: 2}\n" + sources,
         encoding="utf-8",

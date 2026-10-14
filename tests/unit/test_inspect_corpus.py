@@ -78,3 +78,16 @@ def test_the_latest_run_of_each_source_is_attached() -> None:
     outcome = overview.candidates[0].sources[0].last_outcome
     assert outcome is not None
     assert outcome.run_id == "run-24"
+
+
+def test_only_the_collection_window_is_shown_and_what_precedes_it_is_counted() -> None:
+    store = InMemoryStore([
+        document("Juin.", published_on=date(2026, 6, 30)),
+        document("Juillet.", published_on=date(2026, 7, 2)),
+    ])  # fmt: skip
+
+    overview = _inspect(store).build([CAMILLE], [FEED], since=date(2026, 7, 1))
+
+    texts = [v.document.text for v in overview.candidates[0].sources[0].documents]
+    assert texts == ["Juillet."]
+    assert (overview.window_start, overview.out_of_window_documents) == (date(2026, 7, 1), 1)

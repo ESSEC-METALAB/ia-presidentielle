@@ -12,6 +12,13 @@
 # one-off archive crawls whose reader is not written yet: enabled: false, so only
 # `observatoire import-legacy` fills them, from what the previous version collected.
 
+# The period the corpus covers. Texts published before this date are neither collected
+# nor imported; texts without a date are kept and shown as "date non précisée", since a
+# missing date is not evidence of age. Moving it forward leaves older texts stored but
+# out of scope: they are counted on the corpus page, never silently dropped.
+collection:
+  since: 2026-07-01
+
 crawler:
   user_agent: "ESSECMetalabBot/1.0 (+https://metalab.essec.edu)"
   min_delay_seconds: 1.0

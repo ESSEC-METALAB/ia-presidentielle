@@ -19,6 +19,7 @@ candidates:
 """
 REPOSITORY = Path(__file__).resolve().parents[2]
 SOURCES = """
+collection: {since: 2026-07-01}
 crawler: {user_agent: "Test/1.0 (+https://example.test)", min_delay_seconds: 0,
           timeout_seconds: 5, min_text_chars: 10, max_redirects: 2}
 sources:

@@ -27,8 +27,3 @@ def make_document(
         trust_level=source.trust_level,
         content_hash=content_hash(text),
     )
-
-
-def on_or_after(published_on: date | None, since: date | None) -> bool:
-    """Undated documents are kept: a missing date is not evidence of age."""
-    return since is None or published_on is None or published_on >= since

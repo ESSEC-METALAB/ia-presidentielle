@@ -15,6 +15,7 @@ from observatoire.domain.models import (
     Source,
     SourceCorpus,
     SourceOutcome,
+    in_window,
 )
 from observatoire.domain.ports import (
     CandidateMatcher,
@@ -47,26 +48,42 @@ class InspectCorpus:
         self._clock = clock
         self._segments = segments
 
-    def build(self, candidates: Sequence[Candidate], sources: Sequence[Source]) -> CorpusOverview:
-        snapshot = self._snapshot()
+    def build(
+        self,
+        candidates: Sequence[Candidate],
+        sources: Sequence[Source],
+        *,
+        since: date | None = None,
+    ) -> CorpusOverview:
+        """Only documents inside the collection window; those before it are counted."""
+        snapshot = self._snapshot(since)
         rows = tuple(self._candidate_corpus(c, sources, snapshot) for c in candidates)
         configured = {source.id for source in sources}
         unconfigured = sum(
             len(docs) for sid, docs in snapshot.by_source.items() if sid not in configured
         )
         return CorpusOverview(
-            generated_at=self._clock.now(), candidates=rows, unconfigured_documents=unconfigured
+            generated_at=self._clock.now(),
+            candidates=rows,
+            unconfigured_documents=unconfigured,
+            window_start=since,
+            out_of_window_documents=snapshot.out_of_window,
         )
 
-    def _snapshot(self) -> "_Snapshot":
+    def _snapshot(self, since: date | None) -> "_Snapshot":
         by_source: dict[str, list[RawDocument]] = defaultdict(list)
+        out_of_window = 0
         for document in self._corpus.list_documents():
-            by_source[document.source_id].append(document)
+            if in_window(document.published_on, since):
+                by_source[document.source_id].append(document)
+            else:
+                out_of_window += 1
         listed = self._segments.list_segmentations() if self._segments else []
         return _Snapshot(
             by_source=by_source,
             latest=self._history.latest_by_source(),
             segmentations={s.document_hash: s for s in listed},
+            out_of_window=out_of_window,
         )
 
     def _candidate_corpus(
@@ -109,6 +126,7 @@ class _Snapshot:
     by_source: dict[str, list[RawDocument]]
     latest: dict[str, SourceOutcome]
     segmentations: dict[str, DocumentSegmentation]
+    out_of_window: int
 
 
 def _newest_first(documents: list[RawDocument]) -> list[RawDocument]:

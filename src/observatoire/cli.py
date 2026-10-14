@@ -59,7 +59,11 @@ def _parser() -> argparse.ArgumentParser:
     )
     commands = parser.add_subparsers(required=True, metavar="commande")
     collect = commands.add_parser("collect", help="collecte les sources actives (réseau requis)")
-    collect.add_argument("--since", type=date.fromisoformat, help="AAAA-MM-JJ")
+    collect.add_argument(
+        "--since",
+        type=date.fromisoformat,
+        help="AAAA-MM-JJ ; jamais avant le début de la fenêtre de collecte (config/sources.yaml)",
+    )
     collect.add_argument("--source-id", action="append", dest="source_ids", help="répétable")
     collect.set_defaults(handler=_collect)
     legacy = commands.add_parser(
@@ -99,7 +103,8 @@ def _collect(args: argparse.Namespace, settings: Settings, registry: Registry) -
     ):
         readers = _live_readers(client, crawler, clock)
         use_case = CollectDaily(readers, repository, repository, clock)
-        report = use_case.run(sources, run_id=_run_id("collect", clock), since=args.since)
+        since = effective_since(args.since, registry.collection.since)
+        report = use_case.run(sources, run_id=_run_id("collect", clock), since=since)
     _print_report(report)
     return 0
 
@@ -111,7 +116,11 @@ def _import_legacy(args: argparse.Namespace, settings: Settings, registry: Regis
     with closing(SqliteRepository(settings.database_path)) as repository:
         use_case = CollectDaily(readers, repository, repository, clock)
         # Every configured source, disabled ones included: `enabled` governs live runs.
-        report = use_case.run(registry.sources, run_id=_run_id("import-legacy", clock))
+        report = use_case.run(
+            registry.sources,
+            run_id=_run_id("import-legacy", clock),
+            since=registry.collection.since,
+        )
     _print_report(report)
     return 0
 
@@ -121,7 +130,9 @@ def _segment(args: argparse.Namespace, settings: Settings, registry: Registry) -
     matcher = AliasMatcher(registry.candidates)
     with closing(SqliteRepository(settings.database_path)) as repository:
         use_case = SegmentDocuments(repository, repository, segmenter, matcher)
-        report = use_case.run(registry.sources, rebuild=args.rebuild)
+        report = use_case.run(
+            registry.sources, rebuild=args.rebuild, since=registry.collection.since
+        )
     _print_segmentation(report)
     return 0
 
@@ -131,7 +142,9 @@ def _corpus(args: argparse.Namespace, settings: Settings, registry: Registry) ->
     matcher = AliasMatcher(registry.candidates)
     with closing(SqliteRepository(settings.database_path)) as repository:
         use_case = InspectCorpus(repository, repository, matcher, clock, segments=repository)
-        overview = use_case.build(registry.candidates, registry.sources)
+        overview = use_case.build(
+            registry.candidates, registry.sources, since=registry.collection.since
+        )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     renderer = CorpusHtmlRenderer(standalone=not args.fragment)
     args.out.write_text(renderer.render(overview), encoding="utf-8")
@@ -161,6 +174,13 @@ def _selected(sources: Sequence[Source], ids: list[str] | None) -> list[Source] 
     return chosen if len(chosen) == len(set(ids)) else None
 
 
+def effective_since(requested: date | None, window_start: date) -> date:
+    """`--since` can narrow the collection window, never widen it."""
+    if requested is not None and requested < window_start:
+        print(f"--since {requested} précède la fenêtre de collecte : {window_start} s'applique")
+    return max(requested or window_start, window_start)
+
+
 def _run_id(prefix: str, clock: Clock) -> str:
     return f"{prefix}-{clock.now():%Y%m%dT%H%M%SZ}"
 
@@ -173,6 +193,8 @@ def _print_report(report: CollectionReport) -> None:
     for outcome in report.outcomes:
         status = "ok" if outcome.status == "ok" else "ÉCHEC"
         counts = f"{outcome.fetched} lus, {outcome.new} nouveaux, {outcome.duplicates} doublons"
+        if outcome.out_of_window:
+            counts += f", {outcome.out_of_window} hors fenêtre"
         print(f"  {status:6} {outcome.source_id:42} {counts}")
         if outcome.error:
             print(f"         {outcome.error}")
@@ -196,3 +218,5 @@ def _print_segmentation(report: SegmentationReport) -> None:
             print(f"  {'':42} exclus : {reasons}")
     if report.unconfigured_documents:
         print(f"  {report.unconfigured_documents} document(s) d'une source non configurée, ignorés")
+    if report.out_of_window_documents:
+        print(f"  {report.out_of_window_documents} document(s) publiés avant la fenêtre, ignorés")
