@@ -188,6 +188,11 @@ et d'un fichier `data.js` généré.
   PDF), pas le genre (discours, entretien, communiqué), qui est un jugement éditorial.
 - **Archive.** Seule une vraie capture de la Wayback Machine (`/web/<14 chiffres>/`),
   héritée de la version précédente, est affichée ; sinon « pas encore de capture ».
+- **Quelle annotation.** Pour chaque passage : celle d'une édition vérifiée
+  (`config/register.yaml`, badge « Vérifiée »), sinon celle de l'annotateur du jour
+  (badge « Contrôles automatiques »), sinon le passage est « en attente » : le site ne dit
+  jamais « aucune position identifiée » d'un texte que personne n'a lu. Une mise à jour du
+  matin ne remplace donc jamais une édition vérifiée.
 
 ## Niveaux de source
 

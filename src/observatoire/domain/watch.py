@@ -27,6 +27,8 @@ class RosterEntry(_Frozen):
 class LeadKind(StrEnum):
     DECLARED_NOT_LISTED = "declared_not_listed"  # declared there, absent from our roster
     WITHDRAWN_BUT_LISTED = "withdrawn_but_listed"  # withdrawn there, running in our roster
+    # Withdrawn in our roster, but a later declaration there, not withdrawn: running again?
+    DECLARED_BUT_WITHDRAWN_HERE = "declared_but_withdrawn_here"
 
 
 class CandidateLead(_Frozen):

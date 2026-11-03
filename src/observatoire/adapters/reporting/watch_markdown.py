@@ -13,6 +13,9 @@ _LEAD_TEXT = {
     LeadKind.WITHDRAWN_BUT_LISTED: (
         "retrait selon la liste extérieure, encore « en course » chez nous"
     ),
+    LeadKind.DECLARED_BUT_WITHDRAWN_HERE: (
+        "déclaré·e de nouveau selon la liste extérieure, « retiré·e » chez nous"
+    ),
 }
 _MAX_EMPTY = 15
 
@@ -35,7 +38,7 @@ def _signal(signal: TopicSignal, report: WatchReport) -> list[str]:
 class WatchMarkdown:
     def render(self, report: WatchReport) -> str:
         lines = [
-            f"# Veille du {report.generated_at:%d/%m/%Y %H:%M}",
+            f"# Veille du {report.generated_at:%d/%m/%Y %H:%M} (UTC)",
             "",
             "Propositions pour l'équipe éditoriale. **Rien n'a été modifié automatiquement** :",
             "ajouter un candidat (`config/candidates.yaml`, règle d'inclusion) ou un axe",

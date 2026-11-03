@@ -1,4 +1,4 @@
-"""BuildRegister: provenance joined from stored documents, withdrawn people and press left out."""
+"""BuildRegister: provenance from stored documents; which annotation each passage shows."""
 
 from datetime import UTC, date, datetime
 
@@ -17,6 +17,7 @@ from observatoire.domain.models import (
     TrustLevel,
 )
 from observatoire.domain.register import Register
+from observatoire.services.ai_relevance import RelevanceSettings, TermRelevanceFilter
 from observatoire.services.dedup import content_hash
 from support import FrozenClock, InMemoryStore, candidate, document, source
 
@@ -31,6 +32,7 @@ DIMENSIONS = (
 )
 TEXT = "Nous créerons une autorité de contrôle de l'IA."
 FEED = source()
+RELEVANCE = TermRelevanceFilter(RelevanceSettings(strong_patterns=(r"\bIA\b",)))
 
 
 def _withdrawn() -> Candidate:
@@ -53,6 +55,7 @@ def _annotated(
     version: str = "v1",
     at: datetime = datetime(2026, 11, 1, tzinfo=UTC),
     hashed: str | None = None,
+    statements: int = 1,
 ) -> SegmentAnnotation:
     passage = Segment(document_hash=doc.content_hash, index=0, text=TEXT, spans=((0, len(TEXT)),))
     store.save(doc)
@@ -83,15 +86,22 @@ def _annotated(
         segment_hash=hashed or content_hash(TEXT),
         annotator_version=version,
         annotated_at=at,
-        annotations=(statement,),
+        annotations=(statement,) * statements,
     )
     store.save_annotation(annotation)
     return annotation
 
 
-def _build(store: InMemoryStore, people: list[Candidate], sources: list[Source]) -> Register:
-    use_case = BuildRegister(corpus=store, segments=store, annotations=store, clock=FrozenClock())
-    return use_case.build(people, sources, DIMENSIONS, since=date(2026, 7, 1))
+def _build(
+    store: InMemoryStore,
+    people: list[Candidate],
+    sources: list[Source],
+    verified: tuple[str, ...] = (),
+) -> Register:
+    use_case = BuildRegister(
+        corpus=store, segments=store, annotations=store, relevance=RELEVANCE, clock=FrozenClock()
+    )
+    return use_case.build(people, sources, DIMENSIONS, since=date(2026, 7, 1), verified=verified)
 
 
 def test_a_statement_carries_the_stored_documents_provenance() -> None:
@@ -104,7 +114,9 @@ def test_a_statement_carries_the_stored_documents_provenance() -> None:
     (entry,) = register.entries
     assert entry.document.url == doc.url
     assert entry.source.id == FEED.id
-    assert register.annotator_version == "v1"
+    assert register.annotators == ("v1",)
+    assert entry.annotator_version == "v1"
+    assert not entry.verified
 
 
 def test_withdrawn_people_are_listed_apart_and_never_shown() -> None:
@@ -145,7 +157,7 @@ def test_an_annotation_of_an_older_passage_text_is_not_shown() -> None:
     assert register.entries == ()
 
 
-def test_the_most_recent_annotator_is_the_one_shown() -> None:
+def test_on_equal_coverage_the_more_recent_automatic_annotator_is_shown() -> None:
     store = InMemoryStore()
     doc = document(TEXT)
     _annotated(store, doc, version="old", at=datetime(2026, 10, 1, tzinfo=UTC))
@@ -153,14 +165,15 @@ def test_the_most_recent_annotator_is_the_one_shown() -> None:
 
     register = _build(store, [candidate()], [FEED])
 
-    assert register.annotator_version == "new"
+    assert register.annotators == ("new",)
     assert len(register.entries) == 1
 
 
 def test_nothing_annotated_yet_is_an_empty_register_not_an_error() -> None:
     register = _build(InMemoryStore(), [candidate()], [FEED])
 
-    assert register.annotator_version is None
+    assert register.annotators == ()
+    assert register.pending == {}
 
 
 @pytest.mark.parametrize("archived_first", [True, False])
@@ -190,4 +203,87 @@ def test_a_newer_annotator_that_has_not_caught_up_does_not_replace_the_register(
 
     register = _build(store, [candidate()], [FEED])
 
-    assert register.annotator_version == "complete"
+    assert register.annotators == ("complete",)
+
+
+def test_rows_of_passages_that_no_longer_exist_do_not_count_as_coverage() -> None:
+    store = InMemoryStore()
+    for gone in ("aaaa-000", "aaaa-001", "aaaa-002"):  # an older segmentation's passages
+        store.save_annotation(
+            SegmentAnnotation(
+                segment_id=gone,
+                segment_hash=content_hash(gone),
+                annotator_version="old",
+                annotated_at=datetime(2026, 12, 1, tzinfo=UTC),
+                annotations=(),
+            )
+        )
+    _annotated(store, document(TEXT), version="new", at=datetime(2026, 10, 1, tzinfo=UTC))
+
+    register = _build(store, [candidate()], [FEED])
+
+    assert register.annotators == ("new",)
+    assert len(register.entries) == 1
+
+
+def test_a_verified_edition_outranks_a_newer_automatic_run_on_the_same_passage() -> None:
+    store = InMemoryStore()
+    doc = document(TEXT)
+    _annotated(store, doc, version="edition", at=datetime(2026, 11, 3, tzinfo=UTC))
+    _annotated(store, doc, version="daily", at=datetime(2026, 11, 4, tzinfo=UTC), statements=0)
+
+    register = _build(store, [candidate()], [FEED], verified=("edition",))
+
+    (entry,) = register.entries
+    assert (entry.annotator_version, entry.verified) == ("edition", True)
+    assert register.annotators == ("edition",)
+
+
+def test_the_automatic_annotator_fills_what_the_verified_edition_does_not_cover() -> None:
+    store = InMemoryStore()
+    old, new = document("Ancien. " + TEXT), document("Nouveau. " + TEXT)
+    _annotated(store, old, version="edition")
+    _annotated(store, new, version="daily")
+
+    register = _build(store, [candidate()], [FEED], verified=("edition",))
+
+    assert sorted((e.annotator_version, e.verified) for e in register.entries) == [
+        ("daily", False),
+        ("edition", True),
+    ]
+    assert register.annotators == ("edition", "daily")
+
+
+def test_an_ai_passage_nobody_annotated_is_pending_for_its_candidate() -> None:
+    store = InMemoryStore()
+    doc = document(TEXT)
+    _annotated(store, doc)
+    fresh = document("Une autre mesure sur l'IA, collectée ce matin.")
+    store.save(fresh)
+    store.replace(
+        [
+            DocumentSegmentation(
+                document_hash=fresh.content_hash,
+                segmenter_version="s1",
+                segments=(
+                    Segment(
+                        document_hash=fresh.content_hash,
+                        index=0,
+                        text=fresh.text,
+                        spans=((0, len(fresh.text)),),
+                    ),
+                    Segment(
+                        document_hash=fresh.content_hash,
+                        index=1,
+                        text="Rien sur le sujet.",
+                        spans=((0, 5),),
+                    ),
+                ),
+                excluded=(),
+            )
+        ]
+    )
+
+    register = _build(store, [candidate()], [FEED])
+
+    assert register.pending == {"camille-exemple": 1}

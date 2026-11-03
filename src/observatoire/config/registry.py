@@ -85,6 +85,26 @@ class WatchSettings(BaseModel):
         return topics
 
 
+class VerifiedEdition(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    annotator: str = Field(min_length=1)
+    record: str = Field(min_length=1)  # the verification record, relative to the repository
+    note: str = ""
+
+
+class RegisterSettings(BaseModel):
+    """config/register.yaml: which annotations the public register shows."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    verified_editions: tuple[VerifiedEdition, ...] = ()
+
+    @property
+    def verified_annotators(self) -> tuple[str, ...]:
+        return tuple(edition.annotator for edition in self.verified_editions)
+
+
 class Registry(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -95,6 +115,7 @@ class Registry(BaseModel):
     segmentation: SegmentationSettings
     taxonomy: TaxonomySettings
     watch: WatchSettings
+    publication: RegisterSettings  # config/register.yaml
 
 
 class _CandidatesFile(BaseModel):
@@ -127,6 +148,7 @@ def load_registry(config_dir: Path) -> Registry:
         segmentation=_load(config_dir / "segmentation.yaml", SegmentationSettings),
         taxonomy=taxonomy,
         watch=_load(config_dir / "watch.yaml", WatchSettings),
+        publication=_load(config_dir / "register.yaml", RegisterSettings),
     )
 
 

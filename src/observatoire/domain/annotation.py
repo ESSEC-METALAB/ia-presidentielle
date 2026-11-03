@@ -6,7 +6,7 @@ model. A proposal becomes a `DimensionAnnotation` only after the gates have foun
 quote in the passage, and the stored quote is the passage's own text, not the model's copy.
 """
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import date
 from enum import StrEnum
 
@@ -97,20 +97,54 @@ class SegmentAnnotation(_Frozen):
         return not self.annotations
 
 
-def current_annotator(annotations: Sequence[SegmentAnnotation]) -> str | None:
-    """The annotator whose work the register shows: one at a time, never a mix.
+def current_annotator(
+    annotations: Sequence[SegmentAnnotation], current: Mapping[str, str]
+) -> str | None:
+    """The automatic annotator: the one covering the most passages as they are now.
 
-    The one that has annotated the most passages, the most recent on a tie. A new
-    provider (say, Mistral after a recorded batch) takes over once it has caught up, so
-    a run that stops halfway (quota, outage) never empties the register overnight.
+    `current` maps each current passage id to the hash of its text. Annotations of
+    passages that are gone or were re-segmented do not count, or an annotator could keep
+    the register on rows that no longer match anything. Recency breaks a tie, so a new
+    provider takes over once it has caught up, and never halfway (a quota stop, an outage).
     """
     coverage: dict[str, tuple[int, AwareDatetime]] = {}
     for annotation in annotations:
-        count, latest = coverage.get(annotation.annotator_version, (0, annotation.annotated_at))
-        coverage[annotation.annotator_version] = (count + 1, max(latest, annotation.annotated_at))
+        if current.get(annotation.segment_id) != annotation.segment_hash:
+            continue
+        version = annotation.annotator_version
+        count, latest = coverage.get(version, (0, annotation.annotated_at))
+        coverage[version] = (count + 1, max(latest, annotation.annotated_at))
     if not coverage:
         return None
     return max(coverage, key=lambda version: coverage[version])
+
+
+def published_annotations(
+    annotations: Sequence[SegmentAnnotation],
+    current: Mapping[str, str],
+    verified: Sequence[str] = (),
+) -> dict[str, SegmentAnnotation]:
+    """For each current passage, the annotation the register shows.
+
+    A cross-verified edition's (`verified`, in order of precedence) when one covers the
+    passage as it is now; otherwise the automatic annotator's. A current passage missing
+    from the result is pending: nobody has annotated its present text.
+    """
+    automatic = current_annotator(
+        [a for a in annotations if a.annotator_version not in verified], current
+    )
+    precedence = {version: rank for rank, version in enumerate(verified)}
+    if automatic is not None:
+        precedence[automatic] = len(verified)
+    chosen: dict[str, SegmentAnnotation] = {}
+    for annotation in annotations:
+        rank = precedence.get(annotation.annotator_version)
+        if rank is None or current.get(annotation.segment_id) != annotation.segment_hash:
+            continue
+        kept = chosen.get(annotation.segment_id)
+        if kept is None or rank < precedence[kept.annotator_version]:
+            chosen[annotation.segment_id] = annotation
+    return chosen
 
 
 class AnnotationContext(_Frozen):

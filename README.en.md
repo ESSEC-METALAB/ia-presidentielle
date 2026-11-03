@@ -39,7 +39,8 @@ machine (on Windows: [WSL](https://learn.microsoft.com/en-us/windows/wsl/install
 git clone https://github.com/ESSEC-METALAB/ia-presidentielle.git
 cd ia-presidentielle && git checkout archi
 make install      # Python environment and dependencies
-make site         # builds the register from the data already collected (≈ 1 min)
+make site         # builds the register from the data already collected (≈ 1 min;
+                  #   first fetches the previous version's database from GitHub)
 make serve        # opens http://localhost:8000 — works without internet
 ```
 
@@ -51,8 +52,8 @@ make schedule            # installs the 08:00 update and keeps the site up local
 make schedule-status     # check; "make unschedule" removes everything
 ```
 
-Without a Mistral key everything still works: the site is rebuilt every morning and new
-passages wait for classification (the watch note counts them).
+Without a Mistral key everything still works: the site is rebuilt every morning, and new
+passages about AI are shown as "pending" until they are classified.
 
 ---
 
@@ -72,6 +73,9 @@ flowchart LR
     DB --> V["Watch: candidates<br/>and topics to examine"]
 ```
 
+The `observatoire …` commands run inside the project environment: `uv run observatoire …`,
+or more simply the matching `make` targets.
+
 | Step | What it does | Command |
 |---|---|---|
 | 1. Collect | Reads the sources declared in `config/sources.yaml`, honouring `robots.txt` and a delay between requests. Keeps the URL, the publication date (never guessed) and the fetch time. A text already seen is not stored twice. | `observatoire collect` |
@@ -79,7 +83,7 @@ flowchart LR
 | 3. AI filter | Keeps only passages about AI: one strong term ("intelligence artificielle", "IA", "algorithme"…) or two distinct weak ones ("numérique", "données"…). | (inside `annotate`) |
 | 4. Annotate | A language model reads each kept passage and proposes its statements: quote, axis, summary, context, translation. **"Nothing" is the expected answer for most passages.** | `observatoire annotate` |
 | 5. Gates | Code rejects any proposal whose quote is not word for word in the text, whose axis is unknown, or whose summary contains a judgement word. The stored quote is the source's own text, never the model's copy. | (inside `annotate`) |
-| 6. Register | Attaches each statement's provenance (candidate, source, date, archive) from the database, then writes the site. | `observatoire register` |
+| 6. Register | Picks the annotation each passage shows (a verified edition first, else the day's annotator, else "pending"), attaches its provenance (candidate, source, date, archive) from the database, then writes the site. | `observatoire register` |
 | Watch | Compares our candidate list with an outside list, counts subjects that are not yet axes, lists pending passages. Changes nothing. | `observatoire watch` |
 
 ### Every morning at 08:00
@@ -87,10 +91,17 @@ flowchart LR
 `make schedule` installs on the machine (launchd on macOS, systemd or cron on Linux):
 
 1. **the update** (`scripts/daily.sh`), at 08:00 local time: collect → import from the
-   previous version → split → annotate → watch → site. If the machine was asleep at
-   08:00, it runs at wake-up (macOS, systemd). A failed step does not stop the next ones;
-   the day's log is in `data/logs/`, with a summary at the end;
-2. **the site server**, on `http://localhost:8000`, restarted if it stops.
+   previous version → split → annotate → watch → site. A failed step does not stop the
+   next ones; the day's log is in `data/logs/`, with a summary. Machine asleep at 08:00:
+   the update runs at wake-up (macOS, systemd). Machine off: caught up at boot with
+   systemd, skipped with launchd and cron;
+2. **the site server**, on `http://localhost:8000`, restarted if it stops (with cron:
+   checked every ten minutes). If there is no site yet, `make schedule` first runs an
+   update.
+
+On macOS, the repository must not live in Documents, Desktop, Downloads or iCloud Drive:
+macOS forbids those folders to scheduled jobs (`make schedule` refuses and says what to
+do). A folder such as `~/ia-presidentielle` is fine.
 
 | Automatic | Proposed in the watch note | Human decision |
 |---|---|---|
@@ -115,6 +126,7 @@ text is kept and shown as "date not specified": a missing date is not evidence o
 | lafranceinsoumise.fr RSS feed | Jean-Luc Mélenchon | 2 | |
 | edouardphilippe.fr "Priorités" page | Édouard Philippe | 1 | |
 | National Assembly transcripts (open data) | Gabriel Attal, Marine Le Pen | 1, confirmed | the transcript names the speaker |
+| National Assembly transcripts | Bruno Retailleau | 1, confirmed | ministerial interventions, until 2025: nothing in the window |
 | Parti socialiste RSS feed, Assembly | Olivier Faure | 2 / 1 | withdrew on 11 October: off the register |
 | Previous version's database (branch `daily`, GitHub Actions) | all monitored | — | a bridge while the old collection runs |
 | MieuxVoter list of candidacies (community) | — | — | **watch only**, never evidence |
@@ -186,10 +198,21 @@ no tone or sentiment, no prediction. Those are judgements; published under an
 institution's name during a campaign, they would be the first risk to its neutrality
 (ADR 0002).
 
-**The edition of 3 November 2026** was classified offline by an assistant (Mistral could
+**Verified editions and the day's annotation.** Each passage shows one annotation, in this
+order (`config/register.yaml`):
+
+1. a **verified edition's**, if it covers the passage as it is now: "Verified" badge;
+2. otherwise the **day's annotator's** (Mistral): "Automatic checks" badge;
+3. otherwise the passage is **pending**, and the site says so.
+
+A morning update therefore never replaces a verified edition; it fills in what the
+edition does not cover.
+
+**The edition of 3 November 2026** was classified offline by an AI assistant (Mistral could
 not be reached from the development environment), with the same prompt and schema Mistral
-gets, then **checked by six independent verifiers** per statement (substance ×3, axis ×2,
-fidelity ×1): 188 proposals, 6 dropped, 1 axis changed, 45 summaries corrected, 182
+gets, then checked statement by statement by **six independent automated verifiers — AI
+assistants, not people** (substance ×3, axis ×2, fidelity ×1): 188 proposals, 6 dropped, 1
+axis changed, 45 statements with corrected notes (summary, context or translation), 182
 statements published. Everything is versioned in `annotations/`.
 
 ---
@@ -213,12 +236,16 @@ statements published. Everything is versioned in `annotations/`.
   to the text, the "Archive" link to a dated copy when one exists.
 - **The level** says who is speaking: "Candidate" (level 1) or "Party or staff"
   (level 2). A **solid** border = confirmed; **dashed** = assigned by default, to confirm.
+- **"Verified"**: the statement comes from an edition checked by the six automated
+  verifiers. **"Automatic checks"**: it passed only the code's checks. None has been
+  reviewed by a person yet.
 - **The barometer counts statements, not their importance.** A brief sentence and a
   detailed reform each count as one. A programme devoted to AI therefore fills many cells
   mechanically.
 - **"No position identified"** (magnifier): we read this candidate's sources and found
-  nothing on this axis. **"Not tracked"** (hatching): no source is configured; we are not
-  listening and can say nothing about their silence.
+  nothing on this axis. **"Pending"** (hourglass): passages by this candidate about AI are
+  not classified yet; nothing is established. **"Not tracked"** (hatching): no source is
+  configured; we can say nothing about their silence.
 - **What not to conclude**: that a candidate is "more" or "less" in favour of AI, that
   they talk about it more than another (that depends first on our sources), or that a
   position is good or bad.
@@ -248,22 +275,22 @@ cli.py  (wires the pieces together)
 ```
 
 ```
-config/         candidates, sources, splitting, axes and gates, watch — no code
+config/         candidates, sources, splitting, axes and gates, watch, verified editions
 web/registre/   the site (prototype v3) with its libraries and fonts, for offline use
 annotations/    versioned annotation answers and verification
 scripts/        daily.sh (update), serve.sh (site), schedule.sh (scheduling)
 docs/           methodology.md (rules and findings), sources-a-verifier.md, adr/
-tests/          279 tests, no network or key; 100 % coverage of domain and use cases
+tests/          295 tests, no network or key; 100 % coverage of domain and use cases
 ```
 
 | Command | Role |
 |---|---|
-| `make site` | the whole register, offline, from the previous version's data |
+| `make site` | the whole register, no API key, from the previous version's data (fetched from GitHub; offline, the last copy) |
 | `make daily` | the morning update, by hand |
 | `make serve` | the site on `http://localhost:8000` |
 | `make schedule` / `unschedule` / `schedule-status` | install, remove, check the 08:00 job and the server |
 | `make watch` | the watch note alone |
-| `make annotate` | classify pending passages with the provider in `.env` |
+| `make annotate` | classify pending passages with Mistral (`.env`); without a key, a dry run that writes nothing |
 | `make check` | lint, strict typing, tests, coverage: must pass before any commit |
 | `make help` | every command |
 
@@ -277,7 +304,10 @@ tests/          279 tests, no network or key; 100 % coverage of domain and use c
   in `config/sources.yaml` (kind, URL, level). No code for an RSS feed, a page, a PDF or a
   deputy.
 - **Add or change an axis**: `config/taxonomy.yaml`. The prompt then changes version:
-  every passage is reclassified on the next run.
+  with Mistral, every passage is reclassified on the next update; without a key, the
+  recorded answers no longer match and the passages become "pending".
+- **Publish a verified edition**: once its answers are verified and recorded, add it to
+  `config/register.yaml`; it then takes precedence over the day's annotation.
 - **Change the model**: `MISTRAL_MODEL` in `.env`. Another provider = a new adapter in
   `adapters/llm/`, without touching the use cases.
 
@@ -289,6 +319,8 @@ tests/          279 tests, no network or key; 100 % coverage of domain and use c
 - The **Mistral client** was written from the documentation and tested against a
   simulated response; its first real call will happen on your machine.
 - **Uneven coverage**: 5 candidates tracked out of 13 (see the warning above).
+- The licence of the flag animation (adapted from React Bits' "Silk" shader) is to be
+  confirmed before publication (`web/registre/NOTICE.md`).
 - The **Parti socialiste** feed is still attributed to Olivier Faure, who withdrew;
   attributing it to Raphaël Glucksmann (joint candidate since 11 October) is an editorial
   decision.

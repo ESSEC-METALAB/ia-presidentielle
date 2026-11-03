@@ -41,7 +41,7 @@ def _axis(dimension: Dimension) -> dict[str, object]:
     }
 
 
-def _candidate(listed: RegisterCandidate) -> dict[str, object]:
+def _candidate(listed: RegisterCandidate, pending: int) -> dict[str, object]:
     person = listed.candidate
     return {
         "id": person.id,
@@ -50,6 +50,9 @@ def _candidate(listed: RegisterCandidate) -> dict[str, object]:
         "party": person.party,
         "partyShort": person.party_short or person.party,
         "tracked": listed.monitored,
+        # AI passages nobody has annotated yet: the site says "en attente" for this
+        # candidate's empty cells instead of "aucune position identifiée".
+        "pending": pending,
         "sources": [{"fr": s.label, "en": s.label, "url": s.url} for s in listed.sources],
     }
 
@@ -75,6 +78,8 @@ def _claim(entry: RegisterEntry) -> dict[str, object]:
         "sourceUrl": document.url,
         "archiveUrl": document.archive_url,
         "archiveDate": _iso(document.archived_on),
+        # From a cross-verified edition (config/register.yaml), or automatic gates only.
+        "verified": entry.verified,
     }
 
 
@@ -83,10 +88,13 @@ class RegisterDataScript:
         data = {
             "generated": register.generated_at.date().isoformat(),
             "windowStart": _iso(register.window_start),
-            "annotator": register.annotator_version,
+            "annotators": list(register.annotators),
             "reviewed": False,  # no statement has been through editorial review yet
+            "pending": sum(register.pending.values()),
             "axes": [_axis(d) for d in register.dimensions],
-            "candidates": [_candidate(c) for c in register.candidates],
+            "candidates": [
+                _candidate(c, register.pending.get(c.candidate.id, 0)) for c in register.candidates
+            ],
             "claims": [_claim(e) for e in register.entries],
             "corrections": [],
         }

@@ -34,6 +34,7 @@ from observatoire.adapters.sources.legacy_pipeline_reader import LEGACY_KINDS, L
 from observatoire.adapters.sources.mieuxvoter_roster import MieuxVoterRoster
 from observatoire.adapters.sources.pdf_reader import PdfReader
 from observatoire.adapters.sources.rss_reader import RssReader
+from observatoire.adapters.storage.discarding_store import DiscardingAnnotationStore
 from observatoire.adapters.storage.sqlite_repository import SqliteRepository
 from observatoire.adapters.system_clock import SystemClock
 from observatoire.application.annotate_documents import AnnotateDocuments
@@ -222,7 +223,10 @@ def _annotate(args: argparse.Namespace, settings: Settings, registry: Registry) 
         client = _llm_client(args, settings, http)
         if client is None:
             return 2
-        if not isinstance(client, BatchRequestWriter):
+        dry_run = isinstance(client, FakeLLMClient | BatchRequestWriter)
+        if isinstance(client, FakeLLMClient):
+            print("Faux annotateur (LLM_PROVIDER=fake) : essai à blanc, rien n'est enregistré.")
+        if not dry_run:
             client = UsageRecordingClient(client, repository, clock, "annotate")
         annotator = LLMAnnotator(
             client, PromptTemplate(PROMPT, taxonomy.dimensions), taxonomy.dimension_ids
@@ -230,7 +234,7 @@ def _annotate(args: argparse.Namespace, settings: Settings, registry: Registry) 
         use_case = AnnotateDocuments(
             corpus=repository,
             segments=repository,
-            store=repository,
+            store=DiscardingAnnotationStore() if dry_run else repository,
             annotator=annotator,
             relevance=TermRelevanceFilter(taxonomy.relevance),
             reviewer=AnnotationGates(taxonomy.dimension_ids, taxonomy.gates),
@@ -281,20 +285,29 @@ def _register(args: argparse.Namespace, settings: Settings, registry: Registry) 
         return 2
     with closing(SqliteRepository(settings.database_path)) as repository:
         use_case = BuildRegister(
-            corpus=repository, segments=repository, annotations=repository, clock=SystemClock()
+            corpus=repository,
+            segments=repository,
+            annotations=repository,
+            relevance=TermRelevanceFilter(registry.taxonomy.relevance),
+            clock=SystemClock(),
         )
         register = use_case.build(
             registry.candidates,
             registry.sources,
             registry.taxonomy.dimensions,
             since=registry.collection.since,
+            verified=registry.publication.verified_annotators,
         )
     page = write_site(args.template, args.out, RegisterDataScript().render(register))
     tracked = sum(1 for c in register.candidates if c.monitored)
+    verified = sum(1 for e in register.entries if e.verified)
     print(
-        f"Registre : {len(register.entries)} déclaration(s), {len(register.candidates)}"
-        f" candidat(s) dont {tracked} suivi(s) ; annotateur {register.annotator_version}"
+        f"Registre : {len(register.entries)} déclaration(s) dont {verified} vérifiée(s),"
+        f" {len(register.candidates)} candidat(s) dont {tracked} suivi(s),"
+        f" {sum(register.pending.values())} passage(s) en attente"
     )
+    for version in register.annotators:
+        print(f"  annotateur : {version}")
     if register.withdrawn:
         print(f"  Hors registre (retrait) : {', '.join(c.name for c in register.withdrawn)}")
     print(f"Site écrit dans {page}")
@@ -330,6 +343,7 @@ def _watch(args: argparse.Namespace, settings: Settings, registry: Registry) -> 
             threshold=registry.watch.topic_threshold,
             min_candidates=registry.watch.topic_min_candidates,
             since=registry.collection.since,
+            verified=registry.publication.verified_annotators,
         )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(WatchMarkdown().render(report), encoding="utf-8")

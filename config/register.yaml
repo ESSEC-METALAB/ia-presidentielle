@@ -1,0 +1,18 @@
+# What the public register shows (`observatoire register`).
+#
+# Each passage shows one annotation:
+#   1. a cross-verified edition's, listed below in order of precedence, when one covers
+#      the passage as it is now; its statements carry the "Vérifiée" badge;
+#   2. otherwise the automatic annotator's (LLM_PROVIDER, e.g. Mistral in the daily run):
+#      the one covering the most current passages; badge "Contrôles automatiques";
+#   3. otherwise the passage is pending: the site says "en attente", never "aucune
+#      position identifiée", about text nobody has read.
+# An edition is listed here by an editor, once its verification record exists. Listing
+# it is what lets it outrank the daily annotator: a morning run never replaces it.
+verified_editions:
+  - annotator: claude-code-session-draft+classify_dimension.v1@6c8d9c67b81d
+    record: annotations/2026-11-03-verification.json
+    note: >-
+      Édition du 3 novembre 2026 : 117 requêtes annotées hors ligne par un assistant,
+      188 propositions vérifiées chacune par six vérificateurs automatiques (fond ×3,
+      axe ×2, fidélité ×1) ; 6 écartées, 1 axe changé, 45 déclarations aux notes corrigées.

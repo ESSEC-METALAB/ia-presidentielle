@@ -13,7 +13,7 @@ from datetime import date
 
 import structlog
 
-from observatoire.domain.annotation import current_annotator
+from observatoire.domain.annotation import published_annotations
 from observatoire.domain.errors import SourceUnavailableError
 from observatoire.domain.models import Candidate, RawDocument, Segment, Source, in_window
 from observatoire.domain.ports import (
@@ -92,12 +92,17 @@ class WatchChanges:
         threshold: int,
         min_candidates: int = 1,
         since: date | None = None,
+        verified: Sequence[str] = (),
     ) -> WatchReport:
+        """Topics and passages count running candidates only, as the register shows them."""
         leads, roster_error = self._candidate_leads(candidates)
+        running = {c.id for c in candidates if c.is_running}
         passages = [
-            p for p in self._passages(sources, since) if self._relevance.is_relevant(p.segment.text)
+            p
+            for p in self._passages(running, sources, since)
+            if self._relevance.is_relevant(p.segment.text)
         ]
-        pending, empty = self._annotation_state(passages)
+        pending, empty = self._annotation_state(passages, verified)
         return WatchReport(
             generated_at=self._clock.now(),
             roster_label=self._roster.label,
@@ -121,8 +126,10 @@ class WatchChanges:
             return (), str(error)
         return tuple(_leads(candidates, entries)), None
 
-    def _passages(self, sources: Sequence[Source], since: date | None) -> Iterator[_Passage]:
-        configured = {s.id for s in sources}
+    def _passages(
+        self, people: set[str], sources: Sequence[Source], since: date | None
+    ) -> Iterator[_Passage]:
+        configured = {s.id for s in sources if s.candidate_id in people}
         documents = {
             d.content_hash: d
             for d in self._corpus.list_documents()
@@ -136,15 +143,15 @@ class WatchChanges:
                 yield from (_Passage(segment, document) for segment in segmentation.segments)
 
     def _annotation_state(
-        self, passages: Sequence[_Passage]
+        self, passages: Sequence[_Passage], verified: Sequence[str]
     ) -> tuple[int, tuple[PassageExample, ...]]:
-        stored = self._annotations.list_annotations()
-        version = current_annotator(stored)
-        done = {a.segment_id: a for a in stored if a.annotator_version == version}
+        """Pending and empty against what the register shows (`published_annotations`)."""
+        hashes = {p.segment.id: content_hash(p.segment.text) for p in passages}
+        shown = published_annotations(self._annotations.list_annotations(), hashes, verified)
         pending, empty = 0, []
         for passage in passages:
-            annotation = done.get(passage.segment.id)
-            if annotation is None or annotation.segment_hash != content_hash(passage.segment.text):
+            annotation = shown.get(passage.segment.id)
+            if annotation is None:
                 pending += 1
             elif annotation.is_empty:
                 empty.append(_excerpt(passage))
@@ -171,6 +178,21 @@ def _leads(
                 party=entry.party,
                 on=entry.withdrawn_on,
             )
+        elif _declared_again(entry, listed):
+            yield CandidateLead(
+                kind=LeadKind.DECLARED_BUT_WITHDRAWN_HERE,
+                name=entry.name,
+                party=entry.party,
+                on=entry.declared_on,
+            )
+
+
+def _declared_again(entry: RosterEntry, listed: Candidate | None) -> bool:
+    """Withdrawn in our roster, declared (later) and not withdrawn in the outside list."""
+    if listed is None or listed.is_running or entry.declared_on is None or entry.withdrawn_on:
+        return False
+    ours = listed.candidacy.since if listed.candidacy else None
+    return ours is None or entry.declared_on > ours
 
 
 def _signal(topic: WatchedTopic, passages: Sequence[_Passage]) -> TopicSignal:

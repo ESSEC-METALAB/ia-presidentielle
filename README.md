@@ -39,7 +39,8 @@ Linux (sous Windows : [WSL](https://learn.microsoft.com/fr-fr/windows/wsl/instal
 git clone https://github.com/ESSEC-METALAB/ia-presidentielle.git
 cd ia-presidentielle && git checkout archi
 make install      # environnement Python et dépendances
-make site         # construit le registre avec les données déjà collectées (≈ 1 min)
+make site         # construit le registre avec les données déjà collectées (≈ 1 min ;
+                  #   récupère d'abord sur GitHub la base de la version précédente)
 make serve        # ouvre http://localhost:8000 — fonctionne sans internet
 ```
 
@@ -51,8 +52,8 @@ make schedule            # installe la mise à jour de 8 h et garde le site en l
 make schedule-status     # vérifier ; « make unschedule » pour tout retirer
 ```
 
-Sans clé Mistral, tout fonctionne aussi : le site est reconstruit chaque matin et les
-nouveaux passages attendent leur classement (la note de veille les compte).
+Sans clé Mistral, tout fonctionne aussi : le site est reconstruit chaque matin, et les
+nouveaux passages sur l'IA y sont signalés « en attente » jusqu'à leur classement.
 
 ---
 
@@ -72,6 +73,9 @@ flowchart LR
     DB --> V["Veille : candidats<br/>et sujets à examiner"]
 ```
 
+Les commandes `observatoire …` s'exécutent dans l'environnement du projet :
+`uv run observatoire …`, ou plus simplement les cibles `make` correspondantes.
+
 | Étape | Ce qu'elle fait | Commande |
 |---|---|---|
 | 1. Collecte | Lit les sources déclarées dans `config/sources.yaml`, en respectant `robots.txt` et un délai entre requêtes. Garde l'URL, la date de publication (jamais devinée) et l'heure de collecte. Un texte déjà vu n'est pas stocké deux fois. | `observatoire collect` |
@@ -79,7 +83,7 @@ flowchart LR
 | 3. Filtre IA | Ne garde que les passages qui parlent d'IA : un terme fort (« intelligence artificielle », « IA », « algorithme »…) ou deux termes faibles distincts (« numérique », « données »…). | (dans `annotate`) |
 | 4. Annotation | Un modèle de langage lit chaque passage retenu et propose ses déclarations : citation, axe, résumé, contexte, traduction. **« Rien » est la réponse attendue pour la plupart des passages.** | `observatoire annotate` |
 | 5. Contrôles | Le code rejette toute proposition dont la citation n'est pas mot pour mot dans le texte, dont l'axe est inconnu, ou dont le résumé contient un mot de jugement. La citation enregistrée est celle de la source, jamais la copie du modèle. | (dans `annotate`) |
-| 6. Registre | Joint à chaque déclaration sa provenance (candidat, source, date, archive) depuis la base, puis écrit le site. | `observatoire register` |
+| 6. Registre | Choisit pour chaque passage l'annotation à montrer (édition vérifiée d'abord, sinon l'annotateur du jour, sinon « en attente »), joint sa provenance (candidat, source, date, archive) depuis la base, puis écrit le site. | `observatoire register` |
 | Veille | Compare la liste des candidats à une liste extérieure, compte les sujets qui ne sont pas encore des axes, liste les passages en attente. Ne modifie rien. | `observatoire watch` |
 
 ### Chaque matin à 8 h
@@ -87,10 +91,17 @@ flowchart LR
 `make schedule` installe sur la machine (launchd sous macOS, systemd ou cron sous Linux) :
 
 1. **la mise à jour** (`scripts/daily.sh`), à 8 h heure locale : collecte → import de la
-   version précédente → découpage → annotation → veille → site. Si la machine dormait à
-   8 h, elle tourne au réveil (macOS, systemd). Une étape en échec n'arrête pas les
-   suivantes ; le journal du jour est dans `data/logs/`, avec un bilan à la fin ;
-2. **le serveur du site**, sur `http://localhost:8000`, relancé s'il s'arrête.
+   version précédente → découpage → annotation → veille → site. Une étape en échec
+   n'arrête pas les suivantes ; le journal du jour est dans `data/logs/`, avec un bilan.
+   Machine en veille à 8 h : la mise à jour tourne au réveil (macOS, systemd). Machine
+   éteinte : rattrapée au démarrage avec systemd, sautée avec launchd et cron ;
+2. **le serveur du site**, sur `http://localhost:8000`, relancé s'il s'arrête (avec cron :
+   vérifié toutes les dix minutes). S'il n'y a pas encore de site, `make schedule` lance
+   d'abord une mise à jour.
+
+Sous macOS, le dépôt ne doit pas se trouver dans Documents, Bureau, Téléchargements ou
+iCloud Drive : macOS interdit ces dossiers aux tâches planifiées (`make schedule` refuse
+et indique quoi faire). Un dossier comme `~/ia-presidentielle` convient.
 
 | Automatique | Proposé dans la note de veille | Décision humaine |
 |---|---|---|
@@ -116,6 +127,7 @@ une preuve d'ancienneté.
 | Flux RSS de lafranceinsoumise.fr | Jean-Luc Mélenchon | 2 | |
 | Page « Priorités » d'edouardphilippe.fr | Édouard Philippe | 1 | |
 | Comptes rendus de l'Assemblée nationale (open data) | Gabriel Attal, Marine Le Pen | 1, confirmé | le compte rendu nomme l'orateur |
+| Comptes rendus de l'Assemblée nationale | Bruno Retailleau | 1, confirmé | interventions de ministre, jusqu'en 2025 : rien dans la fenêtre |
 | Flux RSS du Parti socialiste, Assemblée | Olivier Faure | 2 / 1 | retiré le 11 octobre : hors registre |
 | Base de la version précédente (branche `daily`, GitHub Actions) | tous les suivis | — | pont, tant que l'ancienne collecte tourne |
 | Liste MieuxVoter des candidatures (communautaire) | — | — | **veille seulement**, jamais une preuve |
@@ -188,11 +200,24 @@ le site les marque « Non suivi ». Leurs sites officiels ont été repérés :
 jugements ; publiés sous le nom d'une institution en pleine campagne, ils seraient le
 premier risque pour sa neutralité (ADR 0002).
 
-**L'édition du 3 novembre 2026** a été classée hors ligne par un assistant (Mistral
+**Éditions vérifiées et annotation du jour.** Chaque passage montre une seule annotation,
+dans cet ordre (`config/register.yaml`) :
+
+1. celle d'une **édition vérifiée**, si elle couvre le passage tel qu'il est : badge
+   « Vérifiée » ;
+2. sinon celle de **l'annotateur du jour** (Mistral) : badge « Contrôles automatiques » ;
+3. sinon le passage est **en attente**, et le site le dit.
+
+Une mise à jour du matin ne remplace donc jamais une édition vérifiée ; elle complète ce
+qu'elle ne couvre pas.
+
+**L'édition du 3 novembre 2026** a été classée hors ligne par un assistant d'IA (Mistral
 n'était pas joignable depuis l'environnement de développement), avec la même consigne et
-le même schéma que Mistral, puis **vérifiée par six vérificateurs indépendants** par
-déclaration (fond ×3, axe ×2, fidélité ×1) : 188 propositions, 6 écartées, 1 axe changé,
-45 résumés corrigés, 182 déclarations publiées. Tout est versionné dans `annotations/`.
+le même schéma que Mistral, puis vérifiée, déclaration par déclaration, par **six
+vérificateurs automatiques indépendants — des assistants d'IA, pas des personnes** (fond
+×3, axe ×2, fidélité ×1) : 188 propositions, 6 écartées, 1 axe changé, 45 déclarations aux
+notes corrigées (résumé, contexte ou traduction), 182 déclarations publiées. Tout est
+versionné dans `annotations/`.
 
 ---
 
@@ -215,12 +240,16 @@ déclaration (fond ×3, axe ×2, fidélité ×1) : 188 propositions, 6 écartée
   « Source » mène au texte, le lien « Archive » à une copie datée quand elle existe.
 - **Le niveau** dit qui parle : « Candidat » (niveau 1) ou « Parti ou équipe » (niveau 2).
   Un cadre **plein** = confirmé ; **en pointillés** = attribué par défaut, à confirmer.
+- **« Vérifiée »** : la déclaration vient d'une édition revue par les six vérificateurs
+  automatiques. **« Contrôles automatiques »** : elle n'a passé que les contrôles du code.
+  Aucune n'a encore été relue par une personne.
 - **Le baromètre compte des déclarations, pas leur importance.** Une phrase brève et une
   réforme détaillée comptent chacune pour une. Un programme consacré à l'IA produit donc
   mécaniquement beaucoup de cases remplies.
 - **« Aucune position identifiée »** (loupe) : nous avons lu les sources de ce candidat et
-  n'avons rien trouvé sur cet axe. **« Non suivi »** (hachures) : aucune source n'est
-  configurée ; nous n'écoutons pas, nous ne pouvons rien dire de son silence.
+  n'avons rien trouvé sur cet axe. **« En attente »** (sablier) : des passages de ce
+  candidat sur l'IA ne sont pas encore classés ; rien n'est établi. **« Non suivi »**
+  (hachures) : aucune source n'est configurée ; nous ne pouvons rien dire de son silence.
 - **Ce qu'il ne faut pas en conclure** : qu'un candidat est « plus » ou « moins » favorable
   à l'IA, qu'il en parle plus qu'un autre (cela dépend d'abord de nos sources), ou qu'une
   position est bonne ou mauvaise.
@@ -250,22 +279,22 @@ cli.py  (assemble les pièces)
 ```
 
 ```
-config/         candidats, sources, découpage, axes et contrôles, veille — aucun code
+config/         candidats, sources, découpage, axes et contrôles, veille, éditions vérifiées
 web/registre/   le site (prototype v3) et ses bibliothèques et polices, pour le hors-ligne
 annotations/    réponses d'annotation versionnées et vérification
 scripts/        daily.sh (mise à jour), serve.sh (site), schedule.sh (planification)
 docs/           methodology.md (règles et constats), sources-a-verifier.md, adr/
-tests/          279 tests, sans réseau ni clé ; couverture 100 % du domaine et des cas d'usage
+tests/          295 tests, sans réseau ni clé ; couverture 100 % du domaine et des cas d'usage
 ```
 
 | Commande | Rôle |
 |---|---|
-| `make site` | tout le registre, hors ligne, depuis les données de la version précédente |
+| `make site` | tout le registre, sans clé API, depuis les données de la version précédente (récupérées sur GitHub ; hors ligne, la dernière copie) |
 | `make daily` | la mise à jour du matin, à la main |
 | `make serve` | le site sur `http://localhost:8000` |
 | `make schedule` / `unschedule` / `schedule-status` | installer, retirer, vérifier la tâche de 8 h et le serveur |
 | `make watch` | la note de veille seule |
-| `make annotate` | classer les passages en attente avec le fournisseur de `.env` |
+| `make annotate` | classer les passages en attente avec Mistral (`.env`) ; sans clé, essai à blanc qui n'écrit rien |
 | `make check` | lint, typage strict, tests, couverture : à passer avant tout commit |
 | `make help` | toutes les commandes |
 
@@ -279,7 +308,11 @@ tests/          279 tests, sans réseau ni clé ; couverture 100 % du domaine et
   une entrée dans `config/sources.yaml` (type, URL, niveau). Aucun code à écrire pour un
   flux RSS, une page, un PDF ou un député.
 - **Ajouter ou modifier un axe** : `config/taxonomy.yaml`. La consigne change donc de
-  version : tous les passages sont reclassés au passage suivant.
+  version : avec Mistral, tous les passages sont reclassés à la mise à jour suivante ;
+  sans clé, les réponses enregistrées ne correspondent plus et les passages passent
+  « en attente ».
+- **Publier une édition vérifiée** : une fois ses réponses vérifiées et enregistrées,
+  l'ajouter à `config/register.yaml` ; elle prime alors sur l'annotation du jour.
 - **Changer de modèle** : `MISTRAL_MODEL` dans `.env`. Un autre fournisseur = un nouvel
   adaptateur dans `adapters/llm/`, sans toucher aux cas d'usage.
 
@@ -291,6 +324,8 @@ tests/          279 tests, sans réseau ni clé ; couverture 100 % du domaine et
 - Le **client Mistral** a été écrit d'après la documentation et testé contre une réponse
   simulée ; son premier appel réel se fera sur votre machine.
 - **Couverture inégale** : 5 candidats suivis sur 13 (voir l'avertissement ci-dessus).
+- La licence de l'animation du drapeau (adaptée du shader « Silk » de React Bits) est à
+  confirmer avant publication (`web/registre/NOTICE.md`).
 - Le flux du **Parti socialiste** reste rattaché à Olivier Faure, retiré ; le rattacher à
   Raphaël Glucksmann (candidat commun depuis le 11 octobre) est une décision éditoriale.
 - Avant toute publication : directeur de la publication, mentions légales, cadre RGPD

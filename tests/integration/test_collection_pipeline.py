@@ -37,6 +37,7 @@ def workspace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     shutil.copy(REPOSITORY / "config" / "segmentation.yaml", config)
     shutil.copy(REPOSITORY / "config" / "taxonomy.yaml", config)
     shutil.copy(REPOSITORY / "config" / "watch.yaml", config)
+    (config / "register.yaml").write_text("verified_editions: []\n", encoding="utf-8")
     monkeypatch.setenv("CONFIG_DIR", str(config))
     monkeypatch.setenv("DATABASE_PATH", str(tmp_path / "corpus.db"))
     monkeypatch.chdir(tmp_path)  # no stray .env from the repository

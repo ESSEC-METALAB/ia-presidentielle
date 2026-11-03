@@ -3,12 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- Offline: the runtime loads React from these local copies (byte-identical to the CDN
-     files it pins, same SHA-384) instead of unpkg.com. See NOTICE.md. -->
-<script>window.__resources = {
-  "https://unpkg.com/react@18.3.1/umd/react.production.min.js": "./vendor/react.production.min.js",
-  "https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js": "./vendor/react-dom.production.min.js"
-};</script>
+<!-- Offline: React and ReactDOM from local copies, byte-identical to the CDN files the
+     runtime pins (same SHA-384). The runtime downloads them only when window.React is
+     missing. Never define window.__resources here: it switches the runtime to bundled
+     mode, which skips re-reading this page's template, and the barometer's table rows
+     then never render. See NOTICE.md. -->
+<script src="./vendor/react.production.min.js"></script>
+<script src="./vendor/react-dom.production.min.js"></script>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -207,6 +208,7 @@ button{font:inherit}
         <p data-reveal style="margin:0 0 18px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#5F646E">01 · {{ t.viewLabel }}</p>
         <h1 data-reveal style="display:flex;align-items:center;gap:22px;margin:0 0 14px;font-weight:500;font-size:clamp(48px,6vw,96px);line-height:.95;letter-spacing:-.035em"><i class="msi" aria-hidden="true" style="font-size:.55em;color:#5F646E">view_stream</i>{{ t.fil }}</h1>
         <p data-reveal style="margin:0 0 36px;max-width:64ch;font-size:18px;color:#3A3E46">{{ t.filLead }}</p>
+        <sc-if value="{{ hasPending }}" hint-placeholder-val="{{ false }}"><p data-reveal style="margin:-20px 0 32px;max-width:64ch;display:flex;gap:10px;align-items:flex-start;padding:10px 14px;border:1px dashed #0B0C0F;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.5;color:#0B0C0F"><i class="msi" aria-hidden="true" style="font-size:16px">hourglass_top</i><span>{{ pendingNote }}</span></p></sc-if>
 
         <div data-reveal role="region" aria-label="{{ t.filters }}" style="position:sticky;top:62px;z-index:12;display:flex;align-items:stretch;flex-wrap:wrap;gap:14px 0;margin:0 -40px;padding:14px 40px 13px;background:rgba(243,241,236,.94);backdrop-filter:blur(12px);border-top:1px solid #0B0C0F;border-bottom:1px solid #D8D5CE">
           <div style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:8px;padding-right:20px">
@@ -287,6 +289,7 @@ button{font:inherit}
                       <a href="{{ it.axisHref }}" style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px 5px 9px;border-radius:3px;background:{{ it.ink }};color:#F7F6F2;text-decoration:none;font-size:12px;font-weight:500;letter-spacing:.01em" style-hover="background:#0B0C0F" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:14px">{{ it.axisIcon }}</i>{{ it.axisLabel }}</a>
                       <span title="{{ it.tierLabel }} — {{ it.tierState }}" style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 8px;border-radius:3px;border:1px {{ it.tierBorderStyle }} {{ it.tierBorderColor }};font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#3A3E46"><i class="msi" aria-hidden="true" style="font-size:14px">{{ it.tierIcon }}</i>{{ it.tierShort }}</span>
                       <span style="display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#5F646E"><i class="msi" aria-hidden="true" style="font-size:14px">{{ it.kindIcon }}</i>{{ it.kindLabel }}</span>
+                      <span title="{{ it.checkTitle }}" style="display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#5F646E"><i class="msi" aria-hidden="true" style="font-size:14px">{{ it.checkIcon }}</i>{{ it.checkLabel }}</span>
                     </div>
                     <div style="display:flex;flex-direction:column;gap:7px;padding:12px 14px;background:#FAF9F6;border:1px solid #E9E6DE">
                       <p style="margin:0;font-size:15px;line-height:1.45;color:#0B0C0F"><span style="display:block;margin-bottom:3px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#8A8F99">{{ t.summary }}</span>{{ it.summary }}</p>
@@ -312,6 +315,7 @@ button{font:inherit}
         <p data-reveal style="margin:0 0 18px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#5F646E">02 · {{ t.viewLabel }}</p>
         <h1 data-reveal style="display:flex;align-items:center;gap:22px;margin:0 0 14px;font-weight:500;font-size:clamp(48px,6vw,96px);line-height:.95;letter-spacing:-.035em"><i class="msi" aria-hidden="true" style="font-size:.55em;color:#5F646E">bar_chart</i>{{ t.grille }}</h1>
         <p data-reveal style="margin:0 0 40px;max-width:64ch;font-size:18px;color:#3A3E46">{{ t.gridLead }}</p>
+        <sc-if value="{{ hasPending }}" hint-placeholder-val="{{ false }}"><p data-reveal style="margin:-20px 0 32px;max-width:64ch;display:flex;gap:10px;align-items:flex-start;padding:10px 14px;border:1px dashed #0B0C0F;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.5;color:#0B0C0F"><i class="msi" aria-hidden="true" style="font-size:16px">hourglass_top</i><span>{{ pendingNote }}</span></p></sc-if>
         <div data-reveal style="position:relative">
           <table style="width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;border-top:2px solid #0B0C0F">
             <caption style="position:absolute;left:-9999px">{{ gridCaption }}</caption>
@@ -338,7 +342,7 @@ button{font:inherit}
                         <sc-if value="{{ r.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ r.initials }}</span></sc-if>
                       </span>
                       <span style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-size:17px;line-height:1.1;font-weight:500;letter-spacing:-.02em">{{ r.name }}</span><span style="font-size:12px;color:#5F646E">{{ r.party }}</span>
-                        <sc-if value="{{ r.untracked }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;align-self:flex-start;margin-top:4px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:3px;border:1px solid #0B0C0F;color:#0B0C0F"><i class="msi" aria-hidden="true" style="font-size:12px">mic_off</i>{{ t.untracked }}</span></sc-if>
+                        <sc-if value="{{ r.untracked }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;align-self:flex-start;margin-top:4px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:3px;border:1px solid #0B0C0F;color:#0B0C0F"><i class="msi" aria-hidden="true" style="font-size:12px">mic_off</i>{{ t.untracked }}</span></sc-if><sc-if value="{{ r.hasPending }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;align-self:flex-start;margin-top:4px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:3px;border:1px dashed #0B0C0F;color:#0B0C0F"><i class="msi" aria-hidden="true" style="font-size:12px">hourglass_top</i>{{ r.pendingLabel }}</span></sc-if>
                       </span>
                     </a>
                   </th>
@@ -354,6 +358,9 @@ button{font:inherit}
                       </sc-if>
                       <sc-if value="{{ c.isNone }}" hint-placeholder-val="{{ false }}">
                         <span title="{{ t.none }}" style="position:relative;display:flex;align-items:flex-start;gap:8px;height:92px;box-sizing:border-box;padding:11px 8px;font-size:13px;font-style:italic;font-family:Spectral,Georgia,serif;color:#5F646E;line-height:1.4;background-image:repeating-linear-gradient(135deg,rgba(11,12,15,.055) 0 1px,transparent 1px 9px)"><i class="msi" aria-hidden="true" style="flex:none;font-size:19px;font-style:normal;position:relative;top:1px">search_off</i><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap">{{ t.none }}</span></span>
+                      </sc-if>
+                      <sc-if value="{{ c.isPending }}" hint-placeholder-val="{{ false }}">
+                        <span title="{{ t.pendingShort }}" style="position:relative;display:flex;align-items:flex-start;gap:8px;height:92px;box-sizing:border-box;padding:11px 8px;font-size:13px;font-style:italic;font-family:Spectral,Georgia,serif;color:#5F646E;line-height:1.4;background-image:repeating-linear-gradient(135deg,rgba(11,12,15,.055) 0 1px,transparent 1px 9px)"><i class="msi" aria-hidden="true" style="flex:none;font-size:19px;font-style:normal;position:relative;top:1px">hourglass_top</i><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap">{{ t.pendingShort }}</span></span>
                       </sc-if>
                       <sc-if value="{{ c.isUntracked }}" hint-placeholder-val="{{ false }}">
                         <span style="display:flex;align-items:flex-start;height:92px;box-sizing:border-box;padding:11px 8px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.3;letter-spacing:.04em;text-transform:uppercase;color:#0B0C0F;overflow-wrap:normal">{{ c.untrackedText }}</span>
@@ -373,6 +380,10 @@ button{font:inherit}
           <div style="display:flex;gap:12px;align-items:flex-start">
             <dt style="flex:none;display:grid;place-items:center;width:32px;height:32px;border:1px solid #D8D5CE;background-image:repeating-linear-gradient(135deg,rgba(11,12,15,.055) 0 1px,transparent 1px 9px)"><i class="msi" aria-hidden="true" style="font-size:17px;color:#5F646E">search_off</i></dt>
             <dd style="margin:0;display:flex;flex-direction:column;gap:2px;min-width:0"><strong style="font-weight:500;color:#0B0C0F;font-size:14px">{{ t.legendNoneH }}</strong><span style="color:#5F646E;font-size:13px;line-height:1.4">{{ t.legendNone }}</span></dd>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <dt style="flex:none;display:grid;place-items:center;width:32px;height:32px;border:1px solid #D8D5CE;background-image:repeating-linear-gradient(135deg,rgba(11,12,15,.055) 0 1px,transparent 1px 9px)"><i class="msi" aria-hidden="true" style="font-size:17px;color:#5F646E">hourglass_top</i></dt>
+            <dd style="margin:0;display:flex;flex-direction:column;gap:2px;min-width:0"><strong style="font-weight:500;color:#0B0C0F;font-size:14px">{{ t.legendPendingH }}</strong><span style="color:#5F646E;font-size:13px;line-height:1.4">{{ t.legendPending }}</span></dd>
           </div>
           <div style="display:flex;gap:12px;align-items:flex-start">
             <dt style="flex:none;display:grid;place-items:center;width:32px;height:32px;border:1px solid #D8D5CE;background:repeating-linear-gradient(135deg,#F3F1EC 0 6px,#E3E0D8 6px 7px)"><i class="msi" aria-hidden="true" style="font-size:17px;color:#0B0C0F">mic_off</i></dt>
@@ -431,11 +442,13 @@ button{font:inherit}
               <div style="display:flex;flex-direction:column;gap:22px;min-width:0">
                 <sc-if value="{{ ax.isUntracked }}" hint-placeholder-val="{{ false }}"><p style="margin:0;display:flex;align-items:center;gap:10px;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#0B0C0F"><i class="msi" aria-hidden="true" style="font-size:18px">mic_off</i>{{ t.untracked }} — <span style="font-family:'Space Grotesk',system-ui,sans-serif;text-transform:none;letter-spacing:0;color:#5F646E;font-size:14px">{{ t.untrackedShort }}</span></p></sc-if>
                 <sc-if value="{{ ax.isNone }}" hint-placeholder-val="{{ false }}"><p style="margin:0;display:flex;align-items:center;gap:10px;font-style:italic;font-family:Spectral,Georgia,serif;color:#5F646E;font-size:16px"><i class="msi" aria-hidden="true" style="font-size:18px;font-style:normal">search_off</i>{{ t.noneAxis }}</p></sc-if>
+                <sc-if value="{{ ax.isPending }}" hint-placeholder-val="{{ false }}"><p style="margin:0;display:flex;align-items:center;gap:10px;font-style:italic;font-family:Spectral,Georgia,serif;color:#5F646E;font-size:16px"><i class="msi" aria-hidden="true" style="font-size:18px;font-style:normal">hourglass_top</i>{{ t.pendingAxis }}</p></sc-if>
                 <sc-for list="{{ ax.claims }}" as="cl" hint-placeholder-count="1">
                   <article id="{{ cl.id }}" aria-label="{{ cl.dateLabel }}" style="display:flex;flex-direction:column;gap:12px;padding:24px 28px;border:1px solid #E3E0D8;border-radius:12px;background:#FAF9F6;scroll-margin-top:96px;transition:border-color .2s,transform .2s" style-hover="border-color:#0B0C0F;transform:translateY(-2px)">
                     <div style="display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:#5F646E">
                       <span style="display:inline-flex;align-items:center;gap:6px;color:#0B0C0F;font-size:12px"><i class="msi" aria-hidden="true" style="font-size:15px">{{ cl.dateIcon }}</i>{{ cl.dateLabel }}</span>
                       <span style="display:inline-flex;align-items:center;gap:6px"><i class="msi" aria-hidden="true" style="font-size:15px">{{ cl.kindIcon }}</i>{{ cl.kindLabel }}</span>
+                      <span title="{{ cl.checkTitle }}" style="display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#5F646E"><i class="msi" aria-hidden="true" style="font-size:15px">{{ cl.checkIcon }}</i>{{ cl.checkLabel }}</span>
                       <span title="{{ cl.tierLabel }} — {{ cl.tierState }}" style="display:inline-flex;align-items:center;gap:6px;border:1px {{ cl.tierBorderStyle }} {{ cl.tierBorderColor }};border-radius:3px;padding:3px 9px;color:#3A3E46"><i class="msi" aria-hidden="true" style="font-size:14px">{{ cl.tierIcon }}</i>{{ cl.tierShort }} · <span style="color:{{ cl.tierStateColor }}">{{ cl.tierState }}</span></span>
                     </div>
                     <sc-if value="{{ cl.isVote }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:8px"><p style="margin:0;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#5F646E">{{ t.quotedTextVote }}</p><blockquote lang="fr" cite="{{ cl.sourceUrl }}" style="margin:0;font-family:Spectral,Georgia,serif;font-size:22px;line-height:1.32;letter-spacing:-.01em">{{ cl.quote }}</blockquote></div></sc-if>
@@ -530,7 +543,7 @@ const I18N = {
     undatedHead: "Date non précisée", undatedNote: "La source de ces déclarations ne porte pas de date : elle est réellement inconnue. Ordre alphabétique.",
     gloss: "Traduction indicative", summary: "Position", context: "Contexte", source: "Source", archive: "Archive du", permalink: "Lien permanent vers cette déclaration",
     tier1: "Niveau 1 · propos du candidat", tier2: "Niveau 2 · parti ou équipe", tierVote: "Niveau 1 · vote enregistré", tierShortVote: "Vote", quotedTextVote: "Texte mis aux voix", confirmed: "confirmé", defaulted: "non confirmé",
-    kinds: { speech: "Discours", programme: "Programme", interview: "Entretien écrit", "press-release": "Communiqué", video: "Vidéo", vote: "Scrutin public", seance: "Séance à l'Assemblée", article: "Publication du site", page: "Page du site", pdf: "Document PDF" }, noArchive: "Archive : pas encore de capture", dateUnknown: "Date non précisée", at: "à",
+    kinds: { speech: "Discours", programme: "Programme", interview: "Entretien écrit", "press-release": "Communiqué", video: "Vidéo", vote: "Scrutin public", seance: "Séance à l'Assemblée", article: "Publication du site", page: "Page du site", pdf: "Document PDF" }, noArchive: "Archive : pas encore de capture", checkVerified: "Vérifiée", checkGates: "Contrôles automatiques", checkVerifiedTitle: "Relue par six vérificateurs automatiques indépendants (fond, axe, fidélité), en plus des contrôles automatiques. Pas encore relue par un éditeur.", checkGatesTitle: "A passé les contrôles automatiques (citation exacte, axe connu, aucun mot de jugement) ; pas de vérification croisée ni de relecture par un éditeur.", pendingShort: "en attente", pendingChip: "passage(s) en attente", pendingAxis: "Des passages de ce candidat sur l'IA attendent leur classement : rien n'est encore établi sur cet axe.", pendingNote: "passage(s) sur l'IA attendent leur classement. Pour les candidats concernés, une case vide signifie « en attente », pas « aucune position identifiée ».", legendPendingH: "En attente", legendPending: "Des passages sur l'IA de ce candidat ne sont pas encore classés. Ce n'est pas une absence de position.", dateUnknown: "Date non précisée", at: "à",
     gridLead: "Chaque candidat sur chacun des neuf axes. Une couleur par axe ; le nombre de déclarations relevées figure dans la case.",
     gridCaption: "Nombre de déclarations relevées, par candidat et par axe, élection présidentielle 2027. Lignes : candidats, par ordre alphabétique. Colonnes : les neuf axes de politique de l'IA.",
     thCand: "Candidat", none: "aucune position identifiée", noneShort: "aucune position", untracked: "Non suivi",
@@ -547,7 +560,7 @@ const I18N = {
       ["Les dates", ["La date affichée est celle de la prise de parole ou de la publication par la source. Lorsque la source ne porte aucune date, la déclaration est marquée « date non précisée » et classée dans une section distincte en fin de fil. Ce n'est pas une date masquée : elle est inconnue."]],
       ["Absence et non-suivi", ["« Aucune position identifiée » : les sources configurées pour ce candidat ont été consultées et rien n'a été trouvé sur cet axe. « Non suivi » : aucune source n'est configurée pour ce candidat ; nous n'écoutons pas, nous ne pouvons donc rien affirmer sur son silence. La grille affiche ces deux états différemment et ne les masque jamais."]],
       ["Égalité de traitement", ["Le registre est publié pendant une campagne nationale sous le nom d'une institution. Les candidats sont présentés avec une place et une mise en forme identiques, par ordre alphabétique (ou dans un ordre tiré au sort à chaque visite). Les portraits sont affichés en noir et blanc, au même format. Aucun score, aucune note, aucun classement, aucun indicateur de tonalité n'est produit."]],
-      ["Repérage et classement", ["Les déclarations de cette édition ont été repérées et rattachées à un axe automatiquement, passage par passage, à partir d'une consigne versionnée et publiée ; chaque réponse est enregistrée. Seuls les passages qui mentionnent l'IA ou le numérique sont examinés.", "Deux contrôles automatiques s'appliquent à chaque déclaration : la citation doit figurer mot pour mot dans le texte source, et le résumé comme le contexte ne doivent contenir aucun terme évaluatif. Chaque déclaration a ensuite été relue par des vérificateurs automatiques indépendants : trois sur le fond (est-ce une position sur l'IA, du candidat ou de son parti ?), deux sur l'axe, un sur la fidélité du résumé. Ils ne remplacent pas la relecture : les déclarations de cette édition n'ont pas encore été relues par un éditeur."]],
+      ["Repérage et classement", ["Les déclarations de cette édition ont été repérées et rattachées à un axe automatiquement, passage par passage, à partir d'une consigne versionnée et publiée ; chaque réponse est enregistrée. Seuls les passages qui mentionnent l'IA ou le numérique sont examinés.", "Deux contrôles automatiques s'appliquent à chaque déclaration : la citation doit figurer mot pour mot dans le texte source, et le résumé comme le contexte ne doivent contenir aucun terme évaluatif. Les déclarations marquées « Vérifiée » ont en outre été relues par des vérificateurs automatiques indépendants : trois sur le fond (est-ce une position sur l'IA, du candidat ou de son parti ?), deux sur l'axe, un sur la fidélité du résumé. Les autres, marquées « Contrôles automatiques », n'ont passé que les deux contrôles ci-dessus. Les passages sur l'IA pas encore classés sont signalés « en attente ». Aucune déclaration n'a encore été relue par un éditeur."]],
       ["Corrections", ["Toute erreur signalée et vérifiée est corrigée sur la déclaration concernée et consignée sur la page Corrections, avec la date et la nature du changement. Les liens permanents restent stables."]]
     ],
     correctionsTitle: "Corrections", correctionsIntro: [["Registre des corrections", ["Chaque correction apportée à une déclaration publiée est consignée ici, de la plus récente à la plus ancienne, avec un lien vers la déclaration concernée."]]],
@@ -571,7 +584,7 @@ const I18N = {
     undatedHead: "Date not specified", undatedNote: "The source of these statements carries no date: it is genuinely unknown. Alphabetical order.",
     gloss: "Indicative translation", summary: "Position", context: "Context", source: "Source", archive: "Archive of", permalink: "Permanent link to this statement",
     tier1: "Level 1 · candidate's own words", tier2: "Level 2 · party or staff", tierVote: "Level 1 · recorded vote", tierShortVote: "Vote", quotedTextVote: "Text put to the vote", confirmed: "confirmed", defaulted: "unconfirmed",
-    kinds: { speech: "Speech", programme: "Programme", interview: "Written interview", "press-release": "Press release", video: "Video", vote: "Recorded vote", seance: "National Assembly sitting", article: "Website post", page: "Website page", pdf: "PDF document" }, noArchive: "Archive: no capture yet", dateUnknown: "Date not specified", at: "at",
+    kinds: { speech: "Speech", programme: "Programme", interview: "Written interview", "press-release": "Press release", video: "Video", vote: "Recorded vote", seance: "National Assembly sitting", article: "Website post", page: "Website page", pdf: "PDF document" }, noArchive: "Archive: no capture yet", checkVerified: "Verified", checkGates: "Automatic checks", checkVerifiedTitle: "Checked by six independent automated verifiers (substance, axis, fidelity), on top of the automatic checks. Not yet reviewed by an editor.", checkGatesTitle: "Passed the automatic checks (exact quote, known axis, no judgement words); no cross-verification and no editorial review.", pendingShort: "pending", pendingChip: "passage(s) pending", pendingAxis: "Passages by this candidate about AI are waiting to be classified: nothing is established on this axis yet.", pendingNote: "passage(s) about AI are waiting to be classified. For the candidates concerned, an empty cell means \"pending\", not \"no position identified\".", legendPendingH: "Pending", legendPending: "Passages by this candidate about AI are not classified yet. This is not an absence of position.", dateUnknown: "Date not specified", at: "at",
     gridLead: "Every candidate on each of the nine axes. One colour per axis; the cell shows how many statements were recorded.",
     gridCaption: "Number of statements recorded, per candidate and per axis, 2027 presidential election. Rows: candidates, in alphabetical order. Columns: the nine AI policy axes.",
     thCand: "Candidate", none: "no position identified", noneShort: "no position", untracked: "Not tracked",
@@ -588,7 +601,7 @@ const I18N = {
       ["Dates", ["The date shown is that of the speech or of publication by the source. When the source carries no date, the statement is marked 'date not specified' and listed in a separate section at the end of the feed. It is not a hidden date: it is unknown."]],
       ["Absence and non-tracking", ["'No position identified': the sources configured for this candidate were checked and nothing was found on this axis. 'Not tracked': no source is configured for this candidate; we are not listening, so we can claim nothing about their silence. The grid displays these two states differently and never hides them."]],
       ["Equal treatment", ["The register is published during a national campaign under an institution's name. Candidates are presented with identical space and formatting, in alphabetical order (or in an order drawn at random on each visit). Portraits are shown in black and white, in the same format. No score, grade, ranking or sentiment indicator is produced."]],
-      ["Finding and classifying", ["The statements in this edition were found and attached to an axis automatically, passage by passage, from a versioned, published instruction; every answer is recorded. Only passages that mention AI or digital technology are examined.", "Two automatic checks apply to every statement: the quote must appear word for word in the source text, and neither the summary nor the context may contain an evaluative term. Each statement was then checked by independent automated verifiers: three on substance (is it an AI-policy position, by the candidate or their party?), two on the axis, one on the fidelity of the summary. They do not replace review: the statements in this edition have not yet been reviewed by an editor."]],
+      ["Finding and classifying", ["The statements in this edition were found and attached to an axis automatically, passage by passage, from a versioned, published instruction; every answer is recorded. Only passages that mention AI or digital technology are examined.", "Two automatic checks apply to every statement: the quote must appear word for word in the source text, and neither the summary nor the context may contain an evaluative term. Statements marked “Verified” were also checked by independent automated verifiers: three on substance (is it an AI-policy position, by the candidate or their party?), two on the axis, one on the fidelity of the summary. The others, marked “Automatic checks”, passed only the two checks above. Passages about AI not yet classified are shown as “pending”. No statement has been reviewed by an editor yet."]],
       ["Corrections", ["Any reported and verified error is corrected on the statement concerned and logged on the Corrections page with the date and nature of the change. Permanent links remain stable."]]
     ],
     correctionsTitle: "Corrections", correctionsIntro: [["Corrections log", ["Every correction to a published statement is logged here, newest first, with a link to the statement concerned."]]],
@@ -822,7 +835,7 @@ class Component extends DCLogic {
         previewText: c.kind === "vote" ? (lang === "fr" ? c.summaryFr : c.summaryEn) : "« " + c.quote + " »",
         tierLabel: c.kind === "vote" ? t.tierVote : c.tier === 1 ? t.tier1 : t.tier2, tierShort: c.kind === "vote" ? t.tierShortVote : c.tier === 1 ? t.tierShort1 : t.tierShort2, tierIcon: ICON.tier[c.tier] || "person", tierState: c.tierConfirmed ? t.confirmed : t.defaulted, tierBorderStyle: c.tierConfirmed ? "solid" : "dashed", tierBorderColor: c.tierConfirmed ? "#0B0C0F" : "#8A8F99", tierStateColor: c.tierConfirmed ? "#5F646E" : "#0B0C0F",
         kindLabel: t.kinds[c.kind] || c.kind, kindIcon: ICON.kind[c.kind] || "article", sourceUrl: c.sourceUrl, sourceLabel: c.sourceLabel, archiveUrl: c.archiveUrl || "", hasArchive: !!c.archiveUrl, noArchive: !c.archiveUrl, archiveLabel: c.archiveUrl ? t.archive + " " + this.fmtDate(c.archiveDate, lang) : t.noArchive,
-        hasTimestamp: !!c.timestamp, timestampLabel: c.timestamp ? t.at + " " + c.timestamp : ""
+        hasTimestamp: !!c.timestamp, timestampLabel: c.timestamp ? t.at + " " + c.timestamp : "", checkLabel: c.verified ? t.checkVerified : t.checkGates, checkTitle: c.verified ? t.checkVerifiedTitle : t.checkGatesTitle, checkIcon: c.verified ? "verified" : "rule"
       };
     };
 
@@ -854,11 +867,11 @@ class Component extends DCLogic {
     const axMax = Math.max(1, ...D.axes.map(a => axTotals[a.id]));
     let maxCell = 1; cands.forEach(c => D.axes.forEach(a => { const k = claimsOf(c.id, a.id).length; if (k > maxCell) maxCell = k; }));
     const gridRows = cands.map(c => ({
-      name: fullName(c), party: c.party, href: H("cand", c.id), untracked: !c.tracked, ...face(c),
+      name: fullName(c), party: c.party, href: H("cand", c.id), untracked: !c.tracked, hasPending: c.tracked && c.pending > 0, pendingLabel: (c.pending || 0) + " " + t.pendingChip, ...face(c),
       cells: D.axes.map(a => {
         if (!c.tracked) return { isUntracked: true, bg: hatch, untrackedText: a.id === D.axes[0].id ? t.untracked : "" };
         const n = claimsOf(c.id, a.id).length;
-        if (!n) return { isNone: true, bg: "transparent" };
+        if (!n) return c.pending ? { isPending: true, bg: "transparent" } : { isNone: true, bg: "transparent" };
         return {
           isCount: true, count: String(n), href: H("fil", null, { candidat: c.id, axe: a.id }),
           aria: fullName(c) + " — " + axLabel(a) + " : " + n + " " + nWord(n), bg: axFill(a.id), ink: "#0B0C0F", bar: axInk(a.id)
@@ -870,7 +883,7 @@ class Component extends DCLogic {
 
     const cand0 = param ? candById[param] : null;
     const cand = cand0 ? { name: fullName(cand0), party: cand0.party, partyShort: cand0.partyShort, tracked: cand0.tracked, untracked: !cand0.tracked, slotId: "portrait-" + cand0.id, ...face(cand0), sources: cand0.sources.map(s => ({ label: s[lang], url: s.url })), status: cand0.tracked ? countOf(cand0.id) + " " + nWord(countOf(cand0.id)) : t.untracked, statusIcon: cand0.tracked ? "format_quote" : "mic_off", sourcesLabel: cand0.sources.length + " " + t.sourcesN } : { name: "", party: "", partyShort: "", tracked: false, untracked: false, slotId: "portrait-none", hasPhoto: false, noPhoto: true, photo: null, photoCss: "none", initials: "", sources: [], status: "", statusIcon: "format_quote", sourcesLabel: "" };
-    const candAxes = cand0 ? D.axes.map(a => { const cls = D.claims.filter(c => c.cand === cand0.id && c.axis === a.id).sort((x, y) => (y.date || "").localeCompare(x.date || "")).map(vm); return { hId: "ax-" + a.id, label: axLabel(a), icon: ICON.axis[a.id], desc: lang === "fr" ? a.descFr : a.descEn, claims: cls, isNone: cand0.tracked && !cls.length, isUntracked: !cand0.tracked, countLabel: cand0.tracked ? cls.length + " " + nWord(cls.length) : "—" }; }) : [];
+    const candAxes = cand0 ? D.axes.map(a => { const cls = D.claims.filter(c => c.cand === cand0.id && c.axis === a.id).sort((x, y) => (y.date || "").localeCompare(x.date || "")).map(vm); return { hId: "ax-" + a.id, label: axLabel(a), icon: ICON.axis[a.id], desc: lang === "fr" ? a.descFr : a.descEn, claims: cls, isNone: cand0.tracked && !cls.length && !cand0.pending, isPending: cand0.tracked && !cls.length && cand0.pending > 0, isUntracked: !cand0.tracked, countLabel: cand0.tracked ? cls.length + " " + nWord(cls.length) : "—" }; }) : [];
 
     const isDoc = ["methodo", "corrections", "legal"].includes(page);
     const docTitle = page === "methodo" ? t.methodoTitle : page === "corrections" ? t.correctionsTitle : t.legalTitle;
@@ -884,6 +897,7 @@ class Component extends DCLogic {
     const grain = this.props.grain == null ? 0.5 : this.props.grain;
 
     return {
+      hasPending: (D.pending || 0) > 0, pendingNote: (D.pending || 0) + " " + t.pendingNote,
       lang, t, isHome: page === "home", isFil: page === "fil", isGrille: page === "grille", isCand: page === "cand", isDoc, isCorrections: page === "corrections",
       hrefHome: H("home"), hrefFil: H("fil"), hrefGrille: H("grille"), hrefMethodo: H("methodo"), hrefCorrections: H("corrections"), hrefLegal: H("legal"),
       hrefFr: lang === "fr" ? location.hash || H("home") : otherHref, hrefEn: lang === "en" ? location.hash || H("home") : otherHref,

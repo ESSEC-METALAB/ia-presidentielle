@@ -47,8 +47,12 @@ changer redécoupe le corpus au prochain `observatoire segment`, sinon rien n'es
 
 L'annotateur est versionné par son modèle et l'empreinte de sa consigne (qui contient les
 axes) : un changement réannote. Une annotation est gardée avec l'empreinte du texte du
-passage, si bien qu'un passage redécoupé est réannoté. Le registre montre un seul
-annotateur à la fois, celui qui couvre le plus de passages.
+passage, si bien qu'un passage redécoupé est réannoté. Le registre choisit, passage par
+passage, l'annotation à montrer (`domain/annotation.py`, `published_annotations`) : celle
+d'une édition vérifiée listée dans `config/register.yaml`, sinon celle de l'annotateur
+automatique qui couvre le plus de passages actuels (les lignes de passages disparus ne
+comptent pas), sinon rien : le passage est compté « en attente » pour son candidat. Le faux
+annotateur ne fait que des essais à blanc (`DiscardingAnnotationStore`).
 
 ## Exploitation
 

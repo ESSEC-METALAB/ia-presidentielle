@@ -6,7 +6,7 @@
 # leave yesterday's site in place of today's. The run fails (exit 1) only if the site
 # could not be rebuilt.
 #
-# Settings, read from .env (all optional):
+# Settings, read from .env like the Python CLI reads it (scripts/env.sh), all optional:
 #   LLM_PROVIDER=mistral       annotate new passages with Mistral (needs MISTRAL_API_KEY
 #                              and MISTRAL_MODEL); otherwise the recorded answers are
 #                              replayed and new passages wait, listed in the watch note
@@ -18,6 +18,8 @@ set -uo pipefail
 
 cd "$(dirname "$0")/.." || exit 1
 mkdir -p data/logs data/raw data/reports
+# shellcheck source=scripts/env.sh
+source scripts/env.sh
 
 LOG="data/logs/daily-$(date +%Y-%m-%d).log"
 exec > >(tee -a "$LOG") 2>&1
@@ -31,22 +33,19 @@ obs() {  # obs ARGS...: the observatoire CLI (bash 3.2 on macOS: no empty "${a[@
 }
 LOCK=data/.daily.lock
 
-env_value() {  # env_value KEY DEFAULT: the process environment first, then .env
-    local value="${!1:-}"
-    if [[ -z "$value" && -f .env ]]; then
-        value=$(grep -E "^$1=" .env | tail -n 1 | cut -d= -f2- | tr -d '"'"'"'\r')
-    fi
-    echo "${value:-$2}"
-}
 
 # One run at a time: two writers on one SQLite file corrupt it. mkdir is atomic, and
-# works on macOS, which has no flock. A lock left by a killed run is detected by its PID.
+# works on macOS, which has no flock. A lock is stale when its PID is gone or is no longer
+# a daily run (PIDs are reused); two runs finding the same stale lock race on the mkdir
+# that follows its removal, and the loser stops.
 if ! mkdir "$LOCK" 2>/dev/null; then
-    if kill -0 "$(cat "$LOCK/pid" 2>/dev/null)" 2>/dev/null; then
-        echo "$(date '+%F %T') une mise à jour tourne déjà (PID $(cat "$LOCK/pid")) : abandon"
+    holder=$(cat "$LOCK/pid" 2>/dev/null || true)
+    if [[ -n "$holder" ]] && ps -p "$holder" -o command= 2>/dev/null | grep -q 'daily\.sh'; then
+        echo "$(date '+%F %T') une mise à jour tourne déjà (PID $holder) : abandon"
         exit 0
     fi
-    rm -rf "$LOCK" && mkdir "$LOCK"
+    rm -rf "$LOCK"
+    mkdir "$LOCK" 2>/dev/null || { echo "une autre mise à jour vient de démarrer : abandon"; exit 0; }
 fi
 echo $$ >"$LOCK/pid"
 trap 'rm -rf "$LOCK"' EXIT
@@ -65,8 +64,9 @@ step() {  # step NAME COMMAND...: run, time and record one step without stopping
 
 # shellcheck disable=SC2329  # called through step
 import_legacy() {
-    git fetch --quiet origin daily &&
-        git show origin/daily:data/observatoire.db >data/raw/legacy-daily.db &&
+    # Offline, the last fetched copy of the branch is imported again: nothing new, no harm.
+    git fetch --quiet origin daily || echo "git fetch impossible : dernière copie connue de origin/daily"
+    git show origin/daily:data/observatoire.db >data/raw/legacy-daily.db &&
         obs import-legacy --database data/raw/legacy-daily.db
 }
 

@@ -54,14 +54,22 @@ def _register() -> Register:
         ),
         candidates=(RegisterCandidate(candidate=person, sources=(hall,)),),
         entries=(
-            RegisterEntry(annotation=STATEMENT, document=archived, source=hall),
+            RegisterEntry(
+                annotation=STATEMENT,
+                document=archived,
+                source=hall,
+                annotator_version="edition",
+                verified=True,
+            ),
             RegisterEntry(
                 annotation=STATEMENT.model_copy(update={"index": 1}),
                 document=document("Autre texte.", published_on=None),
                 source=source(),
+                annotator_version="daily",
             ),
         ),
-        annotator_version="fake+classify_dimension.v1@x",
+        annotators=("edition", "daily"),
+        pending={"camille-de-exemple": 2},
     )
 
 
@@ -75,6 +83,7 @@ def test_the_script_follows_the_site_prototypes_shape() -> None:
     data = _data(RegisterDataScript().render(_register()))
 
     assert set(data) >= {"generated", "axes", "candidates", "claims", "corrections"}
+    assert (data["annotators"], data["pending"]) == (["edition", "daily"], 2)
     assert data["generated"] == "2026-11-03"
     assert data["axes"] == [
         {
@@ -96,6 +105,7 @@ def test_a_candidate_is_listed_by_surname_with_what_we_listen_to() -> None:
         "PE",
     )
     assert person["tracked"] is True
+    assert person["pending"] == 2
     assert person["sources"][0]["url"].startswith("https://")
 
 
@@ -107,6 +117,7 @@ def test_a_statement_carries_its_source_archive_and_confirmed_level() -> None:
     assert first["quote"] == "une autorité de contrôle"
     assert first["sourceLabel"].startswith("parti-exemple.test — ")
     assert (second["date"], second["archiveUrl"], second["kind"]) == (None, None, "article")
+    assert (first["verified"], second["verified"]) == (True, False)
 
 
 def test_the_site_is_the_template_plus_the_generated_data(tmp_path: Path) -> None:

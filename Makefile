@@ -42,15 +42,15 @@ test: ## pytest with the coverage floor (80 % on domain/ and application/)
 
 check: lint typecheck test ## Everything that must pass before a task is done
 
-demo: site ## Alias of `site`: the whole register from the previous version's data, no API key
+demo: site ## Alias of `site`
 
 collect: ## Live collection from config/sources.yaml (network required)
 	mkdir -p $(DATA_DIRS)
 	$(RUN) observatoire collect
 
-legacy-db: ## Copy the previous version's database from branch `daily` to data/raw/
+legacy-db: ## Copy the previous version's database from branch `daily` (offline: last fetched copy)
 	mkdir -p $(DATA_DIRS)
-	git fetch --quiet origin daily
+	git fetch --quiet origin daily || echo "git fetch impossible : dernière copie connue de origin/daily"
 	git show origin/daily:data/observatoire.db > data/raw/legacy-daily.db
 
 import-legacy: legacy-db ## Import what the previous version collected, through the same use case
@@ -62,7 +62,7 @@ segment: ## Split stored documents into segments (rules in config/segmentation.y
 corpus: ## Write the raw-corpus page to data/reports/corpus.html
 	$(RUN) observatoire corpus --out data/reports/corpus.html
 
-annotate: ## Annotate AI passages with LLM_PROVIDER (fake by default; mistral needs .env)
+annotate: ## Classify pending AI passages with LLM_PROVIDER=mistral (.env); fake = dry run, writes nothing
 	$(RUN) observatoire annotate
 
 annotate-batch: ## Write the pending annotation requests to data/llm/requests.jsonl, as a batch
@@ -74,7 +74,7 @@ annotate-replay: ## Replay recorded answers (RESPONSES=...) through the same gat
 register: ## Build the public register site into data/site/ (template: web/registre/)
 	$(RUN) observatoire register --out data/site
 
-site: import-legacy segment annotate-replay register ## The whole register, offline, from the previous version's data
+site: import-legacy segment annotate-replay register ## The whole register from the previous version's data, no API key (fetches branch daily once)
 
 usage: ## Tokens used per step and model
 	$(RUN) observatoire usage

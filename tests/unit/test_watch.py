@@ -21,6 +21,7 @@ from observatoire.domain.models import (
     DocumentSegmentation,
     RawDocument,
     Segment,
+    Source,
 )
 from observatoire.domain.watch import LeadKind, RosterEntry, WatchedTopic, WatchReport
 from observatoire.services.ai_relevance import RelevanceSettings, TermRelevanceFilter
@@ -84,6 +85,8 @@ def _run(
     people: list[Candidate] | None = None,
     *,
     min_candidates: int = 1,
+    sources: list[Source] | None = None,
+    verified: tuple[str, ...] = (),
 ) -> WatchReport:
     use_case = WatchChanges(
         roster=roster,
@@ -95,11 +98,12 @@ def _run(
     )
     return use_case.run(
         people or [candidate()],
-        [source()],
+        sources or [source()],
         [RESEARCH],
         threshold=2,
         min_candidates=min_candidates,
         since=date(2026, 7, 1),
+        verified=verified,
     )
 
 
@@ -175,7 +179,9 @@ def test_one_long_programme_alone_does_not_make_a_topic_worth_an_axis() -> None:
     assert "à examiner" not in note.split("## Sujets à examiner")[1].split("## Passages")[0]
 
 
-def _annotate(store: InMemoryStore, passage: Segment, *, with_statement: bool) -> None:
+def _annotate(
+    store: InMemoryStore, passage: Segment, *, with_statement: bool, version: str = "v1"
+) -> None:
     statements = (
         DimensionAnnotation(
             segment_id=passage.id,
@@ -194,7 +200,7 @@ def _annotate(store: InMemoryStore, passage: Segment, *, with_statement: bool) -
         SegmentAnnotation(
             segment_id=passage.id,
             segment_hash=content_hash(passage.text),
-            annotator_version="v1",
+            annotator_version=version,
             annotated_at=T0,
             annotations=statements if with_statement else (),
         )
@@ -286,3 +292,89 @@ def test_documents_outside_the_window_or_unconfigured_are_not_watched() -> None:
     report = _run(store, FakeRoster())
 
     assert (report.ai_passages, report.topic_signals[0].passages) == (0, 0)
+
+
+def _two_people(store: InMemoryStore, second: Candidate) -> list[Source]:
+    theirs = source("x/rss/y", candidate_id=second.id)
+    _segmented(store, document("Un."), "Des chercheurs en IA.")
+    _segmented(
+        store,
+        document("Deux.", source_id=theirs.id, candidate_id=second.id),
+        "D'autres chercheurs, IA.",
+    )
+    return [source(), theirs]
+
+
+def test_a_topic_raised_by_enough_candidates_is_flagged_for_an_editor() -> None:
+    store = InMemoryStore()
+    other = candidate("dominique-nouvel", "Dominique Nouvel")
+    sources = _two_people(store, other)
+
+    report = _run(store, FakeRoster(), [candidate(), other], min_candidates=2, sources=sources)
+    note = WatchMarkdown().render(report)
+
+    assert report.topic_signals[0].candidates == ("camille-exemple", "dominique-nouvel")
+    assert "— **à examiner**" in note
+
+
+def test_a_withdrawn_person_never_counts_towards_a_topic() -> None:
+    store = InMemoryStore()
+    gone = _withdrawn("dominique-temoin", "Dominique Témoin")
+    sources = _two_people(store, gone)
+
+    report = _run(store, FakeRoster(), [candidate(), gone], min_candidates=2, sources=sources)
+
+    assert report.topic_signals[0].candidates == ("camille-exemple",)
+    assert "— **à examiner**" not in WatchMarkdown().render(report)
+
+
+def test_someone_withdrawn_here_who_declares_again_elsewhere_is_a_lead() -> None:
+    gone = _withdrawn("dominique-temoin", "Dominique Témoin")
+    roster = FakeRoster([RosterEntry(name="Dominique Témoin", declared_on=date(2026, 11, 1))])
+
+    report = _run(InMemoryStore(), roster, [candidate(), gone])
+
+    (lead,) = report.candidate_leads
+    assert (lead.kind, lead.on) == (LeadKind.DECLARED_BUT_WITHDRAWN_HERE, date(2026, 11, 1))
+    assert "déclaré·e de nouveau" in WatchMarkdown().render(report)
+
+
+def test_an_old_declaration_of_someone_withdrawn_since_is_not_a_lead() -> None:
+    gone = _withdrawn("dominique-temoin", "Dominique Témoin").model_copy(
+        update={
+            "candidacy": Candidacy(
+                status=CandidacyStatus.WITHDRAWN,
+                since=date(2026, 10, 14),
+                checked_on=date(2026, 10, 14),
+                sources=("https://exemple.test/retrait",),
+            )
+        }
+    )
+    roster = FakeRoster([RosterEntry(name="Dominique Témoin", declared_on=date(2026, 3, 1))])
+
+    assert _run(InMemoryStore(), roster, [candidate(), gone]).candidate_leads == ()
+
+
+def test_pending_follows_what_the_register_shows_not_any_stored_annotation() -> None:
+    store = InMemoryStore()
+    first, second = _segmented(store, document("Texte."), "Mesure sur l'IA.", "Autre IA.")
+    _annotate(store, first, with_statement=True, version="edition")
+    _annotate(store, second, with_statement=False, version="trial")  # a dry run kept by mistake
+
+    shown = _run(store, FakeRoster(), verified=("edition",))
+
+    # The verified edition shows the first passage, the automatic annotator the second.
+    assert (shown.pending_passages, len(shown.empty_passages)) == (0, 1)
+
+
+def test_a_short_or_ragged_csv_row_is_skipped_or_fails_the_list_cleanly() -> None:
+    header = (
+        "candidate_id,complete_name,name,surname,parti,annonce_candidature,"
+        "retrait_candidature,second_round\n"
+    )
+    short = header + "DN,Dominique Nouvel\n \n"
+    entries = MieuxVoterRoster(_http(short), CSV_URL, "Liste").fetch()
+
+    assert [(e.name, e.party, e.declared_on) for e in entries] == [("Dominique Nouvel", None, None)]
+    with pytest.raises(SourceUnavailableError):
+        MieuxVoterRoster(_http(header + '"Dominique, guillemet ouvert\n'), CSV_URL, "Liste").fetch()
