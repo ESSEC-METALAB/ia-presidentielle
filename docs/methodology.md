@@ -191,8 +191,9 @@ et d'un fichier `data.js` généré.
 
 ## Niveaux de source
 
-Repris du README. À préciser : ce qu'est une « citation directe attribuée » pour qu'une
-source de niveau 3 alimente un score.
+Repris du README. Seuls les niveaux 1 et 2 deviennent des déclarations ; la presse
+(niveau 3) et les tiers (niveau 4) jamais, même avec une citation directe attribuée : ils
+peuvent signaler une piste à un éditeur, pas établir une position.
 
 ## Indicateur
 

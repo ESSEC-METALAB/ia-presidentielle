@@ -1,4 +1,5 @@
-# Weights and thresholds of the indicator (README, "L'indicateur"). No number lives in code.
+# Weights and thresholds of an indicator, if one is ever computed. The public register
+# publishes none (docs/adr/0002): no score, ranking or tone. No number lives in code.
 #
 # TODO(step 2): the values, once docs/methodology.md settles them — weight per trust level,
 # minimum segment count below which "données insuffisantes" is shown, confidence level.
