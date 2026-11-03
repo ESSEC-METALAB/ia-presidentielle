@@ -14,6 +14,7 @@ def make_document(
     text: str,
     published_on: date | None,
     fetched_at: datetime,
+    archive_url: str | None = None,
 ) -> RawDocument:
     """Provenance comes from the source configuration, never from the content."""
     return RawDocument(
@@ -26,4 +27,5 @@ def make_document(
         fetched_at=fetched_at,
         trust_level=source.trust_level,
         content_hash=content_hash(text),
+        archive_url=archive_url,
     )

@@ -4,10 +4,17 @@ from collections.abc import Iterable, Sequence
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
+from observatoire.domain.annotation import (
+    AnnotationContext,
+    SegmentAnnotation,
+    StatementDraft,
+    UsageRecord,
+)
 from observatoire.domain.models import (
     Candidate,
     DocumentSegmentation,
     RawDocument,
+    Segment,
     Source,
     SourceOutcome,
     TrustLevel,
@@ -32,13 +39,31 @@ class FrozenClock:
 
 
 class InMemoryStore:
-    """Every storage port in memory: documents, run outcomes, segmentations."""
+    """Every storage port in memory: documents, run outcomes, segmentations, annotations."""
 
     def __init__(self, documents: Iterable[RawDocument] = ()) -> None:
         self.documents = {d.content_hash: d for d in documents}
         self.outcomes: list[SourceOutcome] = []
         self.segmentations: dict[str, DocumentSegmentation] = {}
         self.replace_calls = 0
+        self.annotations: dict[tuple[str, str], SegmentAnnotation] = {}
+        self.usage: list[UsageRecord] = []
+
+    def annotated_segments(self, annotator_version: str) -> dict[str, str]:
+        return {
+            segment_id: a.segment_hash
+            for (segment_id, version), a in self.annotations.items()
+            if version == annotator_version
+        }
+
+    def save_annotation(self, annotation: SegmentAnnotation) -> None:
+        self.annotations[(annotation.segment_id, annotation.annotator_version)] = annotation
+
+    def list_annotations(self) -> list[SegmentAnnotation]:
+        return list(self.annotations.values())
+
+    def record_usage(self, record: UsageRecord) -> None:
+        self.usage.append(record)
 
     def segmented_versions(self) -> dict[str, str]:
         return {h: s.segmenter_version for h, s in self.segmentations.items()}
@@ -111,6 +136,32 @@ def document(
         fetched_at=fetched_at,
         trust_level=trust_level,
         content_hash=content_hash(text),
+    )
+
+
+def segment(text: str, *, document_hash: str = "a" * 64, index: int = 0) -> Segment:
+    return Segment(document_hash=document_hash, index=index, text=text, spans=((0, len(text)),))
+
+
+def draft(quote: str, dimension: str = "regulation", **notes: str) -> StatementDraft:
+    fields = {
+        "summary_fr": "Propose une autorité de contrôle.",
+        "summary_en": "Proposes an oversight authority.",
+        "context_fr": "Texte fictif.",
+        "context_en": "Fictional text.",
+        "gloss_en": "A fictional gloss.",
+    }
+    return StatementDraft(dimension=dimension, quote=quote, **(fields | notes))
+
+
+def context() -> AnnotationContext:
+    return AnnotationContext(
+        speaker="Camille Exemple",
+        party="Parti Exemple",
+        source_label="Parti Exemple — fil RSS",
+        trust_level=TrustLevel.PARTY,
+        title="Titre fictif",
+        published_on=date(2026, 9, 15),
     )
 
 

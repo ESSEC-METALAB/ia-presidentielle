@@ -296,3 +296,22 @@ def test_a_kind_the_previous_version_never_had_yields_nothing(tmp_path: Path) ->
     reader = LegacyPipelineReader(_legacy_db(tmp_path / "legacy.db", []))
 
     assert reader.fetch(source(kind="youtube"), since=None) == []
+
+
+def test_a_legacy_snapshot_is_kept_only_when_it_is_a_real_capture(tmp_path: Path) -> None:
+    capture = f"https://web.archive.org/web/20260918144520/{SITE}/a"
+    database = _legacy_db(tmp_path / "legacy.db", [
+        ("camille-exemple", {
+            "kind": "rss", "url": f"{SITE}/a", "text": "A", "archive_url": capture,
+        }),
+        # A dated query only asks for the nearest capture; it proves nothing.
+        ("camille-exemple", {
+            "kind": "rss", "url": f"{SITE}/b", "text": "B",
+            "archive_url": f"https://web.archive.org/web/2026/{SITE}/b",
+        }),
+    ])  # fmt: skip
+
+    documents = LegacyPipelineReader(database).fetch(source(), since=None)
+
+    assert {d.text: d.archive_url for d in documents} == {"A": capture, "B": None}
+    assert documents[0].archived_on == date(2026, 9, 18)

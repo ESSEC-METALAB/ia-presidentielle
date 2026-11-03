@@ -8,8 +8,10 @@
 UV ?= uv
 RUN ?= $(UV) run --extra dev
 DATA_DIRS := data/raw data/processed data/reports
+# Recorded annotation answers replayed by `make annotate-replay` (see docs/methodology.md).
+RESPONSES ?= annotations/2026-11-03-brouillon.jsonl
 
-.PHONY: help install install-pip format lint typecheck test check demo collect legacy-db import-legacy segment corpus clean
+.PHONY: help install install-pip format lint typecheck test check demo collect legacy-db import-legacy segment corpus annotate annotate-batch annotate-replay register site usage clean
 
 help: ## List the targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) \
@@ -61,6 +63,23 @@ segment: ## Split stored documents into segments (rules in config/segmentation.y
 
 corpus: ## Write the raw-corpus page to data/reports/corpus.html
 	$(RUN) observatoire corpus --out data/reports/corpus.html
+
+annotate: ## Annotate AI passages with LLM_PROVIDER (fake by default; mistral needs .env)
+	$(RUN) observatoire annotate
+
+annotate-batch: ## Write the pending annotation requests to data/llm/requests.jsonl, as a batch
+	$(RUN) observatoire annotate --llm batch --batch-out data/llm/requests.jsonl
+
+annotate-replay: ## Replay recorded answers (RESPONSES=...) through the same gates, offline
+	$(RUN) observatoire annotate --llm recorded --responses $(RESPONSES)
+
+register: ## Build the public register site into data/site/ (template: web/registre/)
+	$(RUN) observatoire register --out data/site
+
+site: import-legacy segment annotate-replay register ## The whole register, offline, from the previous version's data
+
+usage: ## Tokens used per step and model
+	$(RUN) observatoire usage
 
 clean: ## Remove caches and build output (never data/)
 	rm -rf .pytest_cache .mypy_cache .ruff_cache .coverage htmlcov build dist

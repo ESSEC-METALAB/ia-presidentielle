@@ -1,9 +1,170 @@
-# Dimensions, their definitions and positioning axes. POC scope: three dimensions, whose
-# ids are fixed by PROMPT_BOOTSTRAP.md.
+# Dimensions of AI policy, the filter that decides which passages are worth annotating,
+# and the gates every annotation must pass. No list or threshold below lives in code.
 #
-# TODO(step 2): French label, definition and the two poles of each axis, worded
-# descriptively and never normatively (README, "Neutralité").
+# `version` changes whenever a dimension, a definition or a rule changes: it is part of
+# the annotator's version, so a changed taxonomy re-annotates instead of mixing results.
+version: "2026-11-03"
+
+# The nine axes of the public register prototype ("IA 2027 — Registre", v3). Each
+# annotation is attached to exactly one: the main object of the sentence. The
+# definitions carry the three boundary rules (energy, surveillance/security, training).
+# Descriptive, never normative: an axis names a subject, not a direction.
 dimensions:
   - id: regulation
-  - id: sovereignty
-  - id: environment
+    label_fr: Régulation
+    label_en: Regulation
+    definition_fr: Règles, interdictions, contrôle, responsabilité, ou une position de dérégulation assumée.
+    definition_en: Rules, bans, oversight, liability, or an explicit deregulation stance.
+  - id: souverainete
+    label_fr: Souveraineté & infra
+    label_en: Sovereignty & infra
+    definition_fr: >-
+      Cloud souverain, capacité de calcul, dépendance aux fournisseurs étrangers. L'énergie
+      présentée comme atout national relève d'ici, pas de l'environnement.
+    definition_en: >-
+      Sovereign cloud, compute, dependence on foreign providers. Energy framed as a
+      national asset belongs here, not under environment.
+  - id: environnement
+    label_fr: Environnement & ressources
+    label_en: Environment & resources
+    definition_fr: >-
+      Coût environnemental et besoins en ressources de l'IA : consommation d'eau et
+      d'électricité des centres de données, récupération de chaleur, implantation,
+      empreinte carbone.
+    definition_en: >-
+      The environmental cost and resource demand of AI: water and electricity use of
+      data centres, waste-heat recovery, siting, carbon footprint.
+  - id: emploi
+    label_fr: Emploi
+    label_en: Jobs
+    definition_fr: Emplois créés ou supprimés, automatisation, droit du travail, protection des métiers exposés.
+    definition_en: Jobs created or displaced, automation, labour law, protection for exposed occupations.
+  - id: formation
+    label_fr: Éducation & formation
+    label_en: Education & training
+    definition_fr: >-
+      École, université, filière d'ingénieurs, formation continue et reconversion. Une
+      mesure délivrée sous forme de formation relève d'ici même si son but est de
+      protéger l'emploi.
+    definition_en: >-
+      Schools, universities, the engineer pipeline, continuing training and
+      reconversion. A measure delivered as training belongs here even when its purpose
+      is protecting jobs.
+  - id: services
+    label_fr: Services publics
+    label_en: Public services
+    definition_fr: IA dans l'État, l'administration, la santé, la détection de fraude.
+    definition_en: AI inside the state, administration, healthcare, fraud detection.
+  - id: surveillance
+    label_fr: Surveillance & libertés
+    label_en: Surveillance & liberties
+    definition_fr: >-
+      Reconnaissance faciale, police, décisions algorithmiques, vie privée. L'IA tournée
+      vers la population ; défendre les systèmes contre une attaque relève de la sécurité.
+    definition_en: >-
+      Facial recognition, policing, algorithmic decisions, privacy. AI turned on the
+      population; defending systems from attack is security.
+  - id: securite-defense
+    label_fr: Sécurité & défense
+    label_en: Security & defence
+    definition_fr: >-
+      Cyberdéfense, protection des infrastructures critiques, IA militaire, drones et
+      systèmes autonomes, ingérences et désinformation.
+    definition_en: >-
+      Cyberdefence, critical-infrastructure protection, military AI, drones and
+      autonomous systems, foreign interference and disinformation.
+  - id: financement
+    label_fr: Financement
+    label_en: Funding
+    definition_fr: Investissement public et privé, fiscalité, commande publique, budgets.
+    definition_en: Public and private investment, tax, procurement, budgets.
+
+# Which passages are sent to the annotator. Measured in the previous version (branch
+# `daily`, observatoire/transcript.py): a flat keyword list passed a pensions debate on
+# "c'est des calculs" and a tax debate on one stray "données". One strong pattern is
+# enough; weak patterns need at least `weak_min_distinct` different matches.
+# Python regular expressions, matched case-insensitively.
+relevance:
+  strong_patterns:
+    - 'intelligence\s+artificielle'
+    - '\bIA\b'
+    - 'algorithm'
+    - 'machine\s+learning'
+    - 'apprentissage\s+automatique'
+    - '\bLLM\b'
+    - 'chatgpt'
+    - 'openai'
+    - 'anthropic'
+    - 'mistral'
+    - 'data\s*-?\s*cent'
+    - 'centres?\s+de\s+donn[ée]es'
+    - 'souverainet[ée]\s+num[ée]rique'
+    - '(?:puissance|capacit[ée]s?)\s+de\s+calcul'
+    - 'deepfake'
+    - 'hypertrucage'
+    - 'reconnaissance\s+faciale'
+    - 'AI\s+Act'
+  weak_patterns:
+    - '\bnum[ée]rique'
+    - '\bdonn[ée]es'
+    - 'automatisation'
+    - '\brobot'
+    - '\bcloud\b'
+    - 'technologi'
+  weak_min_distinct: 2
+
+# Gates applied to every proposed annotation. A failed gate rejects the annotation and
+# records why; nothing is corrected silently.
+gates:
+  # The quote must be one exact passage of the segment, short enough to be a citation.
+  quote_max_words: 60
+  # Judgement words, checked in the summaries and context notes ONLY, never in the
+  # quote: if a candidate calls their own plan ambitious, that is their word and it is
+  # evidence. Stems, matched at a word start, case-insensitively. From the previous
+  # version (observatoire/lint.py).
+  evaluative_stems:
+    - ambitieu
+    - audacieu
+    - timide
+    - flou
+    - vague
+    - irréaliste
+    - réaliste
+    - crédible
+    - incohérent
+    - insuffisant
+    - excessi
+    - modeste
+    - prometteu
+    - décevant
+    - révolutionnaire
+    - visionnaire
+    - pertinent
+    - dangereu
+    - remarquable
+    - impressionnant
+    - intéressant
+    - courageu
+    - raisonnable
+    - ambitious
+    - bold
+    - timid
+    - unrealistic
+    - realistic
+    - credible
+    - incoherent
+    - insufficient
+    - excessive
+    - modest
+    - promising
+    - disappointing
+    - revolutionary
+    - visionary
+    - relevant
+    - dangerous
+    - remarkable
+    - impressive
+    - interesting
+    - courageous
+    - reasonable
+    - sensible

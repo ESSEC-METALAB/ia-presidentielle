@@ -18,6 +18,9 @@
 #
 # Order: alphabetical by surname.
 #
+# party_short: shown next to the name on the register. family_name: only where the last
+# word of `name` is not the surname, for alphabetical order.
+#
 # aliases: matched whole-word and case-insensitively. Unambiguous forms only: "Olivier
 # Faure", never "Faure"; "Fabien Roussel", never "Roussel"; "Nathalie Arthaud", never
 # "Arthaud".
@@ -25,6 +28,7 @@ candidates:
   - id: nathalie-arthaud
     name: Nathalie Arthaud
     party: Lutte ouvrière
+    party_short: "LO"
     aliases: [Nathalie Arthaud]
     candidacy:
       status: declared
@@ -38,6 +42,7 @@ candidates:
   - id: gabriel-attal
     name: Gabriel Attal
     party: Renaissance
+    party_short: "RE"
     aliases: [Attal]
     candidacy:
       status: declared
@@ -48,7 +53,8 @@ candidates:
 
   - id: jordan-bardella
     name: Jordan Bardella
-    party: RN
+    party: Rassemblement national
+    party_short: "RN"
     aliases: [Bardella]
     candidacy:
       status: withdrawn
@@ -62,6 +68,7 @@ candidates:
   - id: nicolas-dupont-aignan
     name: Nicolas Dupont-Aignan
     party: Debout la France
+    party_short: "DLF"
     aliases: [Dupont-Aignan]
     candidacy:
       status: declared
@@ -73,7 +80,8 @@ candidates:
 
   - id: olivier-faure
     name: Olivier Faure
-    party: PS
+    party: Parti socialiste
+    party_short: "PS"
     aliases: [Olivier Faure]
     candidacy:
       status: withdrawn
@@ -86,7 +94,8 @@ candidates:
 
   - id: raphael-glucksmann
     name: Raphaël Glucksmann
-    party: Place publique
+    party: Place publique – Parti socialiste
+    party_short: "PP-PS"
     aliases: [Glucksmann]
     candidacy:
       status: designated
@@ -100,7 +109,9 @@ candidates:
 
   - id: marine-le-pen
     name: Marine Le Pen
-    party: RN
+    party: Rassemblement national
+    party_short: "RN"
+    family_name: Le Pen
     aliases: [Marine Le Pen]
     candidacy:
       status: declared
@@ -114,6 +125,7 @@ candidates:
   - id: david-lisnard
     name: David Lisnard
     party: Nouvelle Énergie
+    party_short: "NE"
     aliases: [Lisnard]
     candidacy:
       status: declared
@@ -125,7 +137,8 @@ candidates:
 
   - id: jean-luc-melenchon
     name: Jean-Luc Mélenchon
-    party: LFI
+    party: La France insoumise
+    party_short: "LFI"
     aliases: [Mélenchon, Melenchon]
     candidacy:
       status: declared
@@ -137,6 +150,7 @@ candidates:
   - id: edouard-philippe
     name: Édouard Philippe
     party: Horizons
+    party_short: "HOR"
     aliases: [Édouard Philippe, Edouard Philippe]
     candidacy:
       status: declared
@@ -147,7 +161,8 @@ candidates:
 
   - id: bruno-retailleau
     name: Bruno Retailleau
-    party: LR
+    party: Les Républicains
+    party_short: "LR"
     aliases: [Retailleau]
     candidacy:
       status: designated
@@ -160,7 +175,8 @@ candidates:
 
   - id: fabien-roussel
     name: Fabien Roussel
-    party: PCF
+    party: Parti communiste français
+    party_short: "PCF"
     aliases: [Fabien Roussel]
     candidacy:
       status: designated
@@ -173,6 +189,7 @@ candidates:
   - id: francois-ruffin
     name: François Ruffin
     party: Debout !
+    party_short: "Debout !"
     aliases: [Ruffin]
     candidacy:
       status: declared
@@ -185,6 +202,7 @@ candidates:
   - id: marine-tondelier
     name: Marine Tondelier
     party: Les Écologistes
+    party_short: "LÉ"
     aliases: [Tondelier]
     candidacy:
       status: declared
@@ -198,6 +216,7 @@ candidates:
   - id: eric-zemmour
     name: Éric Zemmour
     party: Reconquête
+    party_short: "REC"
     aliases: [Zemmour]
     candidacy:
       status: declared

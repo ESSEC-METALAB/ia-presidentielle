@@ -1,23 +1,35 @@
 """Protocols the use cases depend on and the adapters implement.
 
 Small on purpose (CLAUDE.md §3, I): a consumer depends only on what it calls.
-TODO(step 2): LLMClient, Annotator, ScoreCalculator, ReportRenderer and
-UsageTracker, with the annotation and scoring use cases.
+TODO: ScoreCalculator, with the scoring use case, if the register ever publishes one.
 """
 
 from collections.abc import Iterable, Sequence
 from datetime import date, datetime
 from typing import Protocol
 
+from observatoire.domain.annotation import (
+    AnnotationContext,
+    DimensionAnnotation,
+    LLMResponse,
+    Prompt,
+    RejectedDraft,
+    ResponseSchema,
+    SegmentAnnotation,
+    StatementDraft,
+    UsageRecord,
+)
 from observatoire.domain.models import (
     CandidateMention,
     CorpusOverview,
     DocumentSegmentation,
     ExtractedText,
     RawDocument,
+    Segment,
     Source,
     SourceOutcome,
 )
+from observatoire.domain.register import Register
 
 
 class Clock(Protocol):
@@ -89,3 +101,57 @@ class SegmentStore(Protocol):
 
 class SegmentReader(Protocol):
     def list_segmentations(self) -> list[DocumentSegmentation]: ...
+
+
+class LLMClient(Protocol):
+    @property
+    def model(self) -> str: ...
+
+    def complete(self, prompt: Prompt, schema: ResponseSchema) -> LLMResponse:
+        """Raises AnnotationUnavailableError when no answer can be had now."""
+        ...
+
+
+class Annotator(Protocol):
+    @property
+    def version(self) -> str:
+        """Model, prompt and taxonomy: changes whenever any of them changes."""
+        ...
+
+    def annotate(self, segment: Segment, context: AnnotationContext) -> list[StatementDraft]:
+        """Proposals only. Raises AnnotationUnavailableError or MalformedAnnotationError."""
+        ...
+
+
+class RelevanceFilter(Protocol):
+    def is_relevant(self, text: str) -> bool:
+        """Cheap and deterministic: decides which passages are worth annotating."""
+        ...
+
+
+class DraftReviewer(Protocol):
+    def review(
+        self, segment: Segment, drafts: Sequence[StatementDraft]
+    ) -> tuple[list[DimensionAnnotation], list[RejectedDraft]]:
+        """Accepted annotations, quoting the passage's own text, and rejections with why."""
+        ...
+
+
+class AnnotationStore(Protocol):
+    def annotated_segments(self, annotator_version: str) -> dict[str, str]:
+        """Segment id -> hash of the passage text it was annotated on, for this version."""
+        ...
+
+    def save_annotation(self, annotation: SegmentAnnotation) -> None: ...
+
+
+class AnnotationReader(Protocol):
+    def list_annotations(self) -> list[SegmentAnnotation]: ...
+
+
+class UsageTracker(Protocol):
+    def record_usage(self, record: UsageRecord) -> None: ...
+
+
+class RegisterRenderer(Protocol):
+    def render(self, register: Register) -> str: ...

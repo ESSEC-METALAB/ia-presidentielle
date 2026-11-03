@@ -129,6 +129,13 @@ make demo                    # pipeline complet hors ligne sur fixtures
 open data/reports/latest.html
 ```
 
+Le registre public, hors ligne, sur les données réelles de la version précédente :
+
+```bash
+make site                    # import, découpage, annotation rejouée, site dans data/site/
+python3 -m http.server -d data/site 8000   # puis http://localhost:8000
+```
+
 Avec des sources réelles :
 
 ```bash
@@ -146,11 +153,13 @@ observatoire usage           # tokens consommés et coût estimé
 |---|---|
 | `observatoire collect` | Récupère les contenus, dédoublonne, stocke avec provenance |
 | `observatoire segment` | Découpe les documents en segments ; chaque passage écarté garde son motif |
-| `observatoire annotate` | Segmente et annote par dimension, position, sentiment |
-| `observatoire score` | Calcule l'indicateur par candidat et par dimension |
-| `observatoire report` | Produit le rapport Markdown ou HTML |
-| `observatoire run-all` | Enchaîne les quatre étapes |
+| `observatoire annotate` | Repère les déclarations sur l'IA passage par passage et les rattache à l'un des neuf axes ; citation contrôlée mot pour mot (`--llm fake\|mistral\|batch\|recorded`) |
+| `observatoire register` | Construit le site du registre public (`web/registre/` + `data.js` généré) dans `data/site/` |
+| `observatoire score` | *(non implémenté)* Calcule l'indicateur par candidat et par dimension |
+| `observatoire report` | *(non implémenté)* Produit le rapport Markdown ou HTML |
+| `observatoire run-all` | *(non implémenté)* Enchaîne les quatre étapes |
 | `observatoire usage` | Consommation de tokens par étape |
+| `make site` | Tout le registre hors ligne : import de la branche `daily`, découpage, réponses enregistrées, site |
 | `make check` | ruff, mypy strict, pytest, couverture |
 
 ---

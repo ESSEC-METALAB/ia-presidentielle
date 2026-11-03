@@ -1,4 +1,4 @@
-"""SQLite storage for raw documents and source run outcomes (schema in schema.sql)."""
+"""SQLite storage: documents, run outcomes, segments, annotations, usage (schema.sql)."""
 
 import json
 import sqlite3
@@ -10,6 +10,7 @@ from pathlib import Path
 
 from pydantic import TypeAdapter
 
+from observatoire.domain.annotation import SegmentAnnotation, UsageRecord
 from observatoire.domain.models import (
     CandidateMention,
     DocumentSegmentation,
@@ -23,7 +24,8 @@ from observatoire.domain.models import (
 
 _SCHEMA = resources.files(__package__).joinpath("schema.sql").read_text(encoding="utf-8")
 _DOCUMENT_COLUMNS = (
-    "content_hash, source_id, candidate_id, url, title, text, published_on, fetched_at, trust_level"
+    "content_hash, source_id, candidate_id, url, title, text, published_on, fetched_at,"
+    " trust_level, archive_url"
 )
 _RUN_COLUMNS = (
     "run_id, source_id, started_at, duration_ms, status, fetched, new, duplicates, out_of_window,"
@@ -33,8 +35,8 @@ _MENTIONS = TypeAdapter(tuple[CandidateMention, ...])
 
 
 class SqliteRepository:
-    """DocumentRepository, CorpusReader, SourceRunLog, SourceRunHistory, SegmentStore and
-    SegmentReader over one file.
+    """DocumentRepository, CorpusReader, SourceRunLog, SourceRunHistory, SegmentStore,
+    SegmentReader, AnnotationStore, AnnotationReader and UsageTracker over one file.
 
     Each write commits on its own, so a crash partway through a long run keeps the
     work already done.
@@ -49,14 +51,14 @@ class SqliteRepository:
 
     def _migrate(self) -> None:
         """Columns added after a database was created. Additive only: nothing is dropped."""
-        columns = {
-            row["name"] for row in self._connection.execute("PRAGMA table_info(source_runs)")
-        }
-        if "out_of_window" not in columns:
+        self._add_column("source_runs", "out_of_window", "INTEGER NOT NULL DEFAULT 0")
+        self._add_column("documents", "archive_url", "TEXT")
+
+    def _add_column(self, table: str, column: str, definition: str) -> None:
+        columns = {row["name"] for row in self._connection.execute(f"PRAGMA table_info({table})")}
+        if column not in columns:
             with self._connection:
-                self._connection.execute(
-                    "ALTER TABLE source_runs ADD COLUMN out_of_window INTEGER NOT NULL DEFAULT 0"
-                )
+                self._connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
     def close(self) -> None:
         self._connection.close()
@@ -76,10 +78,12 @@ class SqliteRepository:
             document.published_on.isoformat() if document.published_on else None,
             document.fetched_at.isoformat(),
             int(document.trust_level),
+            document.archive_url,
         )
         with self._connection:
             self._connection.execute(
-                f"INSERT OR IGNORE INTO documents ({_DOCUMENT_COLUMNS}) VALUES (?,?,?,?,?,?,?,?,?)",
+                f"INSERT OR IGNORE INTO documents ({_DOCUMENT_COLUMNS})"
+                " VALUES (?,?,?,?,?,?,?,?,?,?)",
                 values,
             )
 
@@ -165,6 +169,58 @@ class SqliteRepository:
             for document_hash, version in self.segmented_versions().items()
         ]
 
+    def annotated_segments(self, annotator_version: str) -> dict[str, str]:
+        rows = self._connection.execute(
+            "SELECT segment_id, segment_hash FROM segment_annotations WHERE annotator_version = ?",
+            (annotator_version,),
+        )
+        return {row["segment_id"]: row["segment_hash"] for row in rows}
+
+    def save_annotation(self, annotation: SegmentAnnotation) -> None:
+        values = (
+            annotation.segment_id,
+            annotation.annotator_version,
+            annotation.segment_hash,
+            annotation.annotated_at.isoformat(),
+            len(annotation.annotations),
+            annotation.model_dump_json(),
+        )
+        with self._connection:
+            self._connection.execute(
+                "INSERT OR REPLACE INTO segment_annotations (segment_id, annotator_version,"
+                " segment_hash, annotated_at, statements, payload) VALUES (?,?,?,?,?,?)",
+                values,
+            )
+
+    def list_annotations(self) -> list[SegmentAnnotation]:
+        rows = self._connection.execute(
+            "SELECT payload FROM segment_annotations ORDER BY segment_id, annotator_version"
+        )
+        return [SegmentAnnotation.model_validate_json(row["payload"]) for row in rows]
+
+    def record_usage(self, record: UsageRecord) -> None:
+        values = (
+            record.step,
+            record.model,
+            record.input_tokens,
+            record.output_tokens,
+            record.recorded_at.isoformat(),
+        )
+        with self._connection:
+            self._connection.execute(
+                "INSERT INTO llm_usage (step, model, input_tokens, output_tokens, recorded_at)"
+                " VALUES (?,?,?,?,?)",
+                values,
+            )
+
+    def usage_totals(self) -> list[tuple[str, str, int, int, int]]:
+        """(step, model, calls, input tokens, output tokens), for `observatoire usage`."""
+        rows = self._connection.execute(
+            "SELECT step, model, COUNT(*), SUM(input_tokens), SUM(output_tokens)"
+            " FROM llm_usage GROUP BY step, model ORDER BY step, model"
+        )
+        return [(r[0], r[1], r[2], r[3], r[4]) for r in rows]
+
 
 def _segment_row(segment: Segment) -> tuple[str, int, str, str, str]:
     return (
@@ -198,6 +254,7 @@ def _document(row: sqlite3.Row) -> RawDocument:
         published_on=date.fromisoformat(published_on) if published_on else None,
         fetched_at=datetime.fromisoformat(row["fetched_at"]),
         trust_level=TrustLevel(row["trust_level"]),
+        archive_url=row["archive_url"],
     )
 
 

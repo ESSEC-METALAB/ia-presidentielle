@@ -78,8 +78,82 @@ apparaissent « non suivi ». Ce qu'il faut vérifier en premier est listé dans
 
 ## Dimensions et axes
 
-À définir, dans `config/taxonomy.yaml` : pour `regulation`, `sovereignty` et `environment`,
-une définition et les deux pôles de l'axe, formulés de façon descriptive.
+Les neuf axes du prototype de site « IA 2027 — Registre » (v3), dans
+`config/taxonomy.yaml` : régulation ; souveraineté et infrastructure ; environnement et
+ressources ; emploi ; éducation et formation ; services publics ; surveillance et
+libertés ; sécurité et défense ; financement. Chaque déclaration est rattachée à un seul
+axe, celui de l'objet principal de la phrase. Trois frontières ont une règle explicite,
+écrite dans les définitions : l'énergie présentée comme atout national relève de la
+souveraineté, la consommation des centres de données de l'environnement ; l'IA tournée
+vers la population relève de la surveillance, la défense des systèmes de la sécurité ; une
+mesure délivrée sous forme de formation relève de l'éducation.
+
+Un axe nomme un sujet, jamais une direction : pas de pôles, pas d'orientation chiffrée.
+C'est le choix du prototype de site (« Ni commentaire, ni score »), qui tranche la
+première question ouverte ci-dessous pour ce qui est publié.
+
+## Repérage et classement (`observatoire annotate`)
+
+1. **Filtre déterministe.** Seuls les passages qui mentionnent l'IA sont examinés : un
+   terme fort suffit (« intelligence artificielle », « IA », « algorithme », « centre de
+   données »…), sinon deux termes faibles distincts (« numérique », « données »…). Règle
+   et listes reprises de la version précédente, où une liste plate avait laissé passer un
+   débat sur les retraites. Sur le corpus du 3 novembre 2026 : 121 passages sur 891.
+2. **Annotation.** Pour chaque passage retenu, un modèle reçoit une consigne versionnée
+   (`adapters/llm/prompts/classify_dimension.v1.md`, avec les axes écrits dedans) et
+   rend, selon un schéma JSON strict, la liste des déclarations du passage : axe,
+   citation, résumé et contexte en français et en anglais, traduction indicative. **Une
+   liste vide est la réponse attendue pour la plupart des passages**, et elle est
+   enregistrée comme les autres : le passage n'est pas renvoyé.
+3. **Contrôles.** Une proposition n'est gardée que si la citation figure mot pour mot
+   dans le passage (espaces et apostrophes typographiques près ; la citation enregistrée
+   est alors le texte de la source, pas la copie du modèle), compte au plus 60 mots,
+   porte un axe connu, n'est pas un doublon, et si ni le résumé ni le contexte ne
+   contiennent de terme évaluatif (liste dans `config/taxonomy.yaml`). La citation n'est
+   jamais filtrée : si un candidat qualifie son propre plan d'« ambitieux », c'est son
+   mot. Toute proposition rejetée est conservée avec son motif.
+4. **Provenance.** Le modèle ne dit jamais qui parle, où ni quand : le schéma l'interdit
+   (`extra="forbid"`). Personne, niveau de source, URL, date et archive sont joints par le
+   code, depuis le document stocké, au moment de construire le registre.
+
+L'annotateur est versionné par son modèle, le fichier de consigne et le hachage de la
+consigne rendue (qui contient les axes). Changer l'un des trois fait réannoter.
+
+**Fournisseurs.** `--llm mistral` appelle l'API Mistral (sorties structurées, schéma
+strict). `--llm batch` écrit les requêtes en attente dans un fichier JSONL au format batch
+sans rien enregistrer ; `--llm recorded --responses <fichier>` rejoue des réponses
+enregistrées par identifiant de requête (empreinte de la consigne et du passage), à
+travers les mêmes contrôles. Une réponse qui ne correspond plus exactement à la requête
+(consigne, axes ou passage modifiés) n'est pas rejouée.
+
+**Édition du 3 novembre 2026 : brouillon, non relu.** L'API Mistral n'étant pas joignable
+depuis l'environnement de développement, les 117 requêtes distinctes ont été écrites en
+batch et traitées hors ligne par un assistant (Claude Code), avec la même consigne et le
+même schéma, puis rejouées par `--llm recorded`. Les réponses sont versionnées dans
+`annotations/2026-11-03-brouillon.jsonl` (modèle déclaré `claude-code-session-draft`) :
+`make site` reconstruit le registre à l'identique, hors ligne. Ce n'est pas le
+fournisseur retenu pour la production, et aucune de ces déclarations n'a encore été relue
+par un éditeur ; le site le dit.
+
+## Registre public (`observatoire register`)
+
+Construit dans `data/site/` à partir du gabarit `web/registre/` (le prototype v3, modifié
+au minimum : mention « citations réelles, classement non relu », lien d'archive seulement
+quand une capture existe, natures de source réelles, historique fictif des axes retiré)
+et d'un fichier `data.js` généré.
+
+- **Qui figure.** Les personnes de `config/candidates.yaml` qui ne se sont pas retirées,
+  par ordre alphabétique du nom. Olivier Faure et Jordan Bardella sont hors registre ;
+  leurs documents restent stockés.
+- **Suivi.** Un candidat est « suivi » s'il a au moins une source active. Sinon, chaque
+  case porte « Non suivi » : nous n'écoutons pas, ce n'est pas un silence.
+- **Niveaux.** Seuls les niveaux 1 et 2 deviennent des déclarations. Le niveau est
+  confirmé seulement quand la source nomme elle-même l'orateur (compte rendu de
+  l'Assemblée nationale) ; partout ailleurs il est attribué par défaut, en pointillés.
+- **Nature.** Le site affiche la nature du support (séance, publication du site, page,
+  PDF), pas le genre (discours, entretien, communiqué), qui est un jugement éditorial.
+- **Archive.** Seule une vraie capture de la Wayback Machine (`/web/<14 chiffres>/`),
+  héritée de la version précédente, est affichée ; sinon « pas encore de capture ».
 
 ## Niveaux de source
 
@@ -88,12 +162,14 @@ source de niveau 3 alimente un score.
 
 ## Indicateur
 
-À définir, dans `config/scoring.yaml` : pondération par niveau de source, seuil de
-segments sous lequel on affiche « données insuffisantes », intervalle de confiance.
+À définir, dans `config/scoring.yaml`, si un score est un jour publié : pondération par
+niveau de source, seuil de segments sous lequel on affiche « données insuffisantes »,
+intervalle de confiance. Le registre n'en publie aucun.
 
 ## Relecture humaine
 
-À définir : taille de l'échantillon, profil des relecteurs, mesure d'accord.
+À définir : taille de l'échantillon, profil des relecteurs, mesure d'accord. Aucune
+déclaration de l'édition du 3 novembre 2026 n'a été relue.
 
 ## Questions ouvertes
 

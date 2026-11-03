@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Spectral:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Sharp:opsz,wght,FILL,GRAD@24,300,0,0&display=block" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="./data.js"></script>
+<script src="./image-slot.js"></script>
+<style>
+body{margin:0;background:#F3F1EC;color:#0B0C0F;font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-wrap:pretty}
+a{color:#1B33B4}a:hover{color:#0B0C0F}
+button{font:inherit}
+.msi{font-family:'Material Symbols Sharp';font-weight:normal;font-style:normal;line-height:1;letter-spacing:normal;text-transform:none;white-space:nowrap;word-wrap:normal;direction:ltr;font-feature-settings:'liga';-webkit-font-smoothing:antialiased;-webkit-user-select:none;user-select:none;flex:none}
+::selection{background:#0B0C0F;color:#F3F1EC}
+@keyframes drift-a{0%{transform:translate(0,0) scale(1)}100%{transform:translate(10vw,-9vh) scale(1.18)}}
+@keyframes drift-b{0%{transform:translate(0,0) scale(1.1)}100%{transform:translate(-9vw,7vh) scale(.92)}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.6)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div lang="{{ lang }}" style="min-height:100vh;display:flex;flex-direction:column;font-size:16px;line-height:1.5;position:relative">
+  <div aria-hidden="true" style="position:fixed;inset:0;pointer-events:none;z-index:60;opacity:{{ grainOpacity }};mix-blend-mode:multiply;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E&quot;);background-size:320px 320px"></div>
+  <a href="#main" style="position:absolute;left:-9999px;top:12px;background:#F3F1EC;color:#0B0C0F;padding:8px 14px;font-size:14px;z-index:100" style-focus="left:16px;outline:2px solid #F3F1EC;outline-offset:2px">{{ t.skip }}</a>
+
+  <div style="position:sticky;top:0;z-index:20">
+    <div aria-hidden="true" style="height:2px;display:grid;grid-template-columns:1fr 1fr 1fr"><span style="background:#2B4BD8"></span><span style="background:#F3F1EC"></span><span style="background:#E0202E"></span></div>
+    <header style="background:#0B0C0F;color:#F3F1EC;border-bottom:1px solid rgba(243,241,236,.1)">
+      <div style="max-width:1400px;margin:0 auto;padding:11px 40px;display:flex;align-items:center;gap:28px;flex-wrap:wrap">
+        <a href="{{ hrefHome }}" style="display:flex;align-items:center;gap:14px;text-decoration:none;color:#F3F1EC" style-focus="outline:2px solid #F3F1EC;outline-offset:4px">
+          <span aria-hidden="true" style="position:relative;width:36px;height:24px;overflow:hidden;border-radius:4px;background:linear-gradient(90deg,#2B4BD8 0 33.3%,#F3F1EC 33.3% 66.6%,#E0202E 66.6%)">
+            <x-import component-from-global-scope="silk-flag" from="./silk-flag.js" speed="5" scale="1.3" noise="1" rotation="-0.1" paused="{{ flagPaused }}" hint-size="100%,100%" style="position:absolute;inset:0;width:100%;height:100%"></x-import>
+          </span>
+          <span style="display:flex;flex-direction:column;line-height:1.15">
+            <span style="font-weight:600;font-size:19px;letter-spacing:-.02em">IA 2027</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#B8B6AF;letter-spacing:.08em;text-transform:uppercase">{{ t.siteSub }}</span>
+          </span>
+        </a>
+        <nav aria-label="{{ t.navLabel }}" style="display:flex;gap:4px;margin-left:auto;font-size:14px;font-weight:500;flex-wrap:wrap">
+          <a href="{{ hrefFil }}" aria-current="{{ curFil }}" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:3px;color:#F3F1EC;text-decoration:none;background:{{ bgFil }};transition:background .2s" style-hover="background:rgba(243,241,236,.12)" style-focus="outline:2px solid #F3F1EC;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:17px">view_stream</i>{{ t.fil }}</a>
+          <a href="{{ hrefGrille }}" aria-current="{{ curGrille }}" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:3px;color:#F3F1EC;text-decoration:none;background:{{ bgGrille }};transition:background .2s" style-hover="background:rgba(243,241,236,.12)" style-focus="outline:2px solid #F3F1EC;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:17px">bar_chart</i>{{ t.grille }}</a>
+          <a href="{{ hrefMethodo }}" aria-current="{{ curMethodo }}" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:3px;color:#F3F1EC;text-decoration:none;background:{{ bgMethodo }};transition:background .2s" style-hover="background:rgba(243,241,236,.12)" style-focus="outline:2px solid #F3F1EC;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:17px">menu_book</i>{{ t.methodo }}</a>
+        </nav>
+        <div role="group" aria-label="{{ t.langLabel }}" style="display:flex;border:1px solid rgba(243,241,236,.35);border-radius:3px;overflow:hidden;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em">
+          <a href="{{ hrefFr }}" hreflang="fr" lang="fr" aria-current="{{ curFr }}" style="padding:7px 12px;text-decoration:none;color:{{ frColor }};background:{{ frBg }}" style-focus="outline:2px solid #F3F1EC;outline-offset:-2px">FR</a>
+          <a href="{{ hrefEn }}" hreflang="en" lang="en" aria-current="{{ curEn }}" style="padding:7px 12px;text-decoration:none;color:{{ enColor }};background:{{ enBg }}" style-focus="outline:2px solid #F3F1EC;outline-offset:-2px">EN</a>
+        </div>
+      </div>
+    </header>
+  </div>
+
+  <main id="main" style="flex:1;width:100%">
+
+    <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+      <section data-screen-label="Accueil" style="position:relative;isolation:isolate;background:#000;color:#F3F1EC;min-height:calc(100vh - 62px);display:flex;flex-direction:column;overflow:hidden">
+        <div aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden">
+          <x-import component-from-global-scope="silk-flag" from="./silk-flag.js" speed="4.2" scale="1.05" noise="1.2" rotation="-0.08" paused="{{ flagPaused }}" hint-size="100%,100%" style="position:absolute;inset:0;width:100%;height:100%"></x-import>
+          <span style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.3) 0%,rgba(0,0,0,0) 22%,rgba(0,0,0,0) 34%,rgba(0,0,0,.6) 52%,rgba(0,0,0,.92) 70%,#000 100%)"></span>
+          <span style="position:absolute;inset:0;opacity:.5;mix-blend-mode:soft-light;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E&quot;);background-size:320px 320px"></span>
+        </div>
+
+        <div style="position:relative;max-width:1400px;width:100%;margin:auto auto 0;padding:200px 40px 56px;box-sizing:border-box;display:flex;flex-direction:column;gap:48px">
+          <h1 data-hero style="position:relative;z-index:2;margin:0;max-width:20ch;font-weight:500;font-size:clamp(52px,7.2vw,118px);line-height:.92;letter-spacing:-.04em;text-wrap:balance;text-shadow:0 2px 40px rgba(0,0,0,.45)">{{ t.heroTitle }}</h1>
+
+          <div data-hero style="position:relative;z-index:2;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:40px 56px;align-items:end">
+            <div style="display:flex;flex-direction:column;gap:30px;min-width:0">
+              <ul style="list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:10px">
+                <sc-for list="{{ principles }}" as="p" hint-placeholder-count="3">
+                  <li style="display:inline-flex;align-items:center;gap:10px;padding:10px 16px 10px 12px;border:1px solid rgba(243,241,236,.24);border-radius:3px;font-size:14px;font-weight:500;background:rgba(243,241,236,.05)"><i class="msi" aria-hidden="true" style="font-size:18px">{{ p.icon }}</i>{{ p.label }}</li>
+                </sc-for>
+              </ul>
+              <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+                <div style="display:flex;padding-left:10px">
+                  <sc-for list="{{ candTiles }}" as="c" hint-placeholder-count="7">
+                    <a href="{{ c.href }}" title="{{ c.name }}" aria-label="{{ c.name }}" style="position:relative;display:grid;place-items:center;width:46px;height:46px;border-radius:50%;margin-left:-10px;border:2px solid #000;background:#1A1B1F {{ c.photoCss }} center/cover;filter:grayscale(1);color:#F3F1EC;overflow:hidden;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.04em;transition:transform .2s" style-hover="transform:translateY(-4px) scale(1.1);z-index:2" style-focus="outline:2px solid #F3F1EC;outline-offset:2px">
+                      <sc-if value="{{ c.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ c.initials }}</span></sc-if>
+                    </a>
+                  </sc-for>
+                </div>
+                <button type="button" onClick="{{ scrollToCands }}" style="appearance:none;border:0;background:none;padding:6px 0;color:#F3F1EC;cursor:pointer;display:inline-flex;align-items:center;gap:10px;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.06em;border-bottom:1px solid rgba(243,241,236,.3)" style-hover="border-bottom-color:#F3F1EC" style-focus="outline:2px solid #F3F1EC;outline-offset:3px">{{ candsLine }}<i class="msi" aria-hidden="true" style="font-size:15px">arrow_downward</i></button>
+              </div>
+            </div>
+
+            <a href="{{ live.href }}" style="display:flex;flex-direction:column;gap:16px;padding:22px 24px 20px;border:1px solid rgba(243,241,236,.18);border-radius:10px;background:rgba(243,241,236,.06);backdrop-filter:blur(18px);text-decoration:none;color:#F3F1EC;box-shadow:0 30px 80px rgba(0,0,0,.5);transition:transform .25s,border-color .25s" style-hover="transform:translateY(-3px);border-color:rgba(243,241,236,.5)" style-focus="outline:2px solid #F3F1EC;outline-offset:3px">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#C9C7C0">
+                <span style="display:inline-flex;align-items:center;gap:8px"><i class="msi" aria-hidden="true" style="font-size:16px">format_quote</i>{{ t.liveLabel }}</span>
+                <span>{{ live.counter }}</span>
+              </div>
+              <blockquote data-live lang="fr" style="margin:0;font-family:Spectral,Georgia,serif;font-size:clamp(18px,1.45vw,22px);line-height:1.35;letter-spacing:-.01em;text-indent:{{ live.indent }};min-height:4.1em">{{ live.previewText }}</blockquote>
+              <div data-live style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <span aria-hidden="true" style="display:grid;place-items:center;width:38px;height:38px;border-radius:3px;overflow:hidden;background:#1A1B1F {{ live.photoCss }} center/cover;filter:grayscale(1);border:1px solid rgba(243,241,236,.2);font-family:'JetBrains Mono',monospace;font-size:11px">
+                  <sc-if value="{{ live.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ live.initials }}</span></sc-if>
+                </span>
+                <span style="display:flex;flex-direction:column;line-height:1.25"><strong style="font-weight:500;font-size:15px">{{ live.candName }}</strong><span style="font-size:13px;color:#C9C7C0">{{ live.party }} · {{ live.dateLabel }}</span></span>
+                <span style="margin-left:auto;display:inline-flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.04em;padding:6px 11px;border:1px solid rgba(243,241,236,.22);border-radius:3px"><i class="msi" aria-hidden="true" style="font-size:14px">{{ live.axisIcon }}</i>{{ live.axisLabel }}</span>
+              </div>
+              <span aria-hidden="true" style="display:block;height:1px;background:rgba(243,241,236,.18);overflow:hidden"><span data-live-bar style="display:block;height:100%;width:100%;background:#F3F1EC;transform-origin:left;transform:scaleX(0)"></span></span>
+            </a>
+          </div>
+        </div>
+
+        <dl data-hero style="position:relative;z-index:2;max-width:1400px;width:100%;margin:0 auto;padding:22px 40px 30px;box-sizing:border-box;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:24px;border-top:1px solid rgba(243,241,236,.18);font-family:'JetBrains Mono',monospace">
+          <div style="display:flex;flex-direction:column-reverse;gap:8px"><dt style="display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#C9C7C0"><i class="msi" aria-hidden="true" style="font-size:15px">format_quote</i>{{ t.statClaims }}</dt><dd style="margin:0;font-family:'Space Grotesk',system-ui,sans-serif;font-size:40px;line-height:1;font-weight:500;letter-spacing:-.02em"><span data-count="{{ nClaims }}">{{ nClaims }}</span></dd></div>
+          <div style="display:flex;flex-direction:column-reverse;gap:8px"><dt style="display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#C9C7C0"><i class="msi" aria-hidden="true" style="font-size:15px">group</i>{{ t.statCands }}</dt><dd style="margin:0;font-family:'Space Grotesk',system-ui,sans-serif;font-size:40px;line-height:1;font-weight:500;letter-spacing:-.02em"><span data-count="{{ nCands }}">{{ nCands }}</span></dd></div>
+          <div style="display:flex;flex-direction:column-reverse;gap:8px"><dt style="display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#C9C7C0"><i class="msi" aria-hidden="true" style="font-size:15px">rss_feed</i>{{ t.statTracked }}</dt><dd style="margin:0;font-family:'Space Grotesk',system-ui,sans-serif;font-size:40px;line-height:1;font-weight:500;letter-spacing:-.02em"><span data-count="{{ nTracked }}">{{ nTracked }}</span></dd></div>
+          <div style="display:flex;flex-direction:column-reverse;gap:8px"><dt style="display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#C9C7C0"><i class="msi" aria-hidden="true" style="font-size:15px">history</i>{{ t.statUpdated }}</dt><dd style="margin:0;font-family:'Space Grotesk',system-ui,sans-serif;font-size:22px;line-height:40px;font-weight:500;letter-spacing:-.01em">{{ lastUpdate }}</dd></div>
+        </dl>
+      </section>
+
+      <section style="background:#0B0C0F;color:#F3F1EC;border-top:1px solid rgba(243,241,236,.14)">
+        <div style="max-width:1400px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))">
+          <a data-reveal href="{{ hrefFil }}" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:28px;padding:44px 40px;border-right:1px solid rgba(243,241,236,.14);text-decoration:none;color:#F3F1EC;transition:background .25s" style-hover="background:rgba(243,241,236,.04)" style-focus="outline:2px solid #F3F1EC;outline-offset:-4px">
+            <span style="display:flex;flex-direction:column;gap:14px;min-width:0">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#C9C7C0">01 · {{ t.viewLabel }}</span>
+              <span style="display:flex;align-items:center;gap:14px;font-size:clamp(32px,3vw,46px);line-height:1;font-weight:500;letter-spacing:-.03em"><i class="msi" aria-hidden="true" style="font-size:.8em;color:#C9C7C0">view_stream</i>{{ t.fil }}</span>
+              <span style="font-size:15px;color:#C9C7C0;max-width:28ch">{{ t.doorFil }}</span>
+              <span style="margin-top:auto;display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.06em">{{ t.open }}<i class="msi" aria-hidden="true" style="font-size:15px">arrow_forward</i></span>
+            </span>
+            <span aria-hidden="true" style="display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid rgba(243,241,236,.14);border-radius:10px;background:rgba(243,241,236,.04);min-width:0;mask-image:linear-gradient(180deg,#000 55%,transparent 100%)">
+              <sc-for list="{{ previewClaims }}" as="p" hint-placeholder-count="3">
+                <span style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;padding:10px 12px;border-radius:7px;background:rgba(243,241,236,.06)">
+                  <span style="display:grid;place-items:center;width:28px;height:28px;border-radius:3px;overflow:hidden;background:#1A1B1F {{ p.photoCss }} center/cover;filter:grayscale(1);border:1px solid rgba(243,241,236,.18);font-family:'JetBrains Mono',monospace;font-size:9px">
+                    <sc-if value="{{ p.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ p.initials }}</span></sc-if>
+                  </span>
+                  <span style="min-width:0;display:flex;flex-direction:column;gap:3px">
+                    <span style="display:flex;gap:8px;align-items:center;font-size:12px;color:#C9C7C0;min-width:0"><strong style="color:#F3F1EC;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">{{ p.candName }}</strong><span style="flex:none;font-family:'JetBrains Mono',monospace;font-size:10px;white-space:nowrap">{{ p.dateShort }}</span><i class="msi" aria-hidden="true" style="margin-left:auto;flex:none;font-size:14px">{{ p.kindIcon }}</i></span>
+                    <span style="font-family:Spectral,Georgia,serif;font-size:14px;line-height:1.3;color:#E3E1DA;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.previewText }}</span>
+                  </span>
+                </span>
+              </sc-for>
+            </span>
+          </a>
+          <a data-reveal href="{{ hrefGrille }}" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:28px;padding:44px 40px;text-decoration:none;color:#F3F1EC;transition:background .25s" style-hover="background:rgba(243,241,236,.04)" style-focus="outline:2px solid #F3F1EC;outline-offset:-4px">
+            <span style="display:flex;flex-direction:column;gap:14px;min-width:0">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#C9C7C0">02 · {{ t.viewLabel }}</span>
+              <span style="display:flex;align-items:center;gap:14px;font-size:clamp(32px,3vw,46px);line-height:1;font-weight:500;letter-spacing:-.03em"><i class="msi" aria-hidden="true" style="font-size:.8em;color:#C9C7C0">bar_chart</i>{{ t.grille }}</span>
+              <span style="font-size:15px;color:#C9C7C0;max-width:28ch">{{ t.doorGrille }}</span>
+              <span style="margin-top:auto;display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.06em">{{ t.open }}<i class="msi" aria-hidden="true" style="font-size:15px">arrow_forward</i></span>
+            </span>
+            <span aria-hidden="true" style="display:flex;flex-direction:column;align-self:start;padding:16px 14px;border:1px solid rgba(243,241,236,.14);border-radius:10px;background:rgba(243,241,236,.04);min-width:0">
+              <span style="display:grid;grid-template-columns:minmax(72px,1fr) 34px 40px;gap:8px;padding-bottom:9px;border-bottom:1px solid rgba(243,241,236,.22);font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.11em;text-transform:uppercase;color:#C9C7C0">
+                <span>{{ t.filterCand }}</span><span style="text-align:right">{{ t.miniColTotal }}</span><span style="text-align:right">{{ t.miniColAxes }}</span>
+              </span>
+              <sc-for list="{{ miniRows }}" as="r" hint-placeholder-count="7">
+                <span style="display:grid;grid-template-columns:minmax(72px,1fr) 34px 40px;gap:8px;align-items:baseline;padding:7px 0;border-bottom:1px solid rgba(243,241,236,.08)">
+                  <span style="font-size:13px;line-height:1.2;color:{{ r.ink }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:12px;text-align:right;color:{{ r.ink }}">{{ r.count }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:12px;text-align:right;color:#C9C7C0">{{ r.axes }}</span>
+                </span>
+              </sc-for>
+            </span>
+          </a>
+        </div>
+      </section>
+
+      <section data-cands style="position:relative;border-top:1px solid #E3E0D8;border-bottom:1px solid #E3E0D8">
+        <div style="position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:clamp(48px,6vh,80px) 40px;box-sizing:border-box;min-height:100svh;display:flex;flex-direction:column;justify-content:center">
+        <div data-reveal style="display:flex;align-items:baseline;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:28px">
+          <h2 style="margin:0;font-weight:500;font-size:clamp(30px,3vw,44px);letter-spacing:-.03em;line-height:1">{{ t.candsTitle }}</h2>
+          <p style="margin:0;display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#5F646E"><i class="msi" aria-hidden="true" style="font-size:14px">sort</i>{{ orderNote }}</p>
+        </div>
+        <ul style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(clamp(160px,calc(25% - 15px),330px),1fr));gap:clamp(12px,1.2vw,20px);align-items:stretch">
+          <sc-for list="{{ candCards }}" as="c" hint-placeholder-count="7">
+            <li data-reveal data-par="{{ c.par }}" data-base="{{ c.offNum }}" style="height:100%;transform:translateY({{ c.offY }})">
+              <a href="{{ c.href }}" style="display:flex;flex-direction:column;height:100%;box-sizing:border-box;background:#FAF9F6;border:1px solid #E3E0D8;text-decoration:none;color:#0B0C0F;transition:transform .3s cubic-bezier(.2,.8,.2,1),border-color .3s" style-hover="transform:translateY(-7px);border-color:#0B0C0F" style-focus="outline:2px solid #1B33B4;outline-offset:3px">
+                <span style="position:relative;display:block;aspect-ratio:1;overflow:hidden;background:#0B0C0F">
+                  <span aria-hidden="true" style="position:absolute;inset:0;display:grid;place-items:center;font-size:clamp(56px,6vw,86px);font-weight:600;letter-spacing:-.06em;color:rgba(243,241,236,.08)">{{ c.initials }}</span>
+                  <image-slot id="{{ c.slotId }}" shape="rect" fit="cover" placeholder="{{ t.dropPortrait }}" style="position:absolute;inset:0;width:100%;height:100%;filter:grayscale(1) contrast(1.05);transition:filter .5s,transform .7s" style-hover="filter:grayscale(0) contrast(1);transform:scale(1.04)"></image-slot>
+                  <span aria-hidden="true" style="position:absolute;left:0;top:0;padding:7px 9px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;color:#F3F1EC;background:rgba(11,12,15,.55)">{{ c.idx }}</span>
+                </span>
+                <span aria-hidden="true" style="display:grid;grid-template-columns:repeat(6,1fr);height:7px">
+                  <sc-for list="{{ c.spectrum }}" as="sp" hint-placeholder-count="9"><span title="{{ sp.title }}" style="background:{{ sp.bg }}"></span></sc-for>
+                </span>
+                <span style="flex:1;display:flex;flex-direction:column;gap:8px;padding:13px 14px 15px;min-width:0">
+                  <span style="font-size:19px;line-height:1.08;font-weight:500;letter-spacing:-.02em">{{ c.name }}</span>
+                  <span title="{{ c.party }}" style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#5F646E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.partyShort }}</span>
+                  <sc-if value="{{ c.hasQuote }}" hint-placeholder-val="{{ true }}">
+                    <span style="display:flex;flex-direction:column;gap:6px;padding-top:9px;border-top:1px solid #E3E0D8">
+                      <span style="font-family:Spectral,Georgia,serif;font-size:14px;line-height:1.35;color:#3A3E46;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">{{ c.quote }}</span>
+                      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:{{ c.lastInk }}">{{ c.lastAxis }}</span>
+                    </span>
+                  </sc-if>
+                  <span style="display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#5F646E">{{ c.status }}<i class="msi" aria-hidden="true" style="margin-left:auto;font-size:16px;color:#0B0C0F">arrow_forward</i></span>
+                </span>
+              </a>
+            </li>
+          </sc-for>
+        </ul>
+      </div>
+      </section>
+
+    </sc-if>
+
+    <sc-if value="{{ isFil }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="Le fil" style="max-width:1400px;margin:0 auto;padding:56px 40px 104px">
+        <p data-reveal style="margin:0 0 18px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#5F646E">01 · {{ t.viewLabel }}</p>
+        <h1 data-reveal style="display:flex;align-items:center;gap:22px;margin:0 0 14px;font-weight:500;font-size:clamp(48px,6vw,96px);line-height:.95;letter-spacing:-.035em"><i class="msi" aria-hidden="true" style="font-size:.55em;color:#5F646E">view_stream</i>{{ t.fil }}</h1>
+        <p data-reveal style="margin:0 0 36px;max-width:64ch;font-size:18px;color:#3A3E46">{{ t.filLead }}</p>
+
+        <div data-reveal role="region" aria-label="{{ t.filters }}" style="position:sticky;top:62px;z-index:12;display:flex;align-items:stretch;flex-wrap:wrap;gap:14px 0;margin:0 -40px;padding:14px 40px 13px;background:rgba(243,241,236,.94);backdrop-filter:blur(12px);border-top:1px solid #0B0C0F;border-bottom:1px solid #D8D5CE">
+          <div style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:8px;padding-right:20px">
+            <span style="display:inline-flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#5F646E"><i class="msi" aria-hidden="true" style="font-size:14px">filter_alt</i>{{ t.filterAxis }}</span>
+            <nav aria-label="{{ t.filterAxis }}" style="display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin">
+              <sc-for list="{{ axisChips }}" as="ax" hint-placeholder-count="7">
+                <a href="{{ ax.href }}" aria-current="{{ ax.current }}" style="flex:none;display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;padding:6px 12px 6px 10px;border-radius:3px;border:1px solid {{ ax.border }};background:{{ ax.bg }};color:{{ ax.color }};text-decoration:none;white-space:nowrap;transition:border-color .15s,background .15s" style-hover="border-color:#0B0C0F" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:16px">{{ ax.icon }}</i>{{ ax.label }}</a>
+              </sc-for>
+            </nav>
+          </div>
+          <div style="flex:0 0 auto;display:flex;flex-direction:column;gap:8px;padding:0 20px;border-left:1px solid #D8D5CE">
+            <span style="display:inline-flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#5F646E"><i class="msi" aria-hidden="true" style="font-size:14px">person_search</i>{{ t.filterCand }}</span>
+            <span data-cand-dd style="position:relative;display:inline-flex">
+              <button type="button" onClick="{{ toggleCand }}" onKeyDown="{{ onCandKey }}" aria-haspopup="listbox" aria-expanded="{{ candExpanded }}" style="display:inline-flex;align-items:center;gap:10px;min-width:198px;padding:6px 8px 6px 12px;border:1px solid #0B0C0F;border-radius:3px;background:transparent;color:#0B0C0F;font-size:13px;font-weight:500;text-align:left;cursor:pointer;transition:background .15s" style-hover="background:rgba(11,12,15,.05)" style-focus="outline:2px solid #1B33B4;outline-offset:2px">{{ candLabel }}<i class="msi" aria-hidden="true" style="margin-left:auto;font-size:18px;color:#5F646E">{{ candCaret }}</i></button>
+              <sc-if value="{{ candOpen }}" hint-placeholder-val="{{ false }}">
+                <span role="listbox" aria-label="{{ t.filterCand }}" style="position:absolute;top:calc(100% + 6px);right:0;z-index:40;min-width:262px;max-height:320px;overflow-y:auto;display:flex;flex-direction:column;background:#F3F1EC;border:1px solid #0B0C0F;box-shadow:0 20px 44px rgba(11,12,15,.2)">
+                  <sc-for list="{{ candItems }}" as="ci" hint-placeholder-count="8">
+                    <a href="{{ ci.href }}" role="option" aria-selected="{{ ci.selected }}" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #E3E0D8;background:{{ ci.bg }};color:#0B0C0F;text-decoration:none;font-size:13px;transition:background .15s" style-hover="background:#E9E6DE" style-focus="outline:2px solid #1B33B4;outline-offset:-2px">
+                      <span aria-hidden="true" style="display:grid;place-items:center;flex:none;width:26px;height:26px;border-radius:3px;overflow:hidden;background:#0B0C0F {{ ci.photoCss }} center/cover;filter:grayscale(1);color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:9px">
+                        <sc-if value="{{ ci.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ ci.initials }}</span></sc-if>
+                      </span>
+                      <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ ci.label }}</span>
+                      <span style="flex:none;font-family:'JetBrains Mono',monospace;font-size:10px;color:#5F646E">{{ ci.count }}</span>
+                    </a>
+                  </sc-for>
+                </span>
+              </sc-if>
+            </span>
+          </div>
+          <div style="flex:0 0 auto;display:flex;flex-direction:column;gap:8px;padding-left:20px;border-left:1px solid #D8D5CE">
+            <span style="display:inline-flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#5F646E"><i class="msi" aria-hidden="true" style="font-size:14px">record_voice_over</i>{{ t.filterTier }}</span>
+            <nav aria-label="{{ t.filterTier }}" style="display:flex;gap:7px">
+              <sc-for list="{{ tierChips }}" as="tc" hint-placeholder-count="3">
+                <a href="{{ tc.href }}" aria-current="{{ tc.current }}" style="flex:none;display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;padding:6px 12px 6px 10px;border-radius:3px;border:1px solid {{ tc.border }};background:{{ tc.bg }};color:{{ tc.color }};text-decoration:none;white-space:nowrap;transition:border-color .15s,background .15s" style-hover="border-color:#0B0C0F" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:16px">{{ tc.icon }}</i>{{ tc.label }}</a>
+              </sc-for>
+            </nav>
+          </div>
+        </div>
+
+        <div data-reveal style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:14px 0 6px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#5F646E" role="status">
+          <span>{{ resultLabel }}</span>
+          <sc-if value="{{ hasFilters }}" hint-placeholder-val="{{ false }}"><a href="{{ hrefFil }}" style="display:inline-flex;align-items:center;gap:6px;color:#1B33B4" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:14px">close</i>{{ t.reset }}</a></sc-if>
+        </div>
+
+        <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+          <p style="margin:40px 0;padding:32px;border:1px dashed #8A8F99;border-radius:12px;text-align:center;color:#5F646E;font-size:16px">{{ t.noResults }}</p>
+        </sc-if>
+
+        <ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:clamp(14px,2vh,26px)">
+          <sc-for list="{{ feedItems }}" as="it" hint-placeholder-count="4">
+            <li data-reveal id="{{ it.id }}" style="scroll-margin-top:110px">
+              <sc-if value="{{ it.isDivider }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:48px;padding:20px 0 24px;border-top:2px solid #0B0C0F;display:flex;flex-direction:column;gap:8px">
+                  <h2 style="margin:0;display:flex;align-items:center;gap:12px;font-weight:500;font-size:30px;letter-spacing:-.03em;line-height:1"><i class="msi" aria-hidden="true" style="font-size:28px;color:#5F646E">event_busy</i>{{ t.undatedHead }}</h2>
+                  <p style="margin:0;max-width:70ch;color:#5F646E;font-size:15px">{{ t.undatedNote }}</p>
+                </div>
+              </sc-if>
+              <sc-if value="{{ it.isClaim }}" hint-placeholder-val="{{ true }}">
+                <article aria-labelledby="{{ it.hId }}" style="display:grid;grid-template-columns:clamp(52px,5vw,68px) minmax(0,1fr);gap:0 clamp(16px,1.8vw,26px);padding:{{ cardPad }} clamp(16px,2vw,28px);background:{{ it.wash }}">
+                  <div style="display:flex;flex-direction:column;align-items:stretch;gap:8px">
+                    <span aria-hidden="true" style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;color:#8A8F99">{{ it.idx }}</span>
+                    <a href="{{ it.candHref }}" tabindex="-1" aria-hidden="true" style="display:grid;place-items:center;width:100%;aspect-ratio:1;overflow:hidden;background:#0B0C0F {{ it.photoCss }} center/cover;filter:grayscale(1) contrast(1.05);color:#F3F1EC;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.04em;transition:filter .5s" style-hover="filter:grayscale(0) contrast(1)">
+                      <sc-if value="{{ it.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ it.initials }}</span></sc-if>
+                    </a>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:13px;min-width:0">
+                    <h2 id="{{ it.hId }}" style="margin:0;display:flex;gap:4px 12px;align-items:baseline;flex-wrap:wrap;font-size:16px;font-weight:500;letter-spacing:-.01em">
+                      <a href="{{ it.candHref }}" style="color:#0B0C0F;text-decoration:none;border-bottom:1px solid transparent" style-hover="border-bottom-color:{{ it.ink }}" style-focus="outline:2px solid #1B33B4;outline-offset:2px">{{ it.candName }}</a>
+                      <span style="font-size:13px;font-weight:400;color:#5F646E">{{ it.party }}</span>
+                      <time dateTime="{{ it.dateIso }}" style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:400;letter-spacing:.04em;color:#5F646E;white-space:nowrap">{{ it.dateLabel }}</time>
+                    </h2>
+                    <sc-if value="{{ it.isVote }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:8px"><p style="margin:0;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#5F646E">{{ t.quotedTextVote }}</p><blockquote lang="fr" cite="{{ it.sourceUrl }}" style="margin:0;font-family:Spectral,Georgia,serif;font-size:{{ quoteSize }};line-height:1.36;font-weight:400;letter-spacing:-.012em;color:#0B0C0F">{{ it.quote }}</blockquote></div></sc-if>
+                    <sc-if value="{{ it.notVote }}" hint-placeholder-val="{{ true }}"><blockquote lang="fr" cite="{{ it.sourceUrl }}" style="margin:0;font-family:Spectral,Georgia,serif;font-size:{{ quoteSize }};line-height:1.36;font-weight:400;letter-spacing:-.012em;text-indent:-.42em;color:#0B0C0F"><span style="color:{{ it.ink }}">«</span> {{ it.quote }} <span style="color:{{ it.ink }}">»</span></blockquote></sc-if>
+                    <sc-if value="{{ showGloss }}" hint-placeholder-val="{{ false }}">
+                      <p style="margin:0;padding-left:14px;border-left:1px solid {{ it.line }};font-family:Spectral,Georgia,serif;font-style:italic;font-size:15px;line-height:1.4;color:#5F646E">{{ it.gloss }}</p>
+                    </sc-if>
+                    <div style="display:flex;flex-wrap:wrap;gap:7px 10px;align-items:center">
+                      <a href="{{ it.axisHref }}" style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px 5px 9px;border-radius:3px;background:{{ it.ink }};color:#F7F6F2;text-decoration:none;font-size:12px;font-weight:500;letter-spacing:.01em" style-hover="background:#0B0C0F" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:14px">{{ it.axisIcon }}</i>{{ it.axisLabel }}</a>
+                      <span title="{{ it.tierLabel }} — {{ it.tierState }}" style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 8px;border-radius:3px;border:1px {{ it.tierBorderStyle }} {{ it.tierBorderColor }};font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#3A3E46"><i class="msi" aria-hidden="true" style="font-size:14px">{{ it.tierIcon }}</i>{{ it.tierShort }}</span>
+                      <span style="display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#5F646E"><i class="msi" aria-hidden="true" style="font-size:14px">{{ it.kindIcon }}</i>{{ it.kindLabel }}</span>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:7px;padding:12px 14px;background:#FAF9F6;border:1px solid #E9E6DE">
+                      <p style="margin:0;font-size:15px;line-height:1.45;color:#0B0C0F"><span style="display:block;margin-bottom:3px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#8A8F99">{{ t.summary }}</span>{{ it.summary }}</p>
+                      <p style="margin:0;font-size:13px;line-height:1.45;color:#5F646E"><span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#8A8F99;margin-right:8px">{{ t.context }}</span>{{ it.context }}</p>
+                    </div>
+                    <div style="display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;padding-top:10px;border-top:1px solid {{ it.line }};font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.03em">
+                      <a href="{{ it.sourceUrl }}" rel="external noopener" style="display:inline-flex;align-items:center;gap:5px;color:#1B33B4;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:14px">open_in_new</i>{{ t.source }}<span style="color:#8A8F99;text-transform:none">{{ it.sourceLabel }}</span></a>
+                      <sc-if value="{{ it.hasArchive }}" hint-placeholder-val="{{ true }}"><a href="{{ it.archiveUrl }}" rel="external noopener" style="display:inline-flex;align-items:center;gap:5px;color:#1B33B4;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:14px">archive</i>{{ it.archiveLabel }}</a></sc-if><sc-if value="{{ it.noArchive }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;color:#8A8F99"><i class="msi" aria-hidden="true" style="font-size:14px">archive</i>{{ it.archiveLabel }}</span></sc-if>
+                      <sc-if value="{{ it.hasTimestamp }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;color:#3A3E46"><i class="msi" aria-hidden="true" style="font-size:13px">play_arrow</i>{{ it.timestampLabel }}</span></sc-if>
+                      <a href="{{ it.href }}" aria-label="{{ t.permalink }}" title="{{ t.permalink }}" style="margin-left:auto;display:inline-flex;align-items:center;gap:5px;color:#8A8F99;text-decoration:none;font-size:10px" style-hover="color:#0B0C0F" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:13px">link</i>{{ it.id }}</a>
+                    </div>
+                  </div>
+                </article>
+              </sc-if>
+            </li>
+          </sc-for>
+        </ol>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ isGrille }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="Le baromètre" style="max-width:1400px;margin:0 auto;padding:56px 40px 104px">
+        <p data-reveal style="margin:0 0 18px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#5F646E">02 · {{ t.viewLabel }}</p>
+        <h1 data-reveal style="display:flex;align-items:center;gap:22px;margin:0 0 14px;font-weight:500;font-size:clamp(48px,6vw,96px);line-height:.95;letter-spacing:-.035em"><i class="msi" aria-hidden="true" style="font-size:.55em;color:#5F646E">bar_chart</i>{{ t.grille }}</h1>
+        <p data-reveal style="margin:0 0 40px;max-width:64ch;font-size:18px;color:#3A3E46">{{ t.gridLead }}</p>
+        <div data-reveal style="position:relative">
+          <table style="width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;border-top:2px solid #0B0C0F">
+            <caption style="position:absolute;left:-9999px">{{ gridCaption }}</caption>
+            <thead>
+              <tr>
+                <th scope="col" style="position:sticky;top:62px;z-index:6;background:#F3F1EC;width:15%;text-align:left;padding:16px 12px 16px 0;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#5F646E;font-weight:500;border-bottom:1px solid #0B0C0F;vertical-align:bottom">{{ t.thCand }}</th>
+                <sc-for list="{{ axisHeads }}" as="ax" hint-placeholder-count="9">
+                  <th scope="col" title="{{ ax.desc }}" style="position:sticky;top:62px;z-index:5;text-align:left;padding:0;font-weight:500;border-bottom:1px solid #0B0C0F;border-left:1px solid #D8D5CE;vertical-align:bottom;background:#F3F1EC;background-image:linear-gradient({{ ax.wash }},{{ ax.wash }})">
+                    <a href="{{ ax.href }}" style="display:flex;flex-direction:column;gap:8px;padding:14px 8px 12px;color:#0B0C0F;text-decoration:none;height:100%;box-sizing:border-box" style-hover="background:{{ ax.line }}" style-focus="outline:2px solid #1B33B4;outline-offset:-2px">
+                      <span style="display:flex;flex-direction:column;gap:7px;min-height:64px;min-width:0"><i class="msi" aria-hidden="true" style="flex:none;align-self:flex-start;font-size:20px;color:{{ ax.ink }}">{{ ax.icon }}</i><span lang="{{ lang }}" style="align-self:stretch;min-width:0;font-size:12px;line-height:1.2;letter-spacing:-.005em;overflow-wrap:normal;hyphens:auto">{{ ax.label }}</span></span>
+                      <span aria-hidden="true" style="display:block;height:7px;background:#E3E0D8;margin-top:auto"><span style="display:block;height:7px;width:{{ ax.barW }};background:{{ ax.ink }}"></span></span>
+                      <span style="align-self:stretch;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.2;letter-spacing:.02em;color:#5F646E;font-weight:400;overflow-wrap:normal">{{ ax.totalLabel }}</span>
+                    </a>
+                  </th>
+                </sc-for>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ gridRows }}" as="r" hint-placeholder-count="7">
+                <tr style="height:92px">
+                  <th scope="row" style="text-align:left;padding:10px 12px 10px 0;border-bottom:1px solid #D8D5CE;font-weight:400;vertical-align:middle">
+                    <a href="{{ r.href }}" style="display:flex;align-items:center;gap:14px;color:#0B0C0F;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #1B33B4;outline-offset:2px">
+                      <span aria-hidden="true" style="display:grid;place-items:center;flex:none;width:38px;height:38px;border-radius:3px;overflow:hidden;background:#0B0C0F {{ r.photoCss }} center/cover;filter:grayscale(1);color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.04em">
+                        <sc-if value="{{ r.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ r.initials }}</span></sc-if>
+                      </span>
+                      <span style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-size:17px;line-height:1.1;font-weight:500;letter-spacing:-.02em">{{ r.name }}</span><span style="font-size:12px;color:#5F646E">{{ r.party }}</span>
+                        <sc-if value="{{ r.untracked }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;align-self:flex-start;margin-top:4px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:3px;border:1px solid #0B0C0F;color:#0B0C0F"><i class="msi" aria-hidden="true" style="font-size:12px">mic_off</i>{{ t.untracked }}</span></sc-if>
+                      </span>
+                    </a>
+                  </th>
+                  <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="9">
+                    <td style="padding:0;border-bottom:1px solid #D8D5CE;border-left:1px solid #D8D5CE;vertical-align:top;background:{{ c.bg }}">
+                      <sc-if value="{{ c.isCount }}" hint-placeholder-val="{{ true }}">
+                        <div style="position:relative;display:flex;flex-direction:column;gap:6px;justify-content:center;height:92px;box-sizing:border-box;padding:11px 8px">
+                          <a href="{{ c.href }}" aria-label="{{ c.aria }}" style="display:flex;flex-direction:column;gap:5px;color:{{ c.ink }};text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #1B33B4;outline-offset:3px">
+                            <span style="font-size:34px;line-height:.9;font-weight:500;letter-spacing:-.04em">{{ c.count }}</span>
+                          </a>
+                          <span aria-hidden="true" style="position:absolute;left:0;right:0;bottom:0;height:5px;background:{{ c.bar }}"></span>
+                        </div>
+                      </sc-if>
+                      <sc-if value="{{ c.isNone }}" hint-placeholder-val="{{ false }}">
+                        <span title="{{ t.none }}" style="position:relative;display:flex;align-items:flex-start;gap:8px;height:92px;box-sizing:border-box;padding:11px 8px;font-size:13px;font-style:italic;font-family:Spectral,Georgia,serif;color:#5F646E;line-height:1.4;background-image:repeating-linear-gradient(135deg,rgba(11,12,15,.055) 0 1px,transparent 1px 9px)"><i class="msi" aria-hidden="true" style="flex:none;font-size:19px;font-style:normal;position:relative;top:1px">search_off</i><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap">{{ t.none }}</span></span>
+                      </sc-if>
+                      <sc-if value="{{ c.isUntracked }}" hint-placeholder-val="{{ false }}">
+                        <span style="display:flex;align-items:flex-start;height:92px;box-sizing:border-box;padding:11px 8px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.3;letter-spacing:.04em;text-transform:uppercase;color:#0B0C0F;overflow-wrap:normal">{{ c.untrackedText }}</span>
+                      </sc-if>
+                    </td>
+                  </sc-for>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+        <dl data-reveal style="margin:32px 0 0;padding:22px 0 0;border-top:1px solid #D8D5CE;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:18px 36px">
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <dt style="flex:none;position:relative;display:grid;place-items:center;width:32px;height:32px;border:1px solid #D8D5CE;background:oklch(.9 .045 258);font-family:'JetBrains Mono',monospace;font-size:13px;color:#0B0C0F">3<span aria-hidden="true" style="position:absolute;left:0;right:0;bottom:0;height:4px;background:oklch(.47 .12 258)"></span></dt>
+            <dd style="margin:0;display:flex;flex-direction:column;gap:2px;min-width:0"><strong style="font-weight:500;color:#0B0C0F;font-size:14px">{{ t.legendCountH }}</strong><span style="color:#5F646E;font-size:13px;line-height:1.4">{{ t.legendCount }}</span></dd>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <dt style="flex:none;display:grid;place-items:center;width:32px;height:32px;border:1px solid #D8D5CE;background-image:repeating-linear-gradient(135deg,rgba(11,12,15,.055) 0 1px,transparent 1px 9px)"><i class="msi" aria-hidden="true" style="font-size:17px;color:#5F646E">search_off</i></dt>
+            <dd style="margin:0;display:flex;flex-direction:column;gap:2px;min-width:0"><strong style="font-weight:500;color:#0B0C0F;font-size:14px">{{ t.legendNoneH }}</strong><span style="color:#5F646E;font-size:13px;line-height:1.4">{{ t.legendNone }}</span></dd>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <dt style="flex:none;display:grid;place-items:center;width:32px;height:32px;border:1px solid #D8D5CE;background:repeating-linear-gradient(135deg,#F3F1EC 0 6px,#E3E0D8 6px 7px)"><i class="msi" aria-hidden="true" style="font-size:17px;color:#0B0C0F">mic_off</i></dt>
+            <dd style="margin:0;display:flex;flex-direction:column;gap:2px;min-width:0"><strong style="font-weight:500;color:#0B0C0F;font-size:14px">{{ t.legendUntrackedH }}</strong><span style="color:#5F646E;font-size:13px;line-height:1.4">{{ t.legendUntracked }}</span></dd>
+          </div>
+        </dl>
+        </section>
+    </sc-if>
+
+    <sc-if value="{{ isCand }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="Candidat" style="position:relative;isolation:isolate;background:#0B0C0F;color:#F3F1EC;overflow:hidden">
+        <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;overflow:hidden">
+          <sc-if value="{{ cand.hasPhoto }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;left:-10%;top:-10%;width:120%;height:120%;background:{{ cand.photoCss }} center/cover;filter:blur(70px) saturate(1.3);opacity:.55"></span></sc-if>
+          <sc-if value="{{ cand.noPhoto }}" hint-placeholder-val="{{ true }}">
+            <span style="position:absolute;left:-10%;top:-30%;width:46vw;height:46vw;border-radius:50%;background:radial-gradient(circle,rgba(43,75,216,.4) 0%,rgba(43,75,216,0) 62%);filter:blur(28px)"></span>
+            <span style="position:absolute;right:-10%;bottom:-40%;width:46vw;height:46vw;border-radius:50%;background:radial-gradient(circle,rgba(224,32,46,.3) 0%,rgba(224,32,46,0) 62%);filter:blur(28px)"></span>
+          </sc-if>
+          <span style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,12,15,.15) 0%,rgba(11,12,15,.9) 100%)"></span>
+          <span style="position:absolute;inset:0;opacity:.5;mix-blend-mode:soft-light;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E&quot;);background-size:320px 320px"></span>
+        </div>
+        <div style="position:relative;max-width:1400px;margin:0 auto;padding:36px 40px 56px;box-sizing:border-box;display:flex;flex-direction:column;gap:36px">
+          <p data-reveal style="margin:0;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase"><a href="{{ hrefGrille }}" style="display:inline-flex;align-items:center;gap:8px;color:#C9C7C0;text-decoration:none" style-hover="color:#F3F1EC" style-focus="outline:2px solid #F3F1EC;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:14px">arrow_back</i>{{ t.grille }}</a></p>
+          <div data-reveal style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:32px 56px;align-items:end">
+            <div style="position:relative;width:min(240px,34vw);aspect-ratio:4/5;border-radius:14px;overflow:hidden;background:#1A1B1F;box-shadow:0 30px 80px rgba(0,0,0,.55);color:#F3F1EC">
+              <span aria-hidden="true" style="position:absolute;inset:0;display:grid;place-items:center;font-size:88px;font-weight:600;letter-spacing:-.06em;color:rgba(243,241,236,.08);pointer-events:none">{{ cand.initials }}</span>
+              <image-slot id="{{ cand.slotId }}" shape="rect" fit="cover" placeholder="{{ t.dropPortrait }}" style="position:absolute;inset:0;width:100%;height:100%"></image-slot>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+              <p style="margin:0;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#C9C7C0">{{ cand.partyShort }} · {{ cand.party }}</p>
+              <h1 style="margin:0;font-weight:500;font-size:clamp(44px,5.6vw,88px);line-height:.95;letter-spacing:-.035em">{{ cand.name }}</h1>
+              <p style="margin:6px 0 0;display:flex;flex-wrap:wrap;gap:8px 18px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#C9C7C0">
+                <span style="display:inline-flex;align-items:center;gap:7px"><i class="msi" aria-hidden="true" style="font-size:15px">{{ cand.statusIcon }}</i>{{ cand.status }}</span>
+                <sc-if value="{{ cand.tracked }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:7px"><i class="msi" aria-hidden="true" style="font-size:15px">rss_feed</i>{{ cand.sourcesLabel }}</span></sc-if>
+              </p>
+              <sc-if value="{{ cand.tracked }}" hint-placeholder-val="{{ true }}">
+                <ul style="margin:6px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:8px;font-size:13px">
+                  <sc-for list="{{ cand.sources }}" as="s" hint-placeholder-count="3"><li><a href="{{ s.url }}" rel="external noopener" style="display:inline-flex;align-items:center;gap:7px;padding:7px 12px 7px 10px;border-radius:3px;border:1px solid rgba(243,241,236,.25);color:#F3F1EC;text-decoration:none;transition:background .15s" style-hover="background:rgba(243,241,236,.1)" style-focus="outline:2px solid #F3F1EC;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:14px">open_in_new</i>{{ s.label }}</a></li></sc-for>
+                </ul>
+              </sc-if>
+              <sc-if value="{{ cand.untracked }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:6px;padding:16px 18px;border:1px dashed rgba(243,241,236,.4);border-radius:10px;font-size:14px;color:#E3E1DA;max-width:60ch">{{ t.untrackedNote }}</div>
+              </sc-if>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section style="max-width:1400px;margin:0 auto;padding:16px 40px 104px">
+        <div style="display:flex;flex-direction:column">
+          <sc-for list="{{ candAxes }}" as="ax" hint-placeholder-count="9">
+            <section data-reveal aria-labelledby="{{ ax.hId }}" style="display:grid;grid-template-columns:260px minmax(0,1fr);gap:16px 48px;padding:36px 0;border-bottom:1px solid #D8D5CE">
+              <div>
+                <h2 id="{{ ax.hId }}" style="margin:0;display:flex;align-items:center;gap:12px;font-weight:500;font-size:26px;line-height:1.1;letter-spacing:-.02em"><i class="msi" aria-hidden="true" style="font-size:26px;color:#5F646E">{{ ax.icon }}</i>{{ ax.label }}</h2>
+                <p style="margin:8px 0 0;font-size:13px;color:#5F646E">{{ ax.desc }}</p>
+                <p style="margin:14px 0 0;font-family:'JetBrains Mono',monospace;font-size:12px;color:#5F646E">{{ ax.countLabel }}</p>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:22px;min-width:0">
+                <sc-if value="{{ ax.isUntracked }}" hint-placeholder-val="{{ false }}"><p style="margin:0;display:flex;align-items:center;gap:10px;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#0B0C0F"><i class="msi" aria-hidden="true" style="font-size:18px">mic_off</i>{{ t.untracked }} — <span style="font-family:'Space Grotesk',system-ui,sans-serif;text-transform:none;letter-spacing:0;color:#5F646E;font-size:14px">{{ t.untrackedShort }}</span></p></sc-if>
+                <sc-if value="{{ ax.isNone }}" hint-placeholder-val="{{ false }}"><p style="margin:0;display:flex;align-items:center;gap:10px;font-style:italic;font-family:Spectral,Georgia,serif;color:#5F646E;font-size:16px"><i class="msi" aria-hidden="true" style="font-size:18px;font-style:normal">search_off</i>{{ t.noneAxis }}</p></sc-if>
+                <sc-for list="{{ ax.claims }}" as="cl" hint-placeholder-count="1">
+                  <article id="{{ cl.id }}" aria-label="{{ cl.dateLabel }}" style="display:flex;flex-direction:column;gap:12px;padding:24px 28px;border:1px solid #E3E0D8;border-radius:12px;background:#FAF9F6;scroll-margin-top:96px;transition:border-color .2s,transform .2s" style-hover="border-color:#0B0C0F;transform:translateY(-2px)">
+                    <div style="display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:#5F646E">
+                      <span style="display:inline-flex;align-items:center;gap:6px;color:#0B0C0F;font-size:12px"><i class="msi" aria-hidden="true" style="font-size:15px">{{ cl.dateIcon }}</i>{{ cl.dateLabel }}</span>
+                      <span style="display:inline-flex;align-items:center;gap:6px"><i class="msi" aria-hidden="true" style="font-size:15px">{{ cl.kindIcon }}</i>{{ cl.kindLabel }}</span>
+                      <span title="{{ cl.tierLabel }} — {{ cl.tierState }}" style="display:inline-flex;align-items:center;gap:6px;border:1px {{ cl.tierBorderStyle }} {{ cl.tierBorderColor }};border-radius:3px;padding:3px 9px;color:#3A3E46"><i class="msi" aria-hidden="true" style="font-size:14px">{{ cl.tierIcon }}</i>{{ cl.tierShort }} · <span style="color:{{ cl.tierStateColor }}">{{ cl.tierState }}</span></span>
+                    </div>
+                    <sc-if value="{{ cl.isVote }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:8px"><p style="margin:0;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#5F646E">{{ t.quotedTextVote }}</p><blockquote lang="fr" cite="{{ cl.sourceUrl }}" style="margin:0;font-family:Spectral,Georgia,serif;font-size:22px;line-height:1.32;letter-spacing:-.01em">{{ cl.quote }}</blockquote></div></sc-if>
+                    <sc-if value="{{ cl.notVote }}" hint-placeholder-val="{{ true }}"><blockquote lang="fr" cite="{{ cl.sourceUrl }}" style="margin:0;font-family:Spectral,Georgia,serif;font-size:22px;line-height:1.32;letter-spacing:-.01em;text-indent:-.45em">« {{ cl.quote }} »</blockquote></sc-if>
+                    <sc-if value="{{ showGloss }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-style:italic;font-family:Spectral,Georgia,serif;color:#3A3E46;font-size:15px">{{ cl.gloss }}</p></sc-if>
+                    <p style="margin:0;font-size:15px">{{ cl.summary }}</p>
+                    <p style="margin:0;font-size:13px;color:#5F646E">{{ cl.context }}</p>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;font-size:12px;font-family:'JetBrains Mono',monospace">
+                      <a href="{{ cl.sourceUrl }}" rel="external noopener" style="display:inline-flex;align-items:center;gap:6px;color:#1B33B4" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:14px">open_in_new</i>{{ t.source }}</a>
+                      <sc-if value="{{ cl.hasArchive }}" hint-placeholder-val="{{ true }}"><a href="{{ cl.archiveUrl }}" rel="external noopener" style="display:inline-flex;align-items:center;gap:6px;color:#1B33B4" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:14px">archive</i>{{ cl.archiveLabel }}</a></sc-if><sc-if value="{{ cl.noArchive }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:6px;color:#8A8F99"><i class="msi" aria-hidden="true" style="font-size:14px">archive</i>{{ cl.archiveLabel }}</span></sc-if>
+                      <sc-if value="{{ cl.hasTimestamp }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:6px;border:1px solid #D8D5CE;border-radius:3px;padding:1px 9px;font-size:11px"><i class="msi" aria-hidden="true" style="font-size:12px">play_arrow</i>{{ cl.timestampLabel }}</span></sc-if>
+                      <a href="{{ cl.href }}" title="{{ t.permalink }}" style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;color:#5F646E;text-decoration:none;font-size:11px" style-hover="color:#0B0C0F" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:13px">link</i>{{ cl.id }}</a>
+                    </div>
+                  </article>
+                </sc-for>
+              </div>
+            </section>
+          </sc-for>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ isDoc }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="Document" style="max-width:1400px;margin:0 auto;padding:56px 40px 104px;display:grid;grid-template-columns:260px minmax(0,1fr);gap:40px 64px;align-items:start">
+        <nav data-reveal aria-label="{{ t.docNavLabel }}" style="position:sticky;top:96px;display:flex;flex-direction:column;gap:4px;font-size:15px;font-weight:500">
+          <a href="{{ hrefMethodo }}" aria-current="{{ curMethodo }}" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;color:#0B0C0F;text-decoration:none;background:{{ bgDocMethodo }}" style-hover="background:#E9E6DE" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:18px">menu_book</i>{{ t.methodo }}</a>
+          <a href="{{ hrefCorrections }}" aria-current="{{ curCorrections }}" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;color:#0B0C0F;text-decoration:none;background:{{ bgDocCorrections }}" style-hover="background:#E9E6DE" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:18px">history</i>{{ t.corrections }}</a>
+          <a href="{{ hrefLegal }}" aria-current="{{ curLegal }}" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;color:#0B0C0F;text-decoration:none;background:{{ bgDocLegal }}" style-hover="background:#E9E6DE" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:18px">gavel</i>{{ t.legal }}</a>
+        </nav>
+        <div style="max-width:72ch">
+          <h1 data-reveal style="margin:0 0 32px;font-weight:500;font-size:clamp(40px,5vw,72px);line-height:.95;letter-spacing:-.035em">{{ docTitle }}</h1>
+          <sc-for list="{{ docSections }}" as="s" hint-placeholder-count="4">
+            <section data-reveal style="padding:28px 0;border-top:1px solid #D8D5CE">
+              <h2 style="margin:0 0 12px;font-weight:500;font-size:24px;letter-spacing:-.02em;line-height:1.15">{{ s.h }}</h2>
+              <sc-for list="{{ s.ps }}" as="p" hint-placeholder-count="1"><p style="margin:0 0 12px;font-size:16px;line-height:1.6;color:#3A3E46">{{ p }}</p></sc-for>
+            </section>
+          </sc-for>
+          <sc-if value="{{ isCorrections }}" hint-placeholder-val="{{ false }}">
+            <ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:clamp(14px,2vh,26px)">
+              <sc-for list="{{ correctionRows }}" as="c" hint-placeholder-count="2">
+                <li data-reveal style="display:grid;grid-template-columns:170px minmax(0,1fr);gap:20px;padding:20px 0;border-top:1px solid #D8D5CE;font-size:15px">
+                  <time dateTime="{{ c.dateIso }}" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#0B0C0F">{{ c.dateLabel }}</time>
+                  <div style="display:flex;flex-direction:column;gap:6px"><p style="margin:0;color:#3A3E46">{{ c.text }}</p><a href="{{ c.href }}" style="display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#1B33B4" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:13px">link</i>{{ c.claim }}</a></div>
+                </li>
+              </sc-for>
+            </ol>
+          </sc-if>
+        </div>
+      </section>
+    </sc-if>
+  </main>
+
+  <footer style="background:#0B0C0F;color:#D8D5CE">
+    <div aria-hidden="true" style="height:2px;display:grid;grid-template-columns:1fr 1fr 1fr"><span style="background:#2B4BD8"></span><span style="background:#F3F1EC"></span><span style="background:#E0202E"></span></div>
+    <div style="max-width:1400px;margin:0 auto;padding:48px 40px 56px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:36px 48px;font-size:14px">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <img src="assets/essec-metalab.png" alt="ESSEC Metalab" style="height:36px;width:auto;align-self:flex-start;filter:invert(1)">
+        <p style="margin:0;max-width:36ch;color:#D8D5CE">{{ t.footerAbout }}</p>
+      </div>
+      <nav aria-label="{{ t.footerNavLabel }}" style="display:flex;flex-direction:column;gap:8px">
+        <a href="{{ hrefFil }}" style="color:#F3F1EC;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #F3F1EC;outline-offset:2px">{{ t.fil }}</a>
+        <a href="{{ hrefGrille }}" style="color:#F3F1EC;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #F3F1EC;outline-offset:2px">{{ t.grille }}</a>
+        <a href="{{ hrefMethodo }}" style="color:#F3F1EC;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #F3F1EC;outline-offset:2px">{{ t.methodo }}</a>
+        <a href="{{ hrefCorrections }}" style="color:#F3F1EC;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #F3F1EC;outline-offset:2px">{{ t.corrections }}</a>
+        <a href="{{ hrefLegal }}" style="color:#F3F1EC;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #F3F1EC;outline-offset:2px">{{ t.legal }}</a>
+      </nav>
+      <div style="display:flex;flex-direction:column;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.04em;color:#B8B6AF">
+        <span>{{ t.footerGenerated }} {{ generatedLabel }}</span>
+        <span>{{ t.footerStatic }}</span>
+        <span style="color:#F3F1EC;border:1px dashed #F3F1EC;border-radius:6px;padding:6px 8px;align-self:flex-start">{{ t.footerFictional }}</span>
+      </div>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;motion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Mouvement&quot;},&quot;rotation&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:7,&quot;min&quot;:4,&quot;max&quot;:14,&quot;step&quot;:1,&quot;unit&quot;:&quot;s&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Mouvement&quot;},&quot;grain&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:0.5,&quot;min&quot;:0,&quot;max&quot;:1,&quot;step&quot;:0.05,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Texture&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;confortable&quot;,&quot;compacte&quot;],&quot;default&quot;:&quot;confortable&quot;,&quot;tsType&quot;:&quot;'confortable'|'compacte'&quot;,&quot;section&quot;:&quot;Le fil&quot;},&quot;order&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;alphabetique&quot;,&quot;aleatoire&quot;],&quot;default&quot;:&quot;alphabetique&quot;,&quot;tsType&quot;:&quot;'alphabetique'|'aleatoire'&quot;,&quot;section&quot;:&quot;Égalité de traitement&quot;}}">
+const I18N = {
+  fr: {
+    skip: "Aller au contenu", siteSub: "Registre des positions sur l'IA", navLabel: "Navigation principale", langLabel: "Langue",
+    fil: "Le fil", grille: "Le baromètre", methodo: "Méthodologie", corrections: "Corrections", legal: "Mentions légales", viewLabel: "Vue", open: "Ouvrir",
+    heroKicker: "Registre public · Présidentielle 2027", heroVersion: "Édition du", heroTitle: "Ce que les candidats disent de l'IA.",
+    principles: [["format_quote", "Mot pour mot"], ["archive", "Source et archive datées"], ["block", "Ni commentaire, ni score"]],
+    liveLabel: "Extrait du registre", equalPlace: "même place pour chacun",
+    statClaims: "déclarations", statCands: "candidats", statTracked: "suivis", statUpdated: "mise à jour",
+    doorFil: "Toutes les déclarations, datées et sourcées.", doorGrille: "Chaque candidat face aux neuf axes. Les absences restent visibles.",
+    candsTitle: "Les candidats", orderAlpha: "Ordre alphabétique · même place pour chacun", orderRandom: "Ordre tiré au sort à chaque visite · même place pour chacun",
+    howTitle: "Comment lire ce registre",
+    how: [["format_quote", "Mot pour mot", "Chaque citation est reproduite exactement comme elle a été prononcée ou écrite. Jamais coupée, jamais corrigée. Pour un scrutin public, ce qui est reproduit est le texte mis aux voix : le vote est l'acte du candidat, les mots sont ceux de la loi."], ["person_search", "Qui parle", "Un niveau de source distingue les mots du candidat de ceux de son parti. Un niveau non confirmé est signalé en pointillés."], ["search_off", "L'absence est une donnée", "« Aucune position identifiée » : nous avons cherché. « Non suivi » : nous n'écoutons pas encore. Deux faits différents."]],
+    filLead: "Toutes les déclarations, de la plus récente à la plus ancienne.",
+    filters: "Filtres", filterAxis: "Axe", filterCand: "Candidat", filterTier: "Source", allAxes: "Tous les axes", allCands: "Tous", allTiers: "Toutes", tierShort1: "Candidat", tierShort2: "Parti ou équipe",
+    results1: "déclaration", resultsN: "déclarations", reset: "Réinitialiser", noResults: "Aucune déclaration ne correspond à ces filtres. L'absence de résultat est elle-même une information : voir la grille.",
+    undatedHead: "Date non précisée", undatedNote: "La source de ces déclarations ne porte pas de date : elle est réellement inconnue. Ordre alphabétique.",
+    gloss: "Traduction indicative", summary: "Position", context: "Contexte", source: "Source", archive: "Archive du", permalink: "Lien permanent vers cette déclaration",
+    tier1: "Niveau 1 · propos du candidat", tier2: "Niveau 2 · parti ou équipe", tierVote: "Niveau 1 · vote enregistré", tierShortVote: "Vote", quotedTextVote: "Texte mis aux voix", confirmed: "confirmé", defaulted: "non confirmé",
+    kinds: { speech: "Discours", programme: "Programme", interview: "Entretien écrit", "press-release": "Communiqué", video: "Vidéo", vote: "Scrutin public", seance: "Séance à l'Assemblée", article: "Publication du site", page: "Page du site", pdf: "Document PDF" }, noArchive: "Archive : pas encore de capture", dateUnknown: "Date non précisée", at: "à",
+    gridLead: "Chaque candidat sur chacun des neuf axes. Une couleur par axe ; le nombre de déclarations relevées figure dans la case.",
+    gridCaption: "Nombre de déclarations relevées, par candidat et par axe, élection présidentielle 2027. Lignes : candidats, par ordre alphabétique. Colonnes : les neuf axes de politique de l'IA.",
+    thCand: "Candidat", none: "aucune position identifiée", noneShort: "aucune position", untracked: "Non suivi",
+    untrackedNote: "Aucune source n'est configurée pour ce candidat. Nous n'écoutons pas encore ; nous ne pouvons donc pas affirmer qu'il ou elle est silencieux·se.", untrackedShort: "aucune source configurée",
+    legendCountH: "Déclarations relevées", legendCount: "Le nombre de déclarations que nous avons relevées pour ce candidat sur cet axe. C'est une mesure de ce que nous avons trouvé, pas une appréciation de la mesure annoncée : une position brève et une réforme détaillée comptent chacune pour une.", legendNoneH: "Aucune position identifiée", legendNone: "Sources vérifiées, rien trouvé sur cet axe.", legendUntrackedH: "Non suivi", legendUntracked: "Aucune source configurée. Ce n'est pas un silence.",
+    readMethodo: "Lire la méthodologie", miniColTotal: "Total", miniColAxes: "Axes", cellLabel1: "déclaration", cellLabelN: "déclarations", sourcesN: "sources suivies",
+    sourcesTitle: "Sources suivies", noneAxis: "Aucune position identifiée sur cet axe.", docNavLabel: "Pages de référence", dropPortrait: "Portrait", dropAside: "Photo d'archive",
+    footerAbout: "Registre publié par l'ESSEC Metalab. Il enregistre ; il ne commente pas et ne conclut pas.", footerNavLabel: "Pied de page", footerGenerated: "Généré le", footerStatic: "Site statique · sans compte · sans traceur", footerFictional: "Prototype · citations réelles · classement automatique non relu",
+    methodoTitle: "Méthodologie",
+    methodoDoc: [
+      ["Ce que nous enregistrons", ["Une déclaration est une prise de position d'un candidat, ou de son parti en son nom, sur la politique de l'intelligence artificielle. Elle est reproduite en français, mot pour mot, telle qu'elle a été prononcée ou écrite : jamais coupée, corrigée, traduite ou reformulée dans la citation elle-même. Pour un scrutin public, ce qui est reproduit est le texte mis aux voix : le vote est l'acte du candidat, les mots sont ceux de la loi.", "Chaque déclaration est accompagnée d'un lien vers la source originale et, lorsqu'elle existe, d'un lien vers une capture d'archive datée. Un lecteur doit pouvoir vérifier chaque citation en une étape."]],
+      ["Les neuf axes", ["Régulation ; souveraineté et infrastructure ; environnement et ressources ; emploi ; éducation et formation ; services publics ; surveillance et libertés ; sécurité et défense ; financement. Une déclaration est rattachée à un seul axe. Lorsqu'une déclaration en concerne plusieurs, l'axe retenu est celui de l'objet principal de la phrase ; le contexte le précise.", "Trois frontières demandent une règle explicite. L'énergie présentée comme atout national relève de la souveraineté ; la consommation d'eau et d'électricité des centres de données relève de l'environnement. L'IA tournée vers la population relève de la surveillance ; la défense des systèmes contre une attaque relève de la sécurité. Une mesure délivrée sous forme de formation relève de l'éducation, même lorsque son but est de protéger l'emploi.",]],
+      ["Les niveaux de source", ["Niveau 1 : les mots du candidat (discours, programme signé, entretien). Niveau 2 : son parti ou son équipe parlant en son nom. Niveau 3 : la presse parlant du candidat — jamais publié comme déclaration ; utilisé seulement comme piste pour un éditeur.", "Un niveau est souvent attribué par défaut selon la rubrique du site source, puis confirmé par un éditeur. Un niveau non confirmé est affiché en pointillés avec la mention « non confirmé »."]],
+      ["Les dates", ["La date affichée est celle de la prise de parole ou de la publication par la source. Lorsque la source ne porte aucune date, la déclaration est marquée « date non précisée » et classée dans une section distincte en fin de fil. Ce n'est pas une date masquée : elle est inconnue."]],
+      ["Absence et non-suivi", ["« Aucune position identifiée » : les sources configurées pour ce candidat ont été consultées et rien n'a été trouvé sur cet axe. « Non suivi » : aucune source n'est configurée pour ce candidat ; nous n'écoutons pas, nous ne pouvons donc rien affirmer sur son silence. La grille affiche ces deux états différemment et ne les masque jamais."]],
+      ["Égalité de traitement", ["Le registre est publié pendant une campagne nationale sous le nom d'une institution. Les candidats sont présentés avec une place et une mise en forme identiques, par ordre alphabétique (ou dans un ordre tiré au sort à chaque visite). Les portraits sont affichés en noir et blanc, au même format. Aucun score, aucune note, aucun classement, aucun indicateur de tonalité n'est produit."]],
+      ["Repérage et classement", ["Les déclarations de cette édition ont été repérées et rattachées à un axe automatiquement, passage par passage, à partir d'une consigne versionnée et publiée ; chaque réponse est enregistrée. Seuls les passages qui mentionnent l'IA ou le numérique sont examinés.", "Deux contrôles automatiques s'appliquent à chaque déclaration : la citation doit figurer mot pour mot dans le texte source, et le résumé comme le contexte ne doivent contenir aucun terme évaluatif. Ils ne remplacent pas la relecture : les déclarations de cette édition n'ont pas encore été relues par un éditeur."]],
+      ["Corrections", ["Toute erreur signalée et vérifiée est corrigée sur la déclaration concernée et consignée sur la page Corrections, avec la date et la nature du changement. Les liens permanents restent stables."]]
+    ],
+    correctionsTitle: "Corrections", correctionsIntro: [["Registre des corrections", ["Chaque correction apportée à une déclaration publiée est consignée ici, de la plus récente à la plus ancienne, avec un lien vers la déclaration concernée."]]],
+    legalTitle: "Mentions légales",
+    legalDoc: [["Éditeur", ["ESSEC Metalab, institut de l'ESSEC Business School. Adresse, directeur de la publication et contact à compléter avant mise en ligne."]], ["Hébergement", ["Site statique généré à partir d'un fichier de données et déployé sous forme de fichiers. Hébergeur à compléter."]], ["Données personnelles", ["Le site ne collecte aucune donnée personnelle : aucun compte, aucun cookie, aucun traceur, aucune mesure d'audience."]], ["Réutilisation", ["Les citations appartiennent à leurs auteurs et sont reproduites au titre du droit de citation. Les résumés, notes de contexte et données structurées du registre sont réutilisables avec mention de la source."]]]
+  },
+  en: {
+    skip: "Skip to content", siteSub: "Register of AI positions", navLabel: "Main navigation", langLabel: "Language",
+    fil: "The feed", grille: "The barometer", methodo: "Methodology", corrections: "Corrections", legal: "Legal notices", viewLabel: "View", open: "Open",
+    heroKicker: "Public register · Presidential election 2027", heroVersion: "Edition of", heroTitle: "What the candidates say about AI.",
+    principles: [["format_quote", "Word for word"], ["archive", "Dated source and archive"], ["block", "No commentary, no score"]],
+    liveLabel: "From the register", equalPlace: "equal space for each",
+    statClaims: "statements", statCands: "candidates", statTracked: "tracked", statUpdated: "updated",
+    doorFil: "Every statement, dated and sourced.", doorGrille: "Every candidate against the nine axes. Gaps stay visible.",
+    candsTitle: "The candidates", orderAlpha: "Alphabetical order · equal space for each", orderRandom: "Order drawn at random on each visit · equal space for each",
+    howTitle: "How to read this register",
+    how: [["format_quote", "Word for word", "Every quote is reproduced exactly as it was said or written. Never cut, never tidied. For a recorded vote, what is reproduced is the text put to the vote: the vote is the candidate's act, the words are the law's."], ["person_search", "Who is speaking", "A source level separates the candidate's own words from their party's. An unconfirmed level is shown dashed."], ["search_off", "Absence is data", "'No position identified': we looked. 'Not tracked': we are not listening yet. Two different facts."]],
+    filLead: "Every statement on record, newest first.",
+    filters: "Filters", filterAxis: "Axis", filterCand: "Candidate", filterTier: "Source", allAxes: "All axes", allCands: "All", allTiers: "All", tierShort1: "Candidate", tierShort2: "Party or staff",
+    results1: "statement", resultsN: "statements", reset: "Reset", noResults: "No statement matches these filters. The absence of results is itself information: see the grid.",
+    undatedHead: "Date not specified", undatedNote: "The source of these statements carries no date: it is genuinely unknown. Alphabetical order.",
+    gloss: "Indicative translation", summary: "Position", context: "Context", source: "Source", archive: "Archive of", permalink: "Permanent link to this statement",
+    tier1: "Level 1 · candidate's own words", tier2: "Level 2 · party or staff", tierVote: "Level 1 · recorded vote", tierShortVote: "Vote", quotedTextVote: "Text put to the vote", confirmed: "confirmed", defaulted: "unconfirmed",
+    kinds: { speech: "Speech", programme: "Programme", interview: "Written interview", "press-release": "Press release", video: "Video", vote: "Recorded vote", seance: "National Assembly sitting", article: "Website post", page: "Website page", pdf: "PDF document" }, noArchive: "Archive: no capture yet", dateUnknown: "Date not specified", at: "at",
+    gridLead: "Every candidate on each of the nine axes. One colour per axis; the cell shows how many statements were recorded.",
+    gridCaption: "Number of statements recorded, per candidate and per axis, 2027 presidential election. Rows: candidates, in alphabetical order. Columns: the nine AI policy axes.",
+    thCand: "Candidate", none: "no position identified", noneShort: "no position", untracked: "Not tracked",
+    untrackedNote: "No source is configured for this candidate. We are not listening yet; we therefore cannot claim that they are silent.", untrackedShort: "no source configured",
+    legendCountH: "Statements recorded", legendCount: "How many statements we recorded for this candidate on this axis. It measures what we found, not the merit of what was announced: a brief position and a detailed reform each count as one.", legendNoneH: "No position identified", legendNone: "Sources checked, nothing found on this axis.", legendUntrackedH: "Not tracked", legendUntracked: "No source configured. This is not silence.",
+    readMethodo: "Read the methodology", miniColTotal: "Total", miniColAxes: "Axes", cellLabel1: "statement", cellLabelN: "statements", sourcesN: "tracked sources",
+    sourcesTitle: "Tracked sources", noneAxis: "No position identified on this axis.", docNavLabel: "Reference pages", dropPortrait: "Portrait", dropAside: "Archive photo",
+    footerAbout: "A register published by ESSEC Metalab. It records; it does not comment or conclude.", footerNavLabel: "Footer", footerGenerated: "Generated on", footerStatic: "Static site · no accounts · no trackers", footerFictional: "Prototype · real quotes · automated classification, not yet reviewed",
+    methodoTitle: "Methodology",
+    methodoDoc: [
+      ["What we record", ["A statement is a position taken by a candidate, or by their party on their behalf, on artificial-intelligence policy. It is reproduced in French, word for word, as said or written: the quote itself is never cut, corrected, translated or rephrased. For a recorded vote, what is reproduced is the text put to the vote: the vote is the candidate's act, the words are the law's.", "Each statement carries a link to the original source and, where one exists, a link to a dated archive capture. A reader must be able to verify any quote in one step."]],
+      ["The nine axes", ["Regulation; sovereignty and infrastructure; environment and resources; jobs; education and training; public services; surveillance and liberties; security and defence; funding. A statement is attached to a single axis. When it touches several, the axis chosen is that of the sentence's main object; the context note says so.", "Three boundaries need an explicit rule. Energy framed as a national asset belongs to sovereignty; the water and electricity use of data centres belongs to environment. AI turned on the population belongs to surveillance; defending systems from attack belongs to security. A measure delivered as training belongs to education even when its purpose is protecting jobs.",]],
+      ["Source levels", ["Level 1: the candidate's own words (speech, signed programme, interview). Level 2: their party or staff speaking on their behalf. Level 3: press reporting about them — never published as a statement; used only as a lead for an editor.", "A level is often assigned by default from the section of the source website, then confirmed by an editor. An unconfirmed level is shown with a dashed border and the note 'unconfirmed'."]],
+      ["Dates", ["The date shown is that of the speech or of publication by the source. When the source carries no date, the statement is marked 'date not specified' and listed in a separate section at the end of the feed. It is not a hidden date: it is unknown."]],
+      ["Absence and non-tracking", ["'No position identified': the sources configured for this candidate were checked and nothing was found on this axis. 'Not tracked': no source is configured for this candidate; we are not listening, so we can claim nothing about their silence. The grid displays these two states differently and never hides them."]],
+      ["Equal treatment", ["The register is published during a national campaign under an institution's name. Candidates are presented with identical space and formatting, in alphabetical order (or in an order drawn at random on each visit). Portraits are shown in black and white, in the same format. No score, grade, ranking or sentiment indicator is produced."]],
+      ["Finding and classifying", ["The statements in this edition were found and attached to an axis automatically, passage by passage, from a versioned, published instruction; every answer is recorded. Only passages that mention AI or digital technology are examined.", "Two automatic checks apply to every statement: the quote must appear word for word in the source text, and neither the summary nor the context may contain an evaluative term. They do not replace review: the statements in this edition have not yet been reviewed by an editor."]],
+      ["Corrections", ["Any reported and verified error is corrected on the statement concerned and logged on the Corrections page with the date and nature of the change. Permanent links remain stable."]]
+    ],
+    correctionsTitle: "Corrections", correctionsIntro: [["Corrections log", ["Every correction to a published statement is logged here, newest first, with a link to the statement concerned."]]],
+    legalTitle: "Legal notices",
+    legalDoc: [["Publisher", ["ESSEC Metalab, an institute of ESSEC Business School. Address, publication director and contact to be completed before launch."]], ["Hosting", ["Static site generated from a data file and deployed as files. Host to be completed."]], ["Personal data", ["The site collects no personal data: no accounts, no cookies, no trackers, no audience measurement."]], ["Reuse", ["Quotes belong to their authors and are reproduced under the right of quotation. The register's summaries, context notes and structured data may be reused with attribution."]]]
+  }
+};
+const SLUGS = { fr: { home: "", fil: "fil", grille: "grille", cand: "candidat", methodo: "methodologie", corrections: "corrections", legal: "mentions-legales" }, en: { home: "", fil: "feed", grille: "grid", cand: "candidate", methodo: "methodology", corrections: "corrections", legal: "legal" } };
+const PAGE_OF = { fil: "fil", feed: "fil", grille: "grille", grid: "grille", candidat: "cand", candidate: "cand", methodologie: "methodo", methodology: "methodo", corrections: "corrections", "mentions-legales": "legal", legal: "legal" };
+const ICON = {
+  kind: { speech: "mic", programme: "description", interview: "forum", "press-release": "campaign", video: "videocam", vote: "how_to_vote", seance: "account_balance", article: "article", page: "web", pdf: "picture_as_pdf" },
+  axis: { regulation: "balance", souverainete: "dns", environnement: "eco", emploi: "work", formation: "school", services: "account_balance", surveillance: "visibility", "securite-defense": "shield", financement: "payments" },
+  tier: { 1: "person", 2: "group" }
+};
+const AX_HUE = { regulation: 258, souverainete: 300, environnement: 155, emploi: 42, formation: 92, services: 196, surveillance: 330, "securite-defense": 15, financement: 120 };
+const hueOf = id => AX_HUE[id] !== undefined ? AX_HUE[id] : 258;
+const axInk = id => "oklch(.47 .12 " + hueOf(id) + ")";
+const axWash = id => "oklch(.47 .12 " + hueOf(id) + " / .055)";
+const axLine = id => "oklch(.47 .12 " + hueOf(id) + " / .3)";
+const axStep = (id, n) => n >= 4 ? "oklch(.47 .12 " + hueOf(id) + ")" : n === 3 ? "oklch(.64 .11 " + hueOf(id) + ")" : n === 2 ? "oklch(.8 .075 " + hueOf(id) + ")" : "oklch(.92 .035 " + hueOf(id) + ")";
+const axStepInk = n => n >= 4 ? "#F7F6F2" : "#0B0C0F";
+const axFill = id => "oklch(.9 .045 " + hueOf(id) + ")";
+
+class Component extends DCLogic {
+  state = { lang: "fr", page: "home", param: null, q: {}, ready: false, seed: Math.random(), liveIdx: 0, portraits: {} };
+  componentDidMount() {
+    this.onHash = () => this.route();
+    window.addEventListener("hashchange", this.onHash);
+    this.onDrop = () => { setTimeout(() => this.loadPortraits(), 1200); setTimeout(() => this.loadPortraits(), 4000); };
+    document.addEventListener("drop", this.onDrop, true);
+    document.addEventListener("change", this.onDrop, true);
+    this._prevRot = this.props.rotation;
+    this.initSmooth();
+    this.initReveal();
+    this.initParallax();
+    this.route();
+    this.waitData();
+    this.loadPortraits();
+    this.startLive();
+  }
+  componentWillUnmount() { if (this._onWheel) window.removeEventListener("wheel", this._onWheel); if (this._syncScroll) window.removeEventListener("scroll", this._syncScroll); if (this._par) { window.removeEventListener("scroll", this._par); window.removeEventListener("resize", this._par); } if (this._io) this._io.disconnect(); if (this._dd) document.removeEventListener("click", this._dd); window.removeEventListener("hashchange", this.onHash); document.removeEventListener("drop", this.onDrop, true); document.removeEventListener("change", this.onDrop, true); clearInterval(this.liveTimer); }
+  componentDidUpdate() {
+    const p = this._prev || { liveIdx: 0, ready: false, page: "home" }, s = this.state;
+    if (p.liveIdx !== s.liveIdx || (!p.ready && s.ready) || (p.page !== "home" && s.page === "home")) this.animateLive();
+    this._prev = { liveIdx: s.liveIdx, ready: s.ready, page: s.page };
+    if (this._prevRot !== this.props.rotation) { this._prevRot = this.props.rotation; this.startLive(); }
+    this.scanReveal();
+  }
+  initSmooth() {
+    if (this.noMotion()) return;
+    const maxY = () => Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    let target = window.scrollY, cur = target, raf = null, gliding = false;
+    const tick = () => {
+      cur += (target - cur) * 0.088;
+      if (Math.abs(target - cur) < 0.35) { cur = target; gliding = false; raf = null; window.scrollTo(0, cur); return; }
+      window.scrollTo(0, cur);
+      this.applyPar();
+      raf = requestAnimationFrame(tick);
+    };
+    this._onWheel = e => {
+      if (e.ctrlKey || e.metaKey || e.deltaMode === 1) return;
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      const t = e.target;
+      if (t && t.closest && t.closest('[role="listbox"],[data-native-scroll],select,textarea')) return;
+      let n = t;
+      while (n && n !== document.body) { const cs = getComputedStyle(n); if ((cs.overflowY === "auto" || cs.overflowY === "scroll") && n.scrollHeight > n.clientHeight + 2) return; n = n.parentElement; }
+      e.preventDefault();
+      target = Math.max(0, Math.min(maxY(), (gliding ? target : window.scrollY) + e.deltaY * 1.08));
+      gliding = true;
+      if (!raf) raf = requestAnimationFrame(tick);
+    };
+    window.addEventListener("wheel", this._onWheel, { passive: false });
+    this._syncScroll = () => { if (!gliding) { target = window.scrollY; cur = target; } };
+    window.addEventListener("scroll", this._syncScroll, { passive: true });
+  }
+  initParallax() {
+    if (this.noMotion()) return;
+    let pending = false;
+    this._par = () => { if (pending) return; pending = true; requestAnimationFrame(() => { pending = false; this.applyPar(); }); };
+    window.addEventListener("scroll", this._par, { passive: true });
+    window.addEventListener("resize", this._par);
+  }
+  applyPar() {
+    const vh = window.innerHeight;
+    document.querySelectorAll("[data-par]").forEach(el => {
+      if (!el.dataset.revealed) return;
+      const r = el.getBoundingClientRect();
+      const p = ((r.top + r.height / 2) - vh / 2) / vh;
+      el.style.transform = "translate3d(0," + (parseFloat(el.dataset.base || 0) + p * parseFloat(el.dataset.par || 0)).toFixed(2) + "px,0)";
+    });
+  }
+  initReveal() {
+    if (this.noMotion() || !("IntersectionObserver" in window)) return;
+    this._io = new IntersectionObserver(entries => entries.forEach(en => {
+      if (!en.isIntersecting) return;
+      const el = en.target;
+      this._io.unobserve(el);
+      el.dataset.revealed = "1";
+      if (this.canReveal()) { gsap.to(el, { opacity: 1, y: 0, duration: .95, ease: "power3.out", clearProps: "opacity,transform" }); this.guardReveal([el]); }
+      else this.clearReveal([el]);
+    }), { rootMargin: "0px 0px -10% 0px", threshold: .06 });
+    this.scanReveal();
+  }
+  scanReveal() {
+    if (!this._io) return;
+    const live = this.canReveal();
+    document.querySelectorAll("[data-reveal]").forEach(el => {
+      if (el.dataset.revealed || el.dataset.watched) return;
+      if (!live || el.getBoundingClientRect().top < window.innerHeight * .92) { el.dataset.revealed = "1"; this.clearReveal([el]); return; }
+      el.dataset.watched = "1";
+      if (window.gsap) gsap.set(el, { opacity: 0, y: 30 }); else el.style.opacity = "0";
+      this._io.observe(el);
+    });
+  }
+  waitData() { if (window.IA2027_DATA) this.setState({ ready: true }, () => requestAnimationFrame(() => this.animate())); else setTimeout(() => this.waitData(), 40); }
+  noMotion() { return this.props.motion === false || (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches); }
+  rotationSecs() { const r = parseFloat(this.props.rotation); return isNaN(r) ? 7 : Math.min(14, Math.max(4, r)); }
+  startLive() {
+    clearInterval(this.liveTimer);
+    this.liveTimer = setInterval(() => { if (this.state.page !== "home" || !this.state.ready || this.noMotion() || document.hidden) return; this.setState(s => ({ liveIdx: s.liveIdx + 1 })); }, this.rotationSecs() * 1000);
+  }
+  loadPortraits() {
+    fetch(".image-slots.state.json", { cache: "no-store" }).then(r => r.ok ? r.json() : {}).then(j => {
+      const m = {};
+      Object.keys(j || {}).forEach(k => { if (!k.startsWith("portrait-")) return; const v = j[k]; const u = typeof v === "string" ? v : v && v.u; if (u && /^data:image\//.test(u)) m[k.slice(9)] = u; });
+      this.setState({ portraits: m });
+    }).catch(() => {});
+  }
+  route() {
+    const h = location.hash || "";
+    if (!h.startsWith("#/")) return;
+    const [path, qs] = h.slice(2).split("?");
+    const parts = path.split("/").filter(Boolean);
+    const lang = parts[0] === "en" ? "en" : "fr";
+    const page = PAGE_OF[parts[1] || ""] || "home";
+    const param = parts[2] || null;
+    const q = {}; new URLSearchParams(qs || "").forEach((v, k) => { q[k] = v; });
+    if (this._dd) document.removeEventListener("click", this._dd);
+    const viewChanged = page !== this.state.page || lang !== this.state.lang || param !== this.state.param;
+    this.setState({ lang, page, param, q, candOpen: false }, () => {
+      if (viewChanged) this.animate();
+      if (q.d) setTimeout(() => { const el = document.getElementById(q.d); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 96 }); }, 420);
+    });
+    if (!q.d && viewChanged) window.scrollTo(0, 0);
+  }
+  canReveal() {
+    if (this.noMotion() || !window.gsap) return false;
+    const tk = gsap.ticker;
+    if (!tk) return false;
+    if (typeof tk.wake === "function") tk.wake();
+    return tk.sleep !== true;
+  }
+  clearReveal(list) {
+    list.forEach(el => {
+      if (!el || !el.isConnected) return;
+      if (parseFloat(getComputedStyle(el).opacity) > .99) return;
+      ["opacity", "transform", "translate", "rotate", "scale"].forEach(p => el.style.removeProperty(p));
+    });
+  }
+  guardReveal(list) {
+    clearTimeout(this._rg);
+    const arr = [].slice.call(list);
+    this._rg = setTimeout(() => this.clearReveal(arr), 260);
+  }
+  animate() {
+    if (!this.canReveal()) { this.clearReveal(document.querySelectorAll("[data-reveal],[data-hero]")); return; }
+    const hero = document.querySelectorAll("[data-hero]");
+    if (hero.length) gsap.fromTo(hero, { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: .9, stagger: .09, ease: "power3.out", clearProps: "opacity,transform", overwrite: true, delay: .1 });
+    document.querySelectorAll("[data-count]").forEach(el => {
+      const end = parseInt(el.dataset.count, 10); if (isNaN(end)) return;
+      const o = { v: 0 }; gsap.to(o, { v: end, duration: 1.4, ease: "power2.out", delay: .5, onUpdate: () => { el.textContent = Math.round(o.v); } });
+    });
+    const els = [].slice.call(document.querySelectorAll("[data-reveal]")).filter(el => el.getBoundingClientRect().top < window.innerHeight * .95);
+    els.forEach(el => { el.dataset.revealed = "1"; el.removeAttribute("data-watched"); });
+    if (els.length) gsap.fromTo(els, { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: .8, stagger: .05, ease: "power3.out", clearProps: "opacity,transform", overwrite: true });
+    this.guardReveal([].slice.call(hero).concat(els));
+    setTimeout(() => this.scanReveal(), 60);
+  }
+  animateLive() {
+    if (!window.gsap || this.noMotion()) return;
+    const els = document.querySelectorAll("[data-live]");
+    if (els.length) gsap.fromTo(els, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: .7, ease: "power2.out", clearProps: "opacity,transform", overwrite: true });
+    const bar = document.querySelector("[data-live-bar]");
+    if (bar) gsap.fromTo(bar, { scaleX: 0 }, { scaleX: 1, duration: this.rotationSecs(), ease: "none", overwrite: true });
+  }
+  href(page, param, q, lang) {
+    lang = lang || this.state.lang;
+    let p = "#/" + lang + "/" + SLUGS[lang][page];
+    if (param) p += "/" + param;
+    const qs = q ? Object.entries(q).filter(([, v]) => v).map(([k, v]) => k + "=" + encodeURIComponent(v)).join("&") : "";
+    return qs ? p + "?" + qs : p;
+  }
+  fmtDate(d, lang, short) {
+    if (!d) return null;
+    const o = short ? { day: "2-digit", month: "2-digit" } : { day: "numeric", month: "long", year: "numeric" };
+    return new Intl.DateTimeFormat(lang === "fr" ? "fr-FR" : "en-GB", { ...o, timeZone: "UTC" }).format(new Date(d + "T00:00:00Z"));
+  }
+  renderVals() {
+    const { lang, page, param, q, ready, portraits, liveIdx } = this.state;
+    const t = I18N[lang];
+    const D = ready ? window.IA2027_DATA : { axes: [], candidates: [], claims: [], corrections: [], generated: "" };
+    const other = lang === "fr" ? "en" : "fr";
+    const H = (p, pr, qq, l) => this.href(p, pr, qq, l);
+    const cur = p => page === p ? "page" : undefined;
+    const bgNav = p => page === p ? "rgba(243,241,236,.14)" : "transparent";
+    const bgDoc = p => page === p ? "#E9E6DE" : "transparent";
+    const dense = this.props.density === "compacte";
+    const showGloss = lang === "en";
+    const photo = id => portraits[id] || null;
+    const initials = c => ((c.first[0] || "") + (c.last[0] || "")).toUpperCase();
+
+    let cands = D.candidates.slice().sort((a, b) => a.last.localeCompare(b.last, "fr"));
+    if (this.props.order === "aleatoire") { let s = this.state.seed * 1e6; const rnd = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; }; for (let i = cands.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [cands[i], cands[j]] = [cands[j], cands[i]]; } }
+    const candById = Object.fromEntries(D.candidates.map(c => [c.id, c]));
+    const axisById = Object.fromEntries(D.axes.map(a => [a.id, a]));
+    const axLabel = a => a[lang];
+    const fullName = c => c.first + " " + c.last;
+    const countOf = (cid, aid) => D.claims.filter(c => c.cand === cid && (!aid || c.axis === aid)).length;
+    const nWord = n => n === 1 ? t.cellLabel1 : t.cellLabelN;
+    const face = c => { const ph = photo(c.id); return { hasPhoto: !!ph, noPhoto: !ph, photo: ph, photoCss: ph ? "url(" + ph + ")" : "none", initials: initials(c) }; };
+
+    const vm = c => {
+      const cand = candById[c.cand], ax = axisById[c.axis];
+      return {
+        isClaim: true, id: c.id, hId: "h-" + c.id, href: H("fil", null, { candidat: c.cand, d: c.id }), ink: axInk(c.axis), wash: axWash(c.axis), line: axLine(c.axis),
+        candName: fullName(cand), candHref: H("cand", cand.id), party: cand.party, ...face(cand),
+        axisLabel: axLabel(ax), axisHref: H("fil", null, { axe: ax.id }), axisIcon: ICON.axis[ax.id] || "label",
+        dateIso: c.date || undefined, dateLabel: c.date ? this.fmtDate(c.date, lang) : t.dateUnknown, dateShort: c.date ? this.fmtDate(c.date, lang, true) : t.dateUnknown, dateIcon: c.date ? "calendar_today" : "event_busy",
+        quote: c.quote, gloss: c.gloss, summary: lang === "fr" ? c.summaryFr : c.summaryEn, context: lang === "fr" ? c.contextFr : c.contextEn,
+        isVote: c.kind === "vote", notVote: c.kind !== "vote", indent: c.kind === "vote" ? "0" : "-.45em",
+        previewText: c.kind === "vote" ? (lang === "fr" ? c.summaryFr : c.summaryEn) : "« " + c.quote + " »",
+        tierLabel: c.kind === "vote" ? t.tierVote : c.tier === 1 ? t.tier1 : t.tier2, tierShort: c.kind === "vote" ? t.tierShortVote : c.tier === 1 ? t.tierShort1 : t.tierShort2, tierIcon: ICON.tier[c.tier] || "person", tierState: c.tierConfirmed ? t.confirmed : t.defaulted, tierBorderStyle: c.tierConfirmed ? "solid" : "dashed", tierBorderColor: c.tierConfirmed ? "#0B0C0F" : "#8A8F99", tierStateColor: c.tierConfirmed ? "#5F646E" : "#0B0C0F",
+        kindLabel: t.kinds[c.kind] || c.kind, kindIcon: ICON.kind[c.kind] || "article", sourceUrl: c.sourceUrl, sourceLabel: c.sourceLabel, archiveUrl: c.archiveUrl || "", hasArchive: !!c.archiveUrl, noArchive: !c.archiveUrl, archiveLabel: c.archiveUrl ? t.archive + " " + this.fmtDate(c.archiveDate, lang) : t.noArchive,
+        hasTimestamp: !!c.timestamp, timestampLabel: c.timestamp ? t.at + " " + c.timestamp : ""
+      };
+    };
+
+    const allDated = D.claims.filter(c => c.date).sort((a, b) => b.date.localeCompare(a.date) || a.id.localeCompare(b.id));
+    const nLive = allDated.length;
+    const live = nLive ? { ...vm(allDated[liveIdx % nLive]), counter: String((liveIdx % nLive) + 1).padStart(2, "0") + " / " + String(nLive).padStart(2, "0") } : { quote: "", previewText: "", indent: "-.45em", isVote: false, notVote: true, candName: "", party: "", dateLabel: "", axisLabel: "", axisIcon: "label", counter: "", href: H("fil"), initials: "", hasPhoto: false, noPhoto: true, photoCss: "none" };
+    const previewClaims = allDated.slice(0, 3).map(vm);
+
+    const fAxe = q.axe || "", fCand = q.candidat || "", fTier = q.tier || "";
+    const filtered = D.claims.filter(c => (!fAxe || c.axis === fAxe) && (!fCand || c.cand === fCand) && (!fTier || String(c.tier) === fTier));
+    const dated = filtered.filter(c => c.date).sort((a, b) => b.date.localeCompare(a.date) || a.id.localeCompare(b.id)).map(vm);
+    const undated = filtered.filter(c => !c.date).sort((a, b) => candById[a.cand].last.localeCompare(candById[b.cand].last, "fr") || a.id.localeCompare(b.id)).map(vm);
+    const feedRaw = undated.length ? dated.concat([{ isDivider: true, id: "undated" }], undated) : dated;
+    let _fi = 0;
+    const feedItems = feedRaw.map(it => it.isClaim ? { ...it, idx: String(++_fi).padStart(2, "0") } : it);
+    const chipStyle = on => ({ current: on ? "true" : undefined, border: on ? "#0B0C0F" : "#D8D5CE", bg: on ? "#0B0C0F" : "transparent", color: on ? "#F3F1EC" : "#0B0C0F" });
+    const axisChips = [{ id: "", label: t.allAxes, icon: "select_all" }].concat(D.axes.map(a => ({ id: a.id, label: axLabel(a), icon: ICON.axis[a.id] }))).map(a => ({ ...a, href: H("fil", null, { axe: a.id, candidat: fCand, tier: fTier }), ...chipStyle(a.id === fAxe) }));
+    const candChips = [{ id: "", label: t.allCands, icon: "group", initials: "", hasPhoto: false, noPhoto: true, photoCss: "none" }].concat(cands.map(c => ({ id: c.id, label: fullName(c), icon: "", ...face(c) }))).map(c => { const on = c.id === fCand; return { ...c, href: H("fil", null, { axe: fAxe, candidat: c.id, tier: fTier }), ...chipStyle(on), avBg: on ? "#F3F1EC" : "#0B0C0F", avColor: on ? "#0B0C0F" : "#F3F1EC" }; });
+    const tierChips = [{ id: "", label: t.allTiers, icon: "select_all" }, { id: "1", label: t.tierShort1, icon: "person" }, { id: "2", label: t.tierShort2, icon: "group" }].map(x => ({ ...x, href: H("fil", null, { axe: fAxe, candidat: fCand, tier: x.id }), ...chipStyle(x.id === fTier) }));
+    const candItems = [{ id: "", label: t.allCands, initials: "", hasPhoto: false, noPhoto: true, photoCss: "none", count: String(D.claims.length) }]
+      .concat(cands.map(c => ({ id: c.id, label: fullName(c), ...face(c), count: c.tracked ? String(countOf(c.id)) : "—" })))
+      .map(x => ({ ...x, href: H("fil", null, { axe: fAxe, candidat: x.id, tier: fTier }), selected: x.id === (fCand || "") ? "true" : "false", bg: x.id === (fCand || "") ? "#E9E6DE" : "transparent" }));
+    const candLabel = fCand && candById[fCand] ? fullName(candById[fCand]) : t.allCands;
+    const total = filtered.length;
+
+    const hatch = "repeating-linear-gradient(135deg,#F3F1EC 0 6px,#E3E0D8 6px 7px)";
+    const claimsOf = (cid, aid) => D.claims.filter(x => x.cand === cid && x.axis === aid);
+    const axTotals = {}; D.axes.forEach(a => { axTotals[a.id] = D.claims.filter(x => x.axis === a.id).length; });
+    const axMax = Math.max(1, ...D.axes.map(a => axTotals[a.id]));
+    let maxCell = 1; cands.forEach(c => D.axes.forEach(a => { const k = claimsOf(c.id, a.id).length; if (k > maxCell) maxCell = k; }));
+    const gridRows = cands.map(c => ({
+      name: fullName(c), party: c.party, href: H("cand", c.id), untracked: !c.tracked, ...face(c),
+      cells: D.axes.map(a => {
+        if (!c.tracked) return { isUntracked: true, bg: hatch, untrackedText: a.id === D.axes[0].id ? t.untracked : "" };
+        const n = claimsOf(c.id, a.id).length;
+        if (!n) return { isNone: true, bg: "transparent" };
+        return {
+          isCount: true, count: String(n), href: H("fil", null, { candidat: c.id, axe: a.id }),
+          aria: fullName(c) + " — " + axLabel(a) + " : " + n + " " + nWord(n), bg: axFill(a.id), ink: "#0B0C0F", bar: axInk(a.id)
+        };
+      })
+    }));
+    const miniRows = cands.map(c => { const n = countOf(c.id), ax = D.axes.filter(a => countOf(c.id, a.id)).length;
+      return { name: c.last, count: c.tracked ? String(n) : "—", axes: c.tracked ? ax + "/" + D.axes.length : "—", ink: c.tracked ? "#F3F1EC" : "#8A8F99" }; });
+
+    const cand0 = param ? candById[param] : null;
+    const cand = cand0 ? { name: fullName(cand0), party: cand0.party, partyShort: cand0.partyShort, tracked: cand0.tracked, untracked: !cand0.tracked, slotId: "portrait-" + cand0.id, ...face(cand0), sources: cand0.sources.map(s => ({ label: s[lang], url: s.url })), status: cand0.tracked ? countOf(cand0.id) + " " + nWord(countOf(cand0.id)) : t.untracked, statusIcon: cand0.tracked ? "format_quote" : "mic_off", sourcesLabel: cand0.sources.length + " " + t.sourcesN } : { name: "", party: "", partyShort: "", tracked: false, untracked: false, slotId: "portrait-none", hasPhoto: false, noPhoto: true, photo: null, photoCss: "none", initials: "", sources: [], status: "", statusIcon: "format_quote", sourcesLabel: "" };
+    const candAxes = cand0 ? D.axes.map(a => { const cls = D.claims.filter(c => c.cand === cand0.id && c.axis === a.id).sort((x, y) => (y.date || "").localeCompare(x.date || "")).map(vm); return { hId: "ax-" + a.id, label: axLabel(a), icon: ICON.axis[a.id], desc: lang === "fr" ? a.descFr : a.descEn, claims: cls, isNone: cand0.tracked && !cls.length, isUntracked: !cand0.tracked, countLabel: cand0.tracked ? cls.length + " " + nWord(cls.length) : "—" }; }) : [];
+
+    const isDoc = ["methodo", "corrections", "legal"].includes(page);
+    const docTitle = page === "methodo" ? t.methodoTitle : page === "corrections" ? t.correctionsTitle : t.legalTitle;
+    const docSrc = page === "methodo" ? t.methodoDoc : page === "corrections" ? t.correctionsIntro : t.legalDoc;
+    const docSections = docSrc.map(([h, ps]) => ({ h, ps }));
+    const correctionRows = D.corrections.slice().sort((a, b) => b.date.localeCompare(a.date)).map(c => ({ dateIso: c.date, dateLabel: this.fmtDate(c.date, lang), text: c[lang], claim: c.claim, href: H("fil", null, { candidat: (D.claims.find(x => x.id === c.claim) || {}).cand, d: c.claim }) }));
+
+    const nTracked = D.candidates.filter(c => c.tracked).length;
+    const lastIso = D.claims.reduce((m, c) => c.archiveDate > m ? c.archiveDate : m, D.generated || "");
+    const otherHref = H(page, param, q, other);
+    const grain = this.props.grain == null ? 0.5 : this.props.grain;
+
+    return {
+      lang, t, isHome: page === "home", isFil: page === "fil", isGrille: page === "grille", isCand: page === "cand", isDoc, isCorrections: page === "corrections",
+      hrefHome: H("home"), hrefFil: H("fil"), hrefGrille: H("grille"), hrefMethodo: H("methodo"), hrefCorrections: H("corrections"), hrefLegal: H("legal"),
+      hrefFr: lang === "fr" ? location.hash || H("home") : otherHref, hrefEn: lang === "en" ? location.hash || H("home") : otherHref,
+      curFil: cur("fil"), curGrille: cur("grille"), curMethodo: cur("methodo"), curCorrections: cur("corrections"), curLegal: cur("legal"),
+      bgFil: bgNav("fil"), bgGrille: bgNav("grille"), bgMethodo: bgNav("methodo"), bgDocMethodo: bgDoc("methodo"), bgDocCorrections: bgDoc("corrections"), bgDocLegal: bgDoc("legal"),
+      curFr: lang === "fr" ? "true" : undefined, curEn: lang === "en" ? "true" : undefined,
+      frColor: lang === "fr" ? "#0B0C0F" : "#F3F1EC", frBg: lang === "fr" ? "#F3F1EC" : "transparent", enColor: lang === "en" ? "#0B0C0F" : "#F3F1EC", enBg: lang === "en" ? "#F3F1EC" : "transparent",
+      nClaims: D.claims.length, nCands: D.candidates.length, nTracked, lastUpdate: this.fmtDate(lastIso, lang) || "", generatedLabel: this.fmtDate(D.generated, lang) || "", generatedIso: D.generated,
+      orderNote: this.props.order === "aleatoire" ? t.orderRandom : t.orderAlpha,
+      principles: t.principles.map(([icon, label]) => ({ icon, label })),
+      candsLine: ready ? D.candidates.length + " " + t.statCands + " · " + t.equalPlace : "",
+      scrollToCands: () => { const el = document.querySelector("[data-cands]"); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 72, behavior: this.noMotion() ? "auto" : "smooth" }); },
+      live, previewClaims, miniRows,
+      candCards: cands.map((c, i) => {
+        const mine = D.claims.filter(x => x.cand === c.id);
+        const last = mine.filter(x => x.date).sort((a, b) => b.date.localeCompare(a.date))[0] || mine[0] || null;
+        const lastIsVote = !!last && last.kind === "vote";
+        const raw = last ? (lastIsVote ? (lang === "fr" ? last.summaryFr : last.summaryEn) : last.quote) : "";
+        const q0 = raw.length > 88 ? raw.slice(0, 88).replace(/[\s,;:.!?»«]+\S*$/, "") + "…" : raw;
+        const q = q0 && !lastIsVote ? "« " + q0 + " »" : q0;
+        const n = countOf(c.id);
+        return {
+          idx: String(i + 1).padStart(2, "0"), name: fullName(c), party: c.party, partyShort: c.partyShort,
+          href: H("cand", c.id), slotId: "portrait-" + c.id, ...face(c), hasQuote: !!q, quote: q,
+          lastAxis: last ? axLabel(axisById[last.axis]) : "", lastInk: last ? axInk(last.axis) : "#8A8F99",
+          status: c.tracked ? n + " " + nWord(n) : t.untrackedShort, offY: i % 2 ? "30px" : "0px", offNum: i % 2 ? 30 : 0, par: [26, 18, 30, 21][i % 4],
+          spectrum: D.axes.map(a => { const k = mine.filter(x => x.axis === a.id).length; return { title: axLabel(a) + " : " + k, bg: !c.tracked ? "repeating-linear-gradient(135deg,#D8D5CE 0 2px,transparent 2px 5px)" : k ? axStep(a.id, k) : "#E3E0D8" }; })
+        };
+      }),
+      candTiles: cands.map(c => { const n = countOf(c.id); return { name: fullName(c), party: c.party, partyShort: c.partyShort, href: H("cand", c.id), slotId: "portrait-" + c.id, ...face(c), status: c.tracked ? n + " " + nWord(n) : t.untracked, statusIcon: c.tracked ? "format_quote" : "mic_off" }; }),
+      howItems: t.how.map(([icon, h, p], i) => ({ n: "0" + (i + 1), icon, h, p })),
+      how1: t.how[0] ? { icon: t.how[0][0], h: t.how[0][1], p: t.how[0][2] } : {},
+      how2: t.how[1] ? { icon: t.how[1][0], h: t.how[1][1], p: t.how[1][2] } : {},
+      how3: t.how[2] ? { icon: t.how[2][0], h: t.how[2][1], p: t.how[2][2] } : {},
+      sample: (() => {
+        const c = D.claims.filter(x => x.date).sort((a, b) => b.date.localeCompare(a.date))[0];
+        if (!c) return { quote: "", cand: "", date: "", source: "", ink: "#8A8F99" };
+        const raw = c.quote;
+        return { quote: raw.length > 104 ? raw.slice(0, 104).replace(/[\s,;:.!?»«]+\S*$/, "") + "…" : raw,
+          cand: fullName(candById[c.cand]), date: this.fmtDate(c.date, lang), source: c.sourceLabel, ink: axInk(c.axis) };
+      })(),
+      axisChips, candChips, tierChips,
+      resultLabel: total + " " + (total === 1 ? t.results1 : t.resultsN) + (undated.length ? " · " + undated.length + " " + t.dateUnknown.toLowerCase() : ""),
+      hasFilters: !!(fAxe || fCand || fTier), noResults: ready && total === 0,
+      feedItems, showGloss, candItems, candLabel, candOpen: !!this.state.candOpen,
+      candExpanded: this.state.candOpen ? "true" : "false", candCaret: this.state.candOpen ? "expand_less" : "expand_more",
+      onCandKey: e => { if (e.key === "Escape") this.setState({ candOpen: false }); },
+      toggleCand: () => {
+        const open = !this.state.candOpen;
+        this.setState({ candOpen: open });
+        if (open) setTimeout(() => {
+          this._dd = e => { if (!(e.target.closest && e.target.closest("[data-cand-dd]"))) { document.removeEventListener("click", this._dd); this.setState({ candOpen: false }); } };
+          document.addEventListener("click", this._dd);
+        }, 0);
+        else if (this._dd) document.removeEventListener("click", this._dd);
+      },
+      cardPad: dense ? "18px" : "26px", quoteSize: dense ? "19px" : "clamp(19px,1.7vw,25px)",
+      gridCaption: t.gridCaption, axisHeads: D.axes.map(a => ({ label: axLabel(a), icon: ICON.axis[a.id], desc: lang === "fr" ? a.descFr : a.descEn, ink: axInk(a.id), wash: axWash(a.id), line: axLine(a.id), totalLabel: String(axTotals[a.id]), barW: Math.round(100 * axTotals[a.id] / axMax) + "%", href: H("fil", null, { axe: a.id }) })), gridRows,
+      cand, candAxes, docTitle, docSections, correctionRows,
+      grainOpacity: grain, flagPaused: this.props.motion === false ? "true" : "false"
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,7 +1,8 @@
-"""Domain entities, as frozen Pydantic v2 models.
+"""Domain entities, as frozen Pydantic v2 models: collection, segmentation, corpus.
 
-Collection, segmentation and corpus inspection. TODO(step 2): DimensionAnnotation,
-DimensionScore and RunReport, once docs/methodology.md settles what a score is.
+Annotation lives in `annotation.py`, the public register in `register.py`. TODO:
+DimensionScore, once docs/methodology.md settles what a score is, if ever (the register
+prototype publishes no score).
 """
 
 from datetime import date
@@ -24,6 +25,9 @@ class _Frozen(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
 
+WAYBACK_CAPTURE = r"^https://web\.archive\.org/web/\d{14}/\S+$"
+
+
 class CandidacyStatus(StrEnum):
     DECLARED = "declared"
     DESIGNATED = "designated"  # chosen by a party or a primary
@@ -44,8 +48,26 @@ class Candidate(_Frozen):
     id: str = Field(pattern=r"^[a-z0-9-]+$")
     name: str
     party: str
+    # Short form shown next to the name, e.g. "LR". Defaults to `party`.
+    party_short: str | None = None
+    # For alphabetical order and initials, when the last word of `name` is not it
+    # ("Le Pen").
+    family_name: str | None = None
     aliases: tuple[str, ...] = ()
     candidacy: Candidacy | None = None
+
+    @property
+    def surname(self) -> str:
+        return self.family_name or self.name.split()[-1]
+
+    @property
+    def given_name(self) -> str:
+        return self.name.removesuffix(self.surname).strip()
+
+    @property
+    def is_running(self) -> bool:
+        """Withdrawn people stay configured, so their past coverage stays readable."""
+        return self.candidacy is None or self.candidacy.status != CandidacyStatus.WITHDRAWN
 
 
 class Source(_Frozen):
@@ -56,6 +78,10 @@ class Source(_Frozen):
     kind: str
     url: str
     trust_level: TrustLevel
+    # True only when the source itself establishes who is speaking (the Assemblée
+    # nationale record names each speaker). Otherwise `trust_level` is a conservative
+    # default, confirmed by an editor at review.
+    trust_confirmed: bool = False
     label: str
     max_items: int = Field(default=20, ge=1)
     enabled: bool = True
@@ -88,6 +114,16 @@ class RawDocument(_Frozen):
     fetched_at: AwareDatetime
     trust_level: TrustLevel
     content_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
+    # A Wayback Machine capture: /web/<14-digit timestamp>/. The dated-query form
+    # (/web/2026/...) only requests the nearest capture and proves nothing.
+    archive_url: str | None = Field(default=None, pattern=WAYBACK_CAPTURE)
+
+    @property
+    def archived_on(self) -> date | None:
+        if self.archive_url is None:
+            return None
+        stamp = self.archive_url.split("/web/", 1)[1][:8]
+        return date(int(stamp[:4]), int(stamp[4:6]), int(stamp[6:8]))
 
 
 class SourceOutcome(_Frozen):

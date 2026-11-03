@@ -9,8 +9,11 @@ from typing import TypeVar
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from observatoire.domain.annotation import Dimension
 from observatoire.domain.errors import ConfigurationError
 from observatoire.domain.models import Candidate, Source
+from observatoire.services.ai_relevance import RelevanceSettings
+from observatoire.services.annotation_gates import GateSettings
 from observatoire.services.segmentation import SegmentationSettings
 
 _Model = TypeVar("_Model", bound=BaseModel)
@@ -36,6 +39,21 @@ class CollectionSettings(BaseModel):
     since: date
 
 
+class TaxonomySettings(BaseModel):
+    """config/taxonomy.yaml: the dimensions, the prefilter and the annotation gates."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    version: str = Field(min_length=1)
+    dimensions: tuple[Dimension, ...] = Field(min_length=1)
+    relevance: RelevanceSettings
+    gates: GateSettings
+
+    @property
+    def dimension_ids(self) -> tuple[str, ...]:
+        return tuple(d.id for d in self.dimensions)
+
+
 class Registry(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -44,6 +62,7 @@ class Registry(BaseModel):
     crawler: CrawlerSettings
     collection: CollectionSettings
     segmentation: SegmentationSettings
+    taxonomy: TaxonomySettings
 
 
 class _CandidatesFile(BaseModel):
@@ -66,12 +85,15 @@ def load_registry(config_dir: Path) -> Registry:
     _require_unique("candidate", [c.id for c in candidates])
     _require_unique("source", [s.id for s in sources_file.sources])
     _require_known_candidates(candidates, sources_file.sources)
+    taxonomy = _load(config_dir / "taxonomy.yaml", TaxonomySettings)
+    _require_unique("dimension", taxonomy.dimension_ids)
     return Registry(
         candidates=tuple(candidates),
         sources=tuple(sources_file.sources),
         crawler=sources_file.crawler,
         collection=sources_file.collection,
         segmentation=_load(config_dir / "segmentation.yaml", SegmentationSettings),
+        taxonomy=taxonomy,
     )
 
 

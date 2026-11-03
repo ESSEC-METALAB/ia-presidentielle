@@ -6,6 +6,7 @@ go through the same CollectDaily use case as a live run: same dedup key, same
 storage, same view.
 """
 
+import re
 import sqlite3
 from contextlib import closing
 from datetime import date, datetime
@@ -15,7 +16,7 @@ from pydantic import BaseModel, ConfigDict
 
 from observatoire.adapters.sources.documents import make_document
 from observatoire.domain.errors import SourceUnavailableError
-from observatoire.domain.models import RawDocument, Source, in_window
+from observatoire.domain.models import WAYBACK_CAPTURE, RawDocument, Source, in_window
 from observatoire.services.dates import parse_date_prefix
 
 # Source kind in this version -> `kind` field of the previous version's payloads.
@@ -26,6 +27,7 @@ LEGACY_KINDS = {
     "assemblee_nationale": "an",
     "sitemap": "site",
 }
+_CAPTURE = re.compile(WAYBACK_CAPTURE)
 
 
 class _LegacyPayload(BaseModel):
@@ -36,6 +38,13 @@ class _LegacyPayload(BaseModel):
     title: str | None = None
     text: str = ""
     date: str | None = None
+    archive_url: str | None = None
+
+    @property
+    def capture(self) -> str | None:
+        """The snapshot taken at ingest, when it is a real capture; else nothing."""
+        url = self.archive_url
+        return url if url and _CAPTURE.match(url) else None
 
 
 class LegacyPipelineReader:
@@ -54,6 +63,7 @@ class LegacyPipelineReader:
                 text=payload.text.strip(),
                 published_on=parse_date_prefix(payload.date),
                 fetched_at=fetched_at,
+                archive_url=payload.capture,
             )
             for payload, fetched_at in self._rows(source.candidate_id)
             if payload.kind == legacy_kind and payload.text.strip()

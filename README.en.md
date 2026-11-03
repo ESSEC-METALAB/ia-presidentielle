@@ -129,6 +129,13 @@ make demo                    # full offline pipeline on fixtures
 open data/reports/latest.html
 ```
 
+The public register, offline, on the previous version's real data:
+
+```bash
+make site                    # import, segmentation, replayed annotation, site in data/site/
+python3 -m http.server -d data/site 8000   # then http://localhost:8000
+```
+
 With real sources:
 
 ```bash
@@ -146,11 +153,13 @@ observatoire usage           # tokens used and estimated cost
 |---|---|
 | `observatoire collect` | Fetches content, deduplicates it, stores it with its provenance |
 | `observatoire segment` | Splits documents into segments; every passage set aside keeps its reason |
-| `observatoire annotate` | Segments and annotates by dimension, position and sentiment |
-| `observatoire score` | Computes the indicator per candidate and per dimension |
-| `observatoire report` | Produces the Markdown or HTML report |
-| `observatoire run-all` | Runs the four steps in sequence |
+| `observatoire annotate` | Finds AI statements passage by passage and attaches each to one of nine axes; quote checked word for word (`--llm fake\|mistral\|batch\|recorded`) |
+| `observatoire register` | Builds the public register site (`web/registre/` + generated `data.js`) into `data/site/` |
+| `observatoire score` | *(not implemented)* Computes the indicator per candidate and per dimension |
+| `observatoire report` | *(not implemented)* Produces the Markdown or HTML report |
+| `observatoire run-all` | *(not implemented)* Runs the four steps in sequence |
 | `observatoire usage` | Tokens used per step |
+| `make site` | The whole register offline: import from branch `daily`, segmentation, recorded answers, site |
 | `make check` | ruff, mypy strict, pytest, coverage |
 
 ---

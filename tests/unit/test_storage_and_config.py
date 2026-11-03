@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from observatoire.adapters.storage.sqlite_repository import SqliteRepository
 from observatoire.cli import _live_readers, effective_since
 from observatoire.config.registry import CrawlerSettings, load_registry
+from observatoire.domain.annotation import SegmentAnnotation, UsageRecord
 from observatoire.domain.errors import ConfigurationError
 from observatoire.domain.models import (
     Candidacy,
@@ -23,6 +24,7 @@ from observatoire.domain.models import (
     Segment,
     SourceOutcome,
 )
+from observatoire.services.ai_relevance import TermRelevanceFilter
 from support import T0, FrozenClock, document
 
 CONFIG = Path(__file__).resolve().parents[2] / "config"
@@ -176,3 +178,82 @@ def test_every_shipped_candidate_carries_a_sourced_candidacy() -> None:
 def test_a_candidacy_without_any_source_is_rejected() -> None:
     with pytest.raises(ValidationError):
         Candidacy(status=CandidacyStatus.DECLARED, checked_on=date(2026, 10, 14), sources=())
+
+
+def test_an_archive_capture_round_trips_and_a_fake_one_is_refused(tmp_path: Path) -> None:
+    capture = "https://web.archive.org/web/20260918144520/https://parti-exemple.test/a"
+    archived = document("Texte archivé.").model_copy(update={"archive_url": capture})
+    repository = SqliteRepository(tmp_path / "corpus.db")
+
+    repository.save(archived)
+
+    assert repository.list_documents()[0].archive_url == capture
+    with pytest.raises(ValidationError):
+        document("x").model_validate(
+            document("x").model_dump() | {"archive_url": "https://web.archive.org/web/2026/x"}
+        )
+
+
+def test_an_older_database_gains_the_archive_column(tmp_path: Path) -> None:
+    path = tmp_path / "old.db"
+    with sqlite3.connect(path) as connection:
+        connection.execute(
+            "CREATE TABLE documents (content_hash TEXT PRIMARY KEY, source_id TEXT NOT NULL,"
+            " candidate_id TEXT NOT NULL, url TEXT NOT NULL, title TEXT, text TEXT NOT NULL,"
+            " published_on TEXT, fetched_at TEXT NOT NULL, trust_level INTEGER NOT NULL)"
+        )
+
+    SqliteRepository(path).save(document("Texte."))
+
+    with sqlite3.connect(path) as connection:
+        columns = {row[1] for row in connection.execute("PRAGMA table_info(documents)")}
+    assert "archive_url" in columns
+
+
+def test_annotations_round_trip_and_are_found_by_version(tmp_path: Path) -> None:
+    repository = SqliteRepository(tmp_path / "corpus.db")
+    annotation = SegmentAnnotation(
+        segment_id="abc-000",
+        segment_hash="h1",
+        annotator_version="v1",
+        annotated_at=T0,
+        annotations=(),
+    )
+
+    repository.save_annotation(annotation)
+    repository.save_annotation(annotation)
+
+    assert repository.list_annotations() == [annotation]
+    assert repository.annotated_segments("v1") == {"abc-000": "h1"}
+    assert repository.annotated_segments("v2") == {}
+
+
+def test_usage_is_added_up_per_step_and_model(tmp_path: Path) -> None:
+    repository = SqliteRepository(tmp_path / "corpus.db")
+    for tokens in (10, 30):
+        repository.record_usage(
+            UsageRecord(
+                step="annotate", model="m", input_tokens=tokens, output_tokens=1, recorded_at=T0
+            )
+        )
+
+    assert repository.usage_totals() == [("annotate", "m", 2, 40, 2)]
+
+
+def test_the_taxonomy_loads_with_unique_dimensions_and_a_working_prefilter() -> None:
+    taxonomy = load_registry(CONFIG).taxonomy
+
+    assert len(taxonomy.dimension_ids) == len(set(taxonomy.dimension_ids)) == 9
+    assert TermRelevanceFilter(taxonomy.relevance).is_relevant("Former à l'IA dès le lycée.")
+
+
+def test_a_candidate_is_sorted_by_surname_and_withdrawn_people_are_not_running() -> None:
+    people = {c.id: c for c in load_registry(CONFIG).candidates}
+
+    assert (people["marine-le-pen"].given_name, people["marine-le-pen"].surname) == (
+        "Marine",
+        "Le Pen",
+    )
+    assert people["jean-luc-melenchon"].surname == "Mélenchon"
+    assert not people["jordan-bardella"].is_running
+    assert people["bruno-retailleau"].is_running

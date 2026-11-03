@@ -23,3 +23,14 @@ class RobotsDisallowedError(SourceUnavailableError):
 
     def __init__(self, url: str) -> None:
         super().__init__(url, "disallowed by robots.txt")
+
+
+class AnnotationUnavailableError(ObservatoireError):
+    """No answer can be had now (network, quota, deferred to a batch, no recording).
+
+    The passage stays pending and is tried again on the next run.
+    """
+
+
+class MalformedAnnotationError(ObservatoireError):
+    """The answer does not follow the response schema. Nothing of it is kept."""

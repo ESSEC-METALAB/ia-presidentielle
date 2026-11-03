@@ -1,7 +1,7 @@
 """Composition root: the only module that instantiates concrete adapters and wires them.
 
-Implemented: collect, import-legacy, segment, corpus. TODO(step 5): annotate, score,
-report, run-all and usage, with the analysis use cases.
+Implemented: collect, import-legacy, segment, corpus, annotate, register, usage.
+TODO: score, report and run-all, if the register ever publishes a score.
 """
 
 import argparse
@@ -14,7 +14,18 @@ from pathlib import Path
 import httpx
 
 from observatoire.adapters.extraction.trafilatura_extractor import TrafilaturaExtractor
+from observatoire.adapters.llm.fake_llm_client import FakeLLMClient
+from observatoire.adapters.llm.llm_annotator import LLMAnnotator
+from observatoire.adapters.llm.mistral_client import MistralClient
+from observatoire.adapters.llm.prompt_template import PromptTemplate
+from observatoire.adapters.llm.recorded_llm_client import (
+    BatchRequestWriter,
+    RecordedLLMClient,
+    load_answers,
+)
 from observatoire.adapters.reporting.corpus_html_renderer import CorpusHtmlRenderer
+from observatoire.adapters.reporting.register_data_script import RegisterDataScript
+from observatoire.adapters.reporting.static_site import write_site
 from observatoire.adapters.sources.assemblee_nationale_reader import AssembleeNationaleReader
 from observatoire.adapters.sources.html_page_reader import HtmlPageReader
 from observatoire.adapters.sources.http_client import PoliteHttpClient, robots_fetcher
@@ -23,20 +34,28 @@ from observatoire.adapters.sources.pdf_reader import PdfReader
 from observatoire.adapters.sources.rss_reader import RssReader
 from observatoire.adapters.storage.sqlite_repository import SqliteRepository
 from observatoire.adapters.system_clock import SystemClock
+from observatoire.application.annotate_documents import AnnotateDocuments
+from observatoire.application.build_register import BuildRegister
 from observatoire.application.collect_daily import CollectDaily
 from observatoire.application.inspect_corpus import InspectCorpus
 from observatoire.application.segment_documents import SegmentDocuments
 from observatoire.config.registry import CrawlerSettings, Registry, load_registry
 from observatoire.config.settings import Settings
+from observatoire.domain.annotation import AnnotationReport
 from observatoire.domain.errors import ConfigurationError
 from observatoire.domain.models import CollectionReport, SegmentationReport, Source
-from observatoire.domain.ports import Clock, SourceReader
+from observatoire.domain.ports import Clock, LLMClient, SourceReader
 from observatoire.observability.logging import configure_logging
+from observatoire.observability.usage_tracker import UsageRecordingClient
+from observatoire.services.ai_relevance import TermRelevanceFilter
+from observatoire.services.annotation_gates import AnnotationGates
 from observatoire.services.candidate_matcher import AliasMatcher
 from observatoire.services.robots_policy import RobotsPolicy
 from observatoire.services.segmentation import ParagraphSegmenter
 
 Handler = Callable[[argparse.Namespace, Settings, Registry], int]
+PROMPT = "classify_dimension.v1"
+LLM_CHOICES = ("fake", "mistral", "recorded", "batch")
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -86,7 +105,32 @@ def _parser() -> argparse.ArgumentParser:
         help="sans <html>/<head>/<body>, pour un hôte qui les ajoute",
     )
     corpus.set_defaults(handler=_corpus)
+    _add_annotate(commands)
+    register = commands.add_parser("register", help="construit le site du registre public")
+    register.add_argument("--out", type=Path, default=Path("data/site"))
+    register.add_argument("--template", type=Path, default=Path("web/registre"))
+    register.set_defaults(handler=_register)
+    usage = commands.add_parser("usage", help="tokens consommés par étape et par modèle")
+    usage.set_defaults(handler=_usage)
     return parser
+
+
+def _add_annotate(commands: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:
+    annotate = commands.add_parser(
+        "annotate", help="repère et classe les déclarations sur l'IA, passage par passage"
+    )
+    annotate.add_argument(
+        "--llm",
+        choices=LLM_CHOICES,
+        help="fake | mistral | recorded (rejoue --responses) | batch (écrit --batch-out) ;"
+        " défaut : LLM_PROVIDER",
+    )
+    annotate.add_argument("--responses", type=Path, help="réponses enregistrées (JSONL)")
+    annotate.add_argument(
+        "--batch-out", type=Path, default=Path("data/llm/requests.jsonl"), help="requêtes (JSONL)"
+    )
+    annotate.add_argument("--limit", type=int, help="nombre maximal de passages envoyés")
+    annotate.set_defaults(handler=_annotate)
 
 
 def _collect(args: argparse.Namespace, settings: Settings, registry: Registry) -> int:
@@ -149,6 +193,106 @@ def _corpus(args: argparse.Namespace, settings: Settings, registry: Registry) ->
     renderer = CorpusHtmlRenderer(standalone=not args.fragment)
     args.out.write_text(renderer.render(overview), encoding="utf-8")
     print(f"Vue du corpus écrite dans {args.out}")
+    return 0
+
+
+def _annotate(args: argparse.Namespace, settings: Settings, registry: Registry) -> int:
+    clock = SystemClock()
+    taxonomy = registry.taxonomy
+    with (
+        httpx.Client(timeout=registry.crawler.timeout_seconds) as http,
+        closing(SqliteRepository(settings.database_path)) as repository,
+    ):
+        client = _llm_client(args, settings, http)
+        if client is None:
+            return 2
+        if not isinstance(client, BatchRequestWriter):
+            client = UsageRecordingClient(client, repository, clock, "annotate")
+        annotator = LLMAnnotator(
+            client, PromptTemplate(PROMPT, taxonomy.dimensions), taxonomy.dimension_ids
+        )
+        use_case = AnnotateDocuments(
+            corpus=repository,
+            segments=repository,
+            store=repository,
+            annotator=annotator,
+            relevance=TermRelevanceFilter(taxonomy.relevance),
+            reviewer=AnnotationGates(taxonomy.dimension_ids, taxonomy.gates),
+            clock=clock,
+        )
+        report = use_case.run(
+            registry.candidates,
+            registry.sources,
+            since=registry.collection.since,
+            limit=args.limit,
+        )
+    _print_annotation(report)
+    if isinstance(client, BatchRequestWriter):
+        args.batch_out.parent.mkdir(parents=True, exist_ok=True)
+        lines = client.lines()
+        args.batch_out.write_text("".join(f"{line}\n" for line in lines), encoding="utf-8")
+        print(f"{len(lines)} requête(s) écrite(s) dans {args.batch_out}")
+    return 0
+
+
+def _llm_client(
+    args: argparse.Namespace, settings: Settings, http: httpx.Client
+) -> LLMClient | None:
+    choice = args.llm or settings.llm_provider
+    if choice == "recorded":
+        if args.responses is None or not args.responses.is_file():
+            print("--llm recorded demande --responses <fichier JSONL>", file=sys.stderr)
+            return None
+        return RecordedLLMClient(load_answers(args.responses))
+    if choice == "fake":
+        return FakeLLMClient()
+    if not settings.mistral_model:
+        print("MISTRAL_MODEL n'est pas défini (.env)", file=sys.stderr)
+        return None
+    if choice == "batch":
+        return BatchRequestWriter(settings.mistral_model)
+    if settings.mistral_api_key is None:
+        print("MISTRAL_API_KEY n'est pas défini (.env)", file=sys.stderr)
+        return None
+    key = settings.mistral_api_key.get_secret_value()
+    return MistralClient(http, api_key=key, model=settings.mistral_model)
+
+
+def _register(args: argparse.Namespace, settings: Settings, registry: Registry) -> int:
+    if not (args.template / "index.html").is_file():
+        print(f"Gabarit du site introuvable : {args.template}/index.html", file=sys.stderr)
+        return 2
+    with closing(SqliteRepository(settings.database_path)) as repository:
+        use_case = BuildRegister(
+            corpus=repository, segments=repository, annotations=repository, clock=SystemClock()
+        )
+        register = use_case.build(
+            registry.candidates,
+            registry.sources,
+            registry.taxonomy.dimensions,
+            since=registry.collection.since,
+        )
+    page = write_site(args.template, args.out, RegisterDataScript().render(register))
+    tracked = sum(1 for c in register.candidates if c.monitored)
+    print(
+        f"Registre : {len(register.entries)} déclaration(s), {len(register.candidates)}"
+        f" candidat(s) dont {tracked} suivi(s) ; annotateur {register.annotator_version}"
+    )
+    if register.withdrawn:
+        print(f"  Hors registre (retrait) : {', '.join(c.name for c in register.withdrawn)}")
+    print(f"Site écrit dans {page}")
+    return 0
+
+
+def _usage(args: argparse.Namespace, settings: Settings, registry: Registry) -> int:
+    with closing(SqliteRepository(settings.database_path)) as repository:
+        totals = repository.usage_totals()
+    if not totals:
+        print("Aucun appel enregistré.")
+    for step, model, calls, tokens_in, tokens_out in totals:
+        print(
+            f"  {step:10} {model:40} {calls:5} appels  {tokens_in:9} entrée  {tokens_out:9} sortie"
+        )
     return 0
 
 
@@ -220,3 +364,19 @@ def _print_segmentation(report: SegmentationReport) -> None:
         print(f"  {report.unconfigured_documents} document(s) d'une source non configurée, ignorés")
     if report.out_of_window_documents:
         print(f"  {report.out_of_window_documents} document(s) publiés avant la fenêtre, ignorés")
+
+
+def _print_annotation(report: AnnotationReport) -> None:
+    print(f"Annotateur {report.annotator_version}")
+    print(
+        f"  {report.segments_read} passages lus, {report.not_relevant} écartés par le filtre IA,"
+        f" {report.already_annotated} déjà annotés"
+    )
+    print(
+        f"  {report.annotated} annotés ({report.empty} sans déclaration),"
+        f" {report.statements} déclaration(s) retenue(s), {report.failed} sans réponse,"
+        f" {report.pending} en attente"
+    )
+    reasons = ", ".join(f"{reason.value} {n}" for reason, n in sorted(report.rejected.items()))
+    if reasons:
+        print(f"  propositions rejetées : {reasons}")

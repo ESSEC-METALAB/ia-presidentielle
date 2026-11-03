@@ -1,6 +1,8 @@
 # Official sources of the candidates' words, each with its trust level (README,
 # "Niveaux de source"): 1 = the person's own words, 2 = party or campaign team.
-# A source's level is a conservative default, confirmed by an editor at review.
+# A source's level is a conservative default, confirmed by an editor at review, except
+# where the source itself names the speaker (`trust_confirmed: true`: the Assemblée
+# nationale record).
 #
 # Every URL below comes from the previous version (branch `daily`): each was probed on
 # 2026-09-18 and returned items, and that version's daily run on GitHub Actions read every
@@ -57,6 +59,7 @@ sources:
   - id: bruno-retailleau/an/PA2538
     candidate_id: bruno-retailleau
     kind: assemblee_nationale
+    trust_confirmed: true   # the record names each speaker
     url: https://data.assemblee-nationale.fr/static/openData/repository/17/vp/syceronbrut/syseron.xml.zip
     trust_level: 1
     label: Assemblée nationale — compte rendu intégral
@@ -83,6 +86,7 @@ sources:
   - id: olivier-faure/an/PA609332
     candidate_id: olivier-faure
     kind: assemblee_nationale
+    trust_confirmed: true   # the record names each speaker
     url: https://data.assemblee-nationale.fr/static/openData/repository/17/vp/syceronbrut/syseron.xml.zip
     trust_level: 1
     label: Assemblée nationale — compte rendu intégral
@@ -108,6 +112,7 @@ sources:
   - id: gabriel-attal/an/PA722190
     candidate_id: gabriel-attal
     kind: assemblee_nationale
+    trust_confirmed: true   # the record names each speaker
     url: https://data.assemblee-nationale.fr/static/openData/repository/17/vp/syceronbrut/syseron.xml.zip
     trust_level: 1
     label: Assemblée nationale — compte rendu intégral
@@ -126,6 +131,7 @@ sources:
   - id: marine-le-pen/an/PA720614
     candidate_id: marine-le-pen
     kind: assemblee_nationale
+    trust_confirmed: true   # the record names each speaker
     url: https://data.assemblee-nationale.fr/static/openData/repository/17/vp/syceronbrut/syseron.xml.zip
     trust_level: 1
     label: Assemblée nationale — compte rendu intégral

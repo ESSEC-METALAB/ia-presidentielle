@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS documents (
     text         TEXT NOT NULL,
     published_on TEXT,               -- ISO date; NULL when the source states none, never guessed
     fetched_at   TEXT NOT NULL,      -- ISO 8601 with offset
-    trust_level  INTEGER NOT NULL CHECK (trust_level BETWEEN 1 AND 4)
+    trust_level  INTEGER NOT NULL CHECK (trust_level BETWEEN 1 AND 4),
+    archive_url  TEXT                -- Wayback capture /web/<14 digits>/..., or NULL
 );
 
 CREATE INDEX IF NOT EXISTS documents_by_source ON documents (source_id);
@@ -53,3 +54,25 @@ CREATE TABLE IF NOT EXISTS excluded_passages (
 );
 
 CREATE INDEX IF NOT EXISTS excluded_by_document ON excluded_passages (document_hash);
+
+-- Annotation: one row per (passage, annotator version), the whole answer as JSON
+-- (accepted statements and rejected proposals alike). A passage whose text changed is
+-- annotated again: segment_hash is the hash of the text that was annotated.
+CREATE TABLE IF NOT EXISTS segment_annotations (
+    segment_id        TEXT NOT NULL,
+    annotator_version TEXT NOT NULL,
+    segment_hash      TEXT NOT NULL,
+    annotated_at      TEXT NOT NULL,
+    statements        INTEGER NOT NULL,  -- accepted, for reading the table by eye
+    payload           TEXT NOT NULL,     -- SegmentAnnotation as JSON
+    PRIMARY KEY (segment_id, annotator_version)
+);
+
+-- Tokens in and out of every LLM call, per step (CLAUDE.md §4, "Logs").
+CREATE TABLE IF NOT EXISTS llm_usage (
+    step          TEXT NOT NULL,
+    model         TEXT NOT NULL,
+    input_tokens  INTEGER NOT NULL,
+    output_tokens INTEGER NOT NULL,
+    recorded_at   TEXT NOT NULL
+);
