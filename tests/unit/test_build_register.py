@@ -2,6 +2,8 @@
 
 from datetime import UTC, date, datetime
 
+import pytest
+
 from observatoire.application.build_register import BuildRegister
 from observatoire.domain.annotation import Dimension, DimensionAnnotation, SegmentAnnotation
 from observatoire.domain.models import (
@@ -161,17 +163,17 @@ def test_nothing_annotated_yet_is_an_empty_register_not_an_error() -> None:
     assert register.annotator_version is None
 
 
-def test_a_rewritten_page_does_not_count_an_unchanged_sentence_twice() -> None:
+@pytest.mark.parametrize("archived_first", [True, False])
+def test_a_rewritten_page_does_not_count_an_unchanged_sentence_twice(archived_first: bool) -> None:
     store = InMemoryStore()
-    capture = "https://web.archive.org/web/20260918144520/https://parti-exemple.test/page"
-    first = document("Version 1. " + TEXT).model_copy(
-        update={"url": "https://parti-exemple.test/page"}
+    page = "https://parti-exemple.test/page"
+    capture = f"https://web.archive.org/web/20260918144520/{page}"
+    plain = document("Version 1. " + TEXT).model_copy(update={"url": page})
+    archived = document("Version 2. " + TEXT).model_copy(
+        update={"url": page, "archive_url": capture}
     )
-    second = document("Version 2. " + TEXT).model_copy(
-        update={"url": "https://parti-exemple.test/page", "archive_url": capture}
-    )
-    _annotated(store, first)
-    _annotated(store, second)
+    for doc in (archived, plain) if archived_first else (plain, archived):
+        _annotated(store, doc)
 
     register = _build(store, [candidate()], [FEED])
 
