@@ -90,7 +90,7 @@ class BuildRegister:
                 )
                 for statement in annotation.annotations
             )
-        return tuple(sorted(entries, key=lambda e: e.annotation.id))
+        return tuple(sorted(_one_per_quote(entries), key=lambda e: e.annotation.id))
 
     def _current_segments(
         self, documents: dict[str, RawDocument]
@@ -101,6 +101,26 @@ class BuildRegister:
             if segmentation.document_hash in documents
             for segment in segmentation.segments
         }
+
+
+def _one_per_quote(entries: Sequence[RegisterEntry]) -> list[RegisterEntry]:
+    """One statement per person, page and quote.
+
+    A standing page that is rewritten is stored again under a new content hash, so its
+    unchanged sentences come back as new passages. Shown twice, they would count twice.
+    The copy kept is the archived one, else the most recently fetched.
+    """
+    kept: dict[tuple[str, str, str], RegisterEntry] = {}
+    for entry in entries:
+        key = (entry.document.candidate_id, entry.document.url, entry.annotation.quote)
+        current = kept.get(key)
+        if current is None or _preferred(entry) > _preferred(current):
+            kept[key] = entry
+    return list(kept.values())
+
+
+def _preferred(entry: RegisterEntry) -> tuple[bool, str]:
+    return entry.document.archive_url is not None, entry.document.fetched_at.isoformat()
 
 
 def _listed(candidate: Candidate, sources: Sequence[Source]) -> RegisterCandidate:

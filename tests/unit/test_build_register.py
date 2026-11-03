@@ -159,3 +159,21 @@ def test_nothing_annotated_yet_is_an_empty_register_not_an_error() -> None:
     register = _build(InMemoryStore(), [candidate()], [FEED])
 
     assert register.annotator_version is None
+
+
+def test_a_rewritten_page_does_not_count_an_unchanged_sentence_twice() -> None:
+    store = InMemoryStore()
+    capture = "https://web.archive.org/web/20260918144520/https://parti-exemple.test/page"
+    first = document("Version 1. " + TEXT).model_copy(
+        update={"url": "https://parti-exemple.test/page"}
+    )
+    second = document("Version 2. " + TEXT).model_copy(
+        update={"url": "https://parti-exemple.test/page", "archive_url": capture}
+    )
+    _annotated(store, first)
+    _annotated(store, second)
+
+    register = _build(store, [candidate()], [FEED])
+
+    (entry,) = register.entries
+    assert entry.document.archive_url == capture

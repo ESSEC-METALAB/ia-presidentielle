@@ -135,6 +135,24 @@ même schéma, puis rejouées par `--llm recorded`. Les réponses sont versionn�
 fournisseur retenu pour la production, et aucune de ces déclarations n'a encore été relue
 par un éditeur ; le site le dit.
 
+**Vérification croisée de l'édition du 3 novembre 2026.** Les contrôles automatiques
+prouvent qu'une citation existe ; ils ne disent pas si elle porte une position, si l'axe
+est le bon, ni si le résumé lui est fidèle. Chaque déclaration retenue par les contrôles
+a donc été relue par six vérificateurs indépendants (des assistants, pas des éditeurs),
+chacun sur un seul critère :
+
+| Critère | Vérificateurs | Règle appliquée par le code |
+|---|---|---|
+| Substance et attribution : une position sur l'IA, du candidat ou de son parti | 3, chargés de réfuter | écartée si au moins 2 la réfutent |
+| Axe : l'objet principal de la phrase, règles de frontière comprises | 2, qui choisissent d'abord leur axe | changé seulement si les 2 le rejettent et proposent le même ; sinon conservé et signalé |
+| Fidélité et neutralité du résumé, du contexte et de la traduction | 1, qui propose une correction | la correction remplace les notes ; la citation n'est jamais touchée |
+
+Les passages restés vides n'ont pas été réexaminés : une annotation vide est une réponse
+correcte, et une seconde passe « pour trouver quelque chose » est précisément ce qui
+fabrique des positions. Tous les verdicts et toutes les modifications sont versionnés dans
+`annotations/2026-11-03-verification.json` ; les réponses brutes de l'annotateur, avant
+vérification, dans `annotations/2026-11-03-brouillon-brut.jsonl`.
+
 ## Registre public (`observatoire register`)
 
 Construit dans `data/site/` à partir du gabarit `web/registre/` (le prototype v3, modifié
