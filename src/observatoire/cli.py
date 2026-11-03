@@ -130,6 +130,11 @@ def _add_annotate(commands: "argparse._SubParsersAction[argparse.ArgumentParser]
         "--batch-out", type=Path, default=Path("data/llm/requests.jsonl"), help="requêtes (JSONL)"
     )
     annotate.add_argument("--limit", type=int, help="nombre maximal de passages envoyés")
+    annotate.add_argument(
+        "--rebuild",
+        action="store_true",
+        help="réannoter ce qui l'est déjà (après un changement du filtre ou des contrôles)",
+    )
     annotate.set_defaults(handler=_annotate)
 
 
@@ -225,6 +230,7 @@ def _annotate(args: argparse.Namespace, settings: Settings, registry: Registry) 
             registry.sources,
             since=registry.collection.since,
             limit=args.limit,
+            rebuild=args.rebuild,
         )
     _print_annotation(report)
     if isinstance(client, BatchRequestWriter):

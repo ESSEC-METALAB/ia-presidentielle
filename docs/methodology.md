@@ -153,6 +153,22 @@ fabrique des positions. Tous les verdicts et toutes les modifications sont versi
 `annotations/2026-11-03-verification.json` ; les réponses brutes de l'annotateur, avant
 vérification, dans `annotations/2026-11-03-brouillon-brut.jsonl`.
 
+**Résultat de la vérification.** 188 déclarations distinctes soumises ; 6 écartées
+(au moins 2 réfutations sur 3 : deux maximes, une prévision, une promesse d'effectifs
+sans lien explicite à l'IA, un constat, un statut de dirigeant sans lien à l'IA) ; 1 axe
+changé (des incitations fiscales pour retenir les talents : de formation à financement) ;
+45 notes corrigées, surtout des résumés qui ajoutaient un mot absent du texte (« en
+France », « citoyens ») ou en retiraient un (« toutes », « fortement »), et une nature
+de texte (« entretien ») que la source ne dit pas. Les lecteurs d'axe, qui choisissaient
+d'abord leur propre axe, retombent sur l'axe proposé dans 356 lectures sur 364 (98 %) ;
+c'est une mesure d'accord entre assistants, pas une validation.
+
+Un défaut des contrôles a été trouvé à cette occasion : la liste des termes évaluatifs
+mêlait français et anglais, et l'anglais *sensible* (jugement) rejetait le français
+« données sensibles » (description). Sept notes fidèles étaient écartées. Chaque langue a
+désormais sa liste, appliquée à ses seuls champs ; `observatoire annotate --rebuild`
+réapplique les contrôles aux réponses enregistrées.
+
 ## Registre public (`observatoire register`)
 
 Construit dans `data/site/` à partir du gabarit `web/registre/` (le prototype v3, modifié
@@ -188,6 +204,21 @@ intervalle de confiance. Le registre n'en publie aucun.
 
 À définir : taille de l'échantillon, profil des relecteurs, mesure d'accord. Aucune
 déclaration de l'édition du 3 novembre 2026 n'a été relue.
+
+## Constat sur le registre du 3 novembre 2026 : une couverture très inégale
+
+182 déclarations, dont 178 de Bruno Retailleau, et 167 tirées d'un seul document : son
+programme consacré à l'IA (« L'IA au service des Français », PDF du 7 juillet 2026). Jean-
+Luc Mélenchon en compte 1, Édouard Philippe 3 ; Gabriel Attal et Marine Le Pen sont suivis
+(Assemblée nationale) sans déclaration sur l'IA depuis juillet ; huit candidats ne sont pas
+suivis du tout.
+
+Ce déséquilibre mesure nos sources, pas l'intérêt des candidats pour l'IA : le registre
+le dit en distinguant « aucune position identifiée » de « Non suivi », mais le baromètre,
+qui compte une déclaration par mesure, place mécaniquement un programme détaillé loin
+devant tout le reste. Avant toute publication : vérifier et activer les sources des
+candidats non suivis (`docs/sources-a-verifier.md`), et décider si le baromètre doit
+signaler qu'une ligne repose sur un programme dédié.
 
 ## Questions ouvertes
 

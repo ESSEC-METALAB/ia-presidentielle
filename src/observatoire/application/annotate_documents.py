@@ -81,10 +81,15 @@ class AnnotateDocuments:
         *,
         since: date | None = None,
         limit: int | None = None,
+        rebuild: bool = False,
     ) -> AnnotationReport:
-        """Annotates at most `limit` passages; the rest stay pending for the next run."""
+        """Annotates at most `limit` passages; the rest stay pending for the next run.
+
+        `rebuild` annotates again what this annotator already did, so that changed gates
+        or prefilter apply to it too.
+        """
         version = self._annotator.version
-        done = self._store.annotated_segments(version)
+        done = {} if rebuild else self._store.annotated_segments(version)
         tally = _Tally()
         for passage in self._passages(candidates, sources, since):
             tally.segments_read += 1

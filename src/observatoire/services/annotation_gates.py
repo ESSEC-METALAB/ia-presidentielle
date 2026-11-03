@@ -31,16 +31,24 @@ _EQUIVALENT_CHARACTERS = str.maketrans(
         "\u2009": " ",  # thin space
     }
 )
-# Fields that describe the statement in our words. Never the quote or its gloss: if a
-# candidate calls their own plan ambitious, that is their word and it is evidence.
-_DESCRIPTIVE_FIELDS = ("summary_fr", "summary_en", "context_fr", "context_en")
+# Fields that describe the statement in our words, by language. Never the quote or its
+# gloss: if a candidate calls their own plan ambitious, that is their word and evidence.
+# Each language has its own list: "sensible" judges in English and means "sensitive" in
+# French ("données sensibles"), so one list for both fields would reject a faithful note.
+_DESCRIPTIVE_FIELDS = {"fr": ("summary_fr", "context_fr"), "en": ("summary_en", "context_en")}
 
 
 class GateSettings(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     quote_max_words: int = Field(ge=1)
-    evaluative_stems: tuple[str, ...] = ()
+    evaluative_stems_fr: tuple[str, ...] = ()
+    evaluative_stems_en: tuple[str, ...] = ()
+
+
+def _stem_pattern(stems: Sequence[str]) -> re.Pattern[str] | None:
+    alternatives = "|".join(re.escape(stem) for stem in stems)
+    return re.compile(rf"\b(?:{alternatives})", re.IGNORECASE) if alternatives else None
 
 
 def _normalised(text: str) -> str:
@@ -60,8 +68,10 @@ class AnnotationGates:
     def __init__(self, dimension_ids: Collection[str], settings: GateSettings) -> None:
         self._dimensions = frozenset(dimension_ids)
         self._max_words = settings.quote_max_words
-        stems = "|".join(re.escape(stem) for stem in settings.evaluative_stems)
-        self._evaluative = re.compile(rf"\b(?:{stems})", re.IGNORECASE) if stems else None
+        self._evaluative = {
+            "fr": _stem_pattern(settings.evaluative_stems_fr),
+            "en": _stem_pattern(settings.evaluative_stems_en),
+        }
 
     def review(
         self, segment: Segment, drafts: Sequence[StatementDraft]
@@ -95,12 +105,14 @@ class AnnotationGates:
         return span
 
     def _judgement(self, draft: StatementDraft) -> str | None:
-        if self._evaluative is None:
-            return None
-        for field in _DESCRIPTIVE_FIELDS:
-            match = self._evaluative.search(getattr(draft, field))
-            if match:
-                return f"{field}: {match.group(0)!r}"
+        for language, fields in _DESCRIPTIVE_FIELDS.items():
+            pattern = self._evaluative[language]
+            if pattern is None:
+                continue
+            for field in fields:
+                match = pattern.search(getattr(draft, field))
+                if match:
+                    return f"{field}: {match.group(0)!r}"
         return None
 
     @staticmethod

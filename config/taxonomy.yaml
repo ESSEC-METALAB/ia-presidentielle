@@ -1,9 +1,12 @@
 # Dimensions of AI policy, the filter that decides which passages are worth annotating,
 # and the gates every annotation must pass. No list or threshold below lives in code.
 #
-# `version` changes whenever a dimension, a definition or a rule changes: it is part of
-# the annotator's version, so a changed taxonomy re-annotates instead of mixing results.
-version: "2026-11-03"
+# `version` changes whenever anything below changes. The dimensions are written into the
+# prompt, whose hash is part of the annotator's version: changing one re-annotates. The
+# prefilter and the gates are not: a change applies to new annotations, and
+# `observatoire annotate --rebuild` re-applies it to stored ones (free when replaying a
+# recorded batch).
+version: "2026-11-03b"
 
 # The nine axes of the public register prototype ("IA 2027 — Registre", v3). Each
 # annotation is attached to exactly one: the main object of the sentence. The
@@ -119,10 +122,12 @@ gates:
   # The quote must be one exact passage of the segment, short enough to be a citation.
   quote_max_words: 60
   # Judgement words, checked in the summaries and context notes ONLY, never in the
-  # quote: if a candidate calls their own plan ambitious, that is their word and it is
-  # evidence. Stems, matched at a word start, case-insensitively. From the previous
-  # version (observatoire/lint.py).
-  evaluative_stems:
+  # quote or its gloss: if a candidate calls their own plan ambitious, that is their word
+  # and it is evidence. Stems, matched at a word start, case-insensitively, from the
+  # previous version (observatoire/lint.py). One list per language, each checked in its
+  # own fields only: "sensible" judges in English but means "sensitive" in French
+  # ("données sensibles"), and a single list rejected seven faithful French notes.
+  evaluative_stems_fr:
     - ambitieu
     - audacieu
     - timide
@@ -146,6 +151,7 @@ gates:
     - intéressant
     - courageu
     - raisonnable
+  evaluative_stems_en:
     - ambitious
     - bold
     - timid

@@ -67,6 +67,7 @@ def _run(
     *,
     since: date | None = None,
     limit: int | None = None,
+    rebuild: bool = False,
 ) -> AnnotationReport:
     use_case = AnnotateDocuments(
         corpus=store,
@@ -77,7 +78,7 @@ def _run(
         reviewer=GATES,
         clock=FrozenClock(),
     )
-    return use_case.run([candidate()], [source()], since=since, limit=limit)
+    return use_case.run([candidate()], [source()], since=since, limit=limit, rebuild=rebuild)
 
 
 def test_only_passages_that_pass_the_prefilter_reach_the_annotator() -> None:
@@ -194,3 +195,14 @@ def test_documents_outside_the_window_or_unconfigured_are_not_read() -> None:
     report = _run(store, ScriptedAnnotator({}), since=date(2026, 7, 1))
 
     assert report.segments_read == 0
+
+
+def test_a_rebuild_annotates_again_what_was_already_annotated() -> None:
+    store = InMemoryStore()
+    _segmented(store, document(AI), AI)
+    annotator = ScriptedAnnotator({})
+    _run(store, annotator)
+
+    report = _run(store, annotator, rebuild=True)
+
+    assert (report.annotated, report.already_annotated) == (1, 0)

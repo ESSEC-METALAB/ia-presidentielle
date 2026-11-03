@@ -14,7 +14,10 @@ RELEVANCE = RelevanceSettings(
     weak_min_distinct=2,
 )
 GATES = AnnotationGates(
-    ["regulation", "emploi"], GateSettings(quote_max_words=12, evaluative_stems=("ambitieu",))
+    ["regulation", "emploi"],
+    GateSettings(
+        quote_max_words=12, evaluative_stems_fr=("ambitieu",), evaluative_stems_en=("sensible",)
+    ),
 )
 PASSAGE = (
     "Nous créerons une autorité de contrôle de l\u2019IA dotée de vrais pouvoirs. Le reste suit."
@@ -124,3 +127,15 @@ def test_without_a_stem_list_no_summary_is_judged() -> None:
     )
 
     assert len(accepted) == 1
+
+
+def test_a_word_is_judged_only_in_the_language_whose_list_names_it() -> None:
+    passage = segment(PASSAGE)
+    french = draft("une autorité de contrôle", summary_fr="Protège les données sensibles.")
+    english = draft("une autorité de contrôle", summary_en="A sensible authority.")
+
+    kept, _ = GATES.review(passage, [french])
+    _, rejected = GATES.review(passage, [english])
+
+    assert len(kept) == 1
+    assert rejected[0].detail == "summary_en: 'sensible'"
