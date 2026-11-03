@@ -179,3 +179,15 @@ def test_a_rewritten_page_does_not_count_an_unchanged_sentence_twice(archived_fi
 
     (entry,) = register.entries
     assert entry.document.archive_url == capture
+
+
+def test_a_newer_annotator_that_has_not_caught_up_does_not_replace_the_register() -> None:
+    store = InMemoryStore()
+    first, second = document("Premier. " + TEXT), document("Second. " + TEXT)
+    _annotated(store, first, version="complete", at=datetime(2026, 10, 1, tzinfo=UTC))
+    _annotated(store, second, version="complete", at=datetime(2026, 10, 1, tzinfo=UTC))
+    _annotated(store, first, version="partial", at=datetime(2026, 11, 2, tzinfo=UTC))
+
+    register = _build(store, [candidate()], [FEED])
+
+    assert register.annotator_version == "complete"

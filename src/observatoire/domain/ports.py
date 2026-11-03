@@ -30,6 +30,7 @@ from observatoire.domain.models import (
     SourceOutcome,
 )
 from observatoire.domain.register import Register
+from observatoire.domain.watch import RosterEntry, WatchReport
 
 
 class Clock(Protocol):
@@ -155,3 +156,16 @@ class UsageTracker(Protocol):
 
 class RegisterRenderer(Protocol):
     def render(self, register: Register) -> str: ...
+
+
+class RosterSource(Protocol):
+    @property
+    def label(self) -> str: ...
+
+    def fetch(self) -> list[RosterEntry]:
+        """Raises SourceUnavailableError when the list cannot be read."""
+        ...
+
+
+class WatchRenderer(Protocol):
+    def render(self, report: WatchReport) -> str: ...

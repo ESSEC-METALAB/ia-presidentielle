@@ -1,5 +1,6 @@
 """Loads and validates config/*.yaml into domain models."""
 
+import re
 from collections import Counter
 from collections.abc import Sequence
 from datetime import date
@@ -7,11 +8,12 @@ from pathlib import Path
 from typing import TypeVar
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from observatoire.domain.annotation import Dimension
 from observatoire.domain.errors import ConfigurationError
 from observatoire.domain.models import Candidate, Source
+from observatoire.domain.watch import WatchedTopic
 from observatoire.services.ai_relevance import RelevanceSettings
 from observatoire.services.annotation_gates import GateSettings
 from observatoire.services.segmentation import SegmentationSettings
@@ -54,6 +56,35 @@ class TaxonomySettings(BaseModel):
         return tuple(d.id for d in self.dimensions)
 
 
+class RosterSettings(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    url: str = Field(pattern=r"^https://")
+    label: str
+
+
+class WatchSettings(BaseModel):
+    """config/watch.yaml: the outside roster and the topics watched for the editors."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    roster: RosterSettings
+    topic_threshold: int = Field(ge=1)
+    topic_min_candidates: int = Field(default=1, ge=1)
+    topics: tuple[WatchedTopic, ...] = ()
+
+    @field_validator("topics")
+    @classmethod
+    def _patterns_compile(cls, topics: tuple[WatchedTopic, ...]) -> tuple[WatchedTopic, ...]:
+        for topic in topics:
+            for pattern in topic.patterns:
+                try:
+                    re.compile(pattern)
+                except re.error as error:
+                    raise ValueError(f"{topic.id}: {pattern!r}: {error}") from error
+        return topics
+
+
 class Registry(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -63,6 +94,7 @@ class Registry(BaseModel):
     collection: CollectionSettings
     segmentation: SegmentationSettings
     taxonomy: TaxonomySettings
+    watch: WatchSettings
 
 
 class _CandidatesFile(BaseModel):
@@ -94,6 +126,7 @@ def load_registry(config_dir: Path) -> Registry:
         collection=sources_file.collection,
         segmentation=_load(config_dir / "segmentation.yaml", SegmentationSettings),
         taxonomy=taxonomy,
+        watch=_load(config_dir / "watch.yaml", WatchSettings),
     )
 
 

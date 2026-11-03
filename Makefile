@@ -11,7 +11,7 @@ DATA_DIRS := data/raw data/processed data/reports
 # Recorded annotation answers replayed by `make annotate-replay` (see docs/methodology.md).
 RESPONSES ?= annotations/2026-11-03-brouillon.jsonl
 
-.PHONY: help install install-pip format lint typecheck test check demo collect legacy-db import-legacy segment corpus annotate annotate-batch annotate-replay register site usage clean
+.PHONY: help install install-pip format lint typecheck test check demo collect legacy-db import-legacy segment corpus annotate annotate-batch annotate-replay register site usage watch daily serve schedule unschedule schedule-status clean
 
 help: ## List the targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) \
@@ -42,9 +42,7 @@ test: ## pytest with the coverage floor (80 % on domain/ and application/)
 
 check: lint typecheck test ## Everything that must pass before a task is done
 
-demo: ## Full offline pipeline on fixtures, no network, no API key (works from step 6)
-	mkdir -p $(DATA_DIRS)
-	$(RUN) observatoire run-all --offline
+demo: site ## Alias of `site`: the whole register from the previous version's data, no API key
 
 collect: ## Live collection from config/sources.yaml (network required)
 	mkdir -p $(DATA_DIRS)
@@ -80,6 +78,24 @@ site: import-legacy segment annotate-replay register ## The whole register, offl
 
 usage: ## Tokens used per step and model
 	$(RUN) observatoire usage
+
+watch: ## Candidates and topics to examine -> data/reports/veille.md (proposes, never edits config)
+	$(RUN) observatoire watch --out data/reports/veille.md
+
+daily: ## The morning update: collect, segment, annotate, watch, rebuild the site (logs in data/logs/)
+	scripts/daily.sh
+
+serve: ## Serve the site on http://localhost:8000 (SITE_PORT in .env); works with no internet
+	scripts/serve.sh
+
+schedule: ## Install the 08:00 daily update and the local site server on this machine (macOS/Linux)
+	scripts/schedule.sh install
+
+unschedule: ## Remove the daily update and the site server from this machine
+	scripts/schedule.sh uninstall
+
+schedule-status: ## Show whether the daily update and the site server are installed
+	scripts/schedule.sh status
 
 clean: ## Remove caches and build output (never data/)
 	rm -rf .pytest_cache .mypy_cache .ruff_cache .coverage htmlcov build dist

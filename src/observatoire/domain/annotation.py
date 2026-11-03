@@ -6,6 +6,7 @@ model. A proposal becomes a `DimensionAnnotation` only after the gates have foun
 quote in the passage, and the stored quote is the passage's own text, not the model's copy.
 """
 
+from collections.abc import Sequence
 from datetime import date
 from enum import StrEnum
 
@@ -94,6 +95,22 @@ class SegmentAnnotation(_Frozen):
     def is_empty(self) -> bool:
         """No AI-policy statement here: the expected answer for most passages."""
         return not self.annotations
+
+
+def current_annotator(annotations: Sequence[SegmentAnnotation]) -> str | None:
+    """The annotator whose work the register shows: one at a time, never a mix.
+
+    The one that has annotated the most passages, the most recent on a tie. A new
+    provider (say, Mistral after a recorded batch) takes over once it has caught up, so
+    a run that stops halfway (quota, outage) never empties the register overnight.
+    """
+    coverage: dict[str, tuple[int, AwareDatetime]] = {}
+    for annotation in annotations:
+        count, latest = coverage.get(annotation.annotator_version, (0, annotation.annotated_at))
+        coverage[annotation.annotator_version] = (count + 1, max(latest, annotation.annotated_at))
+    if not coverage:
+        return None
+    return max(coverage, key=lambda version: coverage[version])
 
 
 class AnnotationContext(_Frozen):

@@ -1,0 +1,36 @@
+# The daily watch (`observatoire watch`, data/reports/veille.md). It proposes candidates
+# and topics to the editors; it never edits config/candidates.yaml or taxonomy.yaml.
+
+# An outside list of declared candidacies, compared each morning with our roster. A
+# community dataset (it cites a source for each entry): a lead, never evidence.
+roster:
+  url: https://raw.githubusercontent.com/MieuxVoter/presidentielle2027/main/candidats.csv
+  label: "MieuxVoter, presidentielle2027 (données communautaires, candidats.csv)"
+
+# Subjects that are not axes yet, counted in the passages that pass the AI prefilter.
+# When one reaches `topic_threshold` passages from at least `topic_min_candidates`
+# different candidates, the note marks it "à examiner" (one long programme alone can
+# reach any passage count; a subject that deserves an axis is one several candidates
+# address). An editor decides whether it deserves an axis (then: config/taxonomy.yaml,
+# a new prompt version, and re-annotation). Python regular expressions, matched case-insensitively.
+topic_threshold: 3
+topic_min_candidates: 2
+topics:
+  - id: culture-droit-auteur
+    label_fr: Culture, création et droit d'auteur
+    patterns: ['droits? d.auteur', '\bartistes?\b', 'cr[ée]ateurs? de contenus?', 'cr[ée]ation artistique', 'propri[ée]t[ée] intellectuelle', '\bdoublage\b', '\bjeux? vid[ée]o\b']
+  - id: recherche
+    label_fr: Recherche publique et science
+    patterns: ['recherche publique', '\bchercheu', '\blaboratoires?\b', '\bINRIA\b', '\bCNRS\b']
+  - id: mineurs-ecrans
+    label_fr: Enfants, écrans et réseaux sociaux
+    patterns: ['\bmineurs?\b', '\benfants?\b', 'r[ée]seaux sociaux', '\b[ée]crans?\b']
+  - id: sante
+    label_fr: Santé et médecine (hors administration)
+    patterns: ['\bm[ée]decins?\b', '\bpatients?\b', '\bdiagnostic', '\bh[ôo]pita']
+  - id: agriculture
+    label_fr: Agriculture
+    patterns: ['\bagricult', '\bagricole']
+  - id: europe
+    label_fr: Union européenne et coopération
+    patterns: ['\bUnion europ[ée]enne\b', '\bBruxelles\b', '\bCommission europ[ée]enne\b']

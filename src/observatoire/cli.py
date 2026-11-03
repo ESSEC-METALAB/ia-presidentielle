@@ -26,10 +26,12 @@ from observatoire.adapters.llm.recorded_llm_client import (
 from observatoire.adapters.reporting.corpus_html_renderer import CorpusHtmlRenderer
 from observatoire.adapters.reporting.register_data_script import RegisterDataScript
 from observatoire.adapters.reporting.static_site import write_site
+from observatoire.adapters.reporting.watch_markdown import WatchMarkdown
 from observatoire.adapters.sources.assemblee_nationale_reader import AssembleeNationaleReader
 from observatoire.adapters.sources.html_page_reader import HtmlPageReader
 from observatoire.adapters.sources.http_client import PoliteHttpClient, robots_fetcher
 from observatoire.adapters.sources.legacy_pipeline_reader import LEGACY_KINDS, LegacyPipelineReader
+from observatoire.adapters.sources.mieuxvoter_roster import MieuxVoterRoster
 from observatoire.adapters.sources.pdf_reader import PdfReader
 from observatoire.adapters.sources.rss_reader import RssReader
 from observatoire.adapters.storage.sqlite_repository import SqliteRepository
@@ -39,12 +41,14 @@ from observatoire.application.build_register import BuildRegister
 from observatoire.application.collect_daily import CollectDaily
 from observatoire.application.inspect_corpus import InspectCorpus
 from observatoire.application.segment_documents import SegmentDocuments
+from observatoire.application.watch_changes import WatchChanges
 from observatoire.config.registry import CrawlerSettings, Registry, load_registry
 from observatoire.config.settings import Settings
 from observatoire.domain.annotation import AnnotationReport
 from observatoire.domain.errors import ConfigurationError
 from observatoire.domain.models import CollectionReport, SegmentationReport, Source
 from observatoire.domain.ports import Clock, LLMClient, SourceReader
+from observatoire.domain.watch import needs_review
 from observatoire.observability.logging import configure_logging
 from observatoire.observability.usage_tracker import UsageRecordingClient
 from observatoire.services.ai_relevance import TermRelevanceFilter
@@ -110,6 +114,11 @@ def _parser() -> argparse.ArgumentParser:
     register.add_argument("--out", type=Path, default=Path("data/site"))
     register.add_argument("--template", type=Path, default=Path("web/registre"))
     register.set_defaults(handler=_register)
+    watch = commands.add_parser(
+        "watch", help="veille : candidats et sujets à examiner (propose, ne modifie rien)"
+    )
+    watch.add_argument("--out", type=Path, default=Path("data/reports/veille.md"))
+    watch.set_defaults(handler=_watch)
     usage = commands.add_parser("usage", help="tokens consommés par étape et par modèle")
     usage.set_defaults(handler=_usage)
     return parser
@@ -155,7 +164,9 @@ def _collect(args: argparse.Namespace, settings: Settings, registry: Registry) -
         since = effective_since(args.since, registry.collection.since)
         report = use_case.run(sources, run_id=_run_id("collect", clock), since=since)
     _print_report(report)
-    return 0
+    # Some sources down is a normal morning; all of them down is an outage worth a non-zero
+    # exit (no network, proxy, DNS), so the daily summary says ÉCHEC rather than ok.
+    return 1 if report.outcomes and len(report.failed_sources) == len(report.outcomes) else 0
 
 
 def _import_legacy(args: argparse.Namespace, settings: Settings, registry: Registry) -> int:
@@ -287,6 +298,51 @@ def _register(args: argparse.Namespace, settings: Settings, registry: Registry) 
     if register.withdrawn:
         print(f"  Hors registre (retrait) : {', '.join(c.name for c in register.withdrawn)}")
     print(f"Site écrit dans {page}")
+    return 0
+
+
+def _watch(args: argparse.Namespace, settings: Settings, registry: Registry) -> int:
+    clock = SystemClock()
+    crawler = registry.crawler
+    headers = {"User-Agent": crawler.user_agent}
+    with (
+        httpx.Client(headers=headers, timeout=crawler.timeout_seconds) as client,
+        closing(SqliteRepository(settings.database_path)) as repository,
+    ):
+        policy = RobotsPolicy(crawler.user_agent, crawler.min_delay_seconds, robots_fetcher(client))
+        roster = MieuxVoterRoster(
+            PoliteHttpClient(client, policy, crawler.max_redirects),
+            registry.watch.roster.url,
+            registry.watch.roster.label,
+        )
+        use_case = WatchChanges(
+            roster=roster,
+            corpus=repository,
+            segments=repository,
+            annotations=repository,
+            relevance=TermRelevanceFilter(registry.taxonomy.relevance),
+            clock=clock,
+        )
+        report = use_case.run(
+            registry.candidates,
+            registry.sources,
+            registry.watch.topics,
+            threshold=registry.watch.topic_threshold,
+            min_candidates=registry.watch.topic_min_candidates,
+            since=registry.collection.since,
+        )
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(WatchMarkdown().render(report), encoding="utf-8")
+    flagged = sum(
+        needs_review(s, report.topic_threshold, report.topic_min_candidates)
+        for s in report.topic_signals
+    )
+    print(
+        f"Veille : {len(report.candidate_leads)} piste(s) candidat, {flagged} sujet(s) à examiner,"
+        f" {report.pending_passages} passage(s) en attente ; écrite dans {args.out}"
+    )
+    if report.roster_error:
+        print(f"  liste extérieure illisible : {report.roster_error}")
     return 0
 
 

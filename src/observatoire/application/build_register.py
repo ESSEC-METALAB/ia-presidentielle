@@ -8,7 +8,7 @@ and third parties never do, however cleanly they were annotated.
 from collections.abc import Sequence
 from datetime import date
 
-from observatoire.domain.annotation import Dimension, SegmentAnnotation
+from observatoire.domain.annotation import Dimension, SegmentAnnotation, current_annotator
 from observatoire.domain.models import (
     Candidate,
     RawDocument,
@@ -48,7 +48,7 @@ class BuildRegister:
     ) -> Register:
         running = [c for c in candidates if c.is_running]
         stored = self._annotations.list_annotations()
-        version = _latest_version(stored)
+        version = current_annotator(stored)
         return Register(
             generated_at=self._clock.now(),
             window_start=since,
@@ -126,10 +126,3 @@ def _preferred(entry: RegisterEntry) -> tuple[bool, str]:
 def _listed(candidate: Candidate, sources: Sequence[Source]) -> RegisterCandidate:
     own = tuple(s for s in sources if s.candidate_id == candidate.id and s.enabled)
     return RegisterCandidate(candidate=candidate, sources=own)
-
-
-def _latest_version(annotations: Sequence[SegmentAnnotation]) -> str | None:
-    """The register shows one annotator's work at a time: the most recent one."""
-    if not annotations:
-        return None
-    return max(annotations, key=lambda a: a.annotated_at).annotator_version
