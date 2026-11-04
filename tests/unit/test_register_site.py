@@ -1,6 +1,7 @@
 """The register's data script and site writer, on a fictional register."""
 
 import json
+import re
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
@@ -130,3 +131,40 @@ def test_the_site_is_the_template_plus_the_generated_data(tmp_path: Path) -> Non
 
     assert page.read_text(encoding="utf-8").startswith("<script")
     assert (page.parent / "data.js").read_text(encoding="utf-8") == "window.IA2027_DATA = {};\n"
+
+
+def _template(tmp_path: Path, html: str) -> Path:
+    template = tmp_path / "template"
+    template.mkdir(exist_ok=True)
+    (template / "index.html").write_text(html, encoding="utf-8")
+    (template / "refresh.js").write_text("// refresh", encoding="utf-8")
+    return template
+
+
+def test_new_data_gets_a_new_script_url(tmp_path: Path) -> None:
+    template = _template(tmp_path, '<script src="./data.js"></script>')
+
+    first = write_site(template, tmp_path / "a", "window.IA2027_DATA = {a: 1};\n")
+    second = write_site(template, tmp_path / "b", "window.IA2027_DATA = {a: 2};\n")
+
+    first_html, second_html = (p.read_text(encoding="utf-8") for p in (first, second))
+    assert re.fullmatch(r'<script src="\./data\.js\?v=[0-9a-f]{12}"></script>', first_html)
+    assert first_html != second_html
+
+
+def test_the_same_data_keeps_its_script_url(tmp_path: Path) -> None:
+    template = _template(tmp_path, "<script src='./data.js'></script>")
+
+    first = write_site(template, tmp_path / "a", "window.IA2027_DATA = {};\n")
+    second = write_site(template, tmp_path / "b", "window.IA2027_DATA = {};\n")
+
+    assert first.read_text(encoding="utf-8") == second.read_text(encoding="utf-8")
+
+
+def test_the_refresh_script_is_versioned_and_others_are_left_alone(tmp_path: Path) -> None:
+    template = _template(tmp_path, '<script src="./refresh.js"></script><script src="./a.js">')
+
+    html = write_site(template, tmp_path / "site", "").read_text(encoding="utf-8")
+
+    assert re.search(r'src="\./refresh\.js\?v=[0-9a-f]{12}"', html)
+    assert 'src="./a.js"' in html
