@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Literal
 
-from pydantic import SecretStr
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -16,3 +16,5 @@ class Settings(BaseSettings):
     database_path: Path = Path("data/observatoire.db")
     config_dir: Path = Path("config")
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+    # `observatoire web`: the least time between two refreshes asked from the site.
+    refresh_cooldown_minutes: int = Field(default=10, ge=0)

@@ -32,6 +32,7 @@ obs() {  # obs ARGS...: the observatoire CLI (bash 3.2 on macOS: no empty "${a[@
     if ((${#RUN_PREFIX[@]})); then "${RUN_PREFIX[@]}" observatoire "$@"; else observatoire "$@"; fi
 }
 LOCK=data/.daily.lock
+LEGACY_DB_URL=https://raw.githubusercontent.com/ESSEC-METALAB/ia-presidentielle/daily/data/observatoire.db
 
 
 # One run at a time: two writers on one SQLite file corrupt it. mkdir is atomic, and
@@ -65,9 +66,17 @@ step() {  # step NAME COMMAND...: run, time and record one step without stopping
 # shellcheck disable=SC2329  # called through step
 import_legacy() {
     # Offline, the last fetched copy of the branch is imported again: nothing new, no harm.
-    git fetch --quiet origin daily || echo "git fetch impossible : dernière copie connue de origin/daily"
-    git show origin/daily:data/observatoire.db >data/raw/legacy-daily.db &&
-        obs import-legacy --database data/raw/legacy-daily.db
+    # Without a git checkout (the server's container), the same file is downloaded.
+    if git rev-parse --git-dir >/dev/null 2>&1; then
+        git fetch --quiet origin daily || echo "git fetch impossible : dernière copie connue de origin/daily"
+        git show origin/daily:data/observatoire.db >data/raw/legacy-daily.db || return 1
+    else
+        curl -fsSL -o data/raw/legacy-daily.db.part "$(env_value LEGACY_DB_URL "$LEGACY_DB_URL")" &&
+            mv data/raw/legacy-daily.db.part data/raw/legacy-daily.db ||
+            echo "téléchargement impossible : dernière copie connue de la base précédente"
+        [[ -f data/raw/legacy-daily.db ]] || return 1
+    fi
+    obs import-legacy --database data/raw/legacy-daily.db
 }
 
 # shellcheck disable=SC2329  # called through step

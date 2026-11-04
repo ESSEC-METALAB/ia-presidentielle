@@ -8,7 +8,7 @@ import argparse
 import sys
 from collections.abc import Callable, Sequence
 from contextlib import closing
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 import httpx
@@ -37,6 +37,8 @@ from observatoire.adapters.sources.rss_reader import RssReader
 from observatoire.adapters.storage.discarding_store import DiscardingAnnotationStore
 from observatoire.adapters.storage.sqlite_repository import SqliteRepository
 from observatoire.adapters.system_clock import SystemClock
+from observatoire.adapters.web.refresh_job import RefreshJob
+from observatoire.adapters.web.server import serve
 from observatoire.application.annotate_documents import AnnotateDocuments
 from observatoire.application.build_register import BuildRegister
 from observatoire.application.collect_daily import CollectDaily
@@ -122,7 +124,33 @@ def _parser() -> argparse.ArgumentParser:
     watch.set_defaults(handler=_watch)
     usage = commands.add_parser("usage", help="tokens consommés par étape et par modèle")
     usage.set_defaults(handler=_usage)
+    _add_web(commands)
     return parser
+
+
+def _add_web(commands: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:
+    web = commands.add_parser(
+        "web", help="sert le site et son bouton « Actualiser » (lance scripts/daily.sh)"
+    )
+    web.add_argument("--host", default="0.0.0.0")  # inside a container: all interfaces
+    web.add_argument("--port", type=int, default=8000)
+    web.add_argument("--site", type=Path, default=Path("data/site"))
+    web.add_argument("--update-command", default="scripts/daily.sh")
+    web.set_defaults(handler=_web)
+
+
+def _web(args: argparse.Namespace, settings: Settings, registry: Registry) -> int:
+    job = RefreshJob(
+        command=[args.update_command],
+        workdir=Path.cwd(),
+        state_path=settings.database_path.parent / "refresh.json",
+        log_path=settings.database_path.parent / "logs" / "refresh.log",
+        cooldown=timedelta(minutes=settings.refresh_cooldown_minutes),
+        clock=SystemClock(),
+    )
+    print(f"Registre servi sur http://{args.host}:{args.port} (site : {args.site})")
+    serve(args.site, job, host=args.host, port=args.port)
+    return 0
 
 
 def _add_annotate(commands: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:
@@ -161,7 +189,13 @@ def _collect(args: argparse.Namespace, settings: Settings, registry: Registry) -
         closing(SqliteRepository(settings.database_path)) as repository,
     ):
         readers = _live_readers(client, crawler, clock)
-        use_case = CollectDaily(readers, repository, repository, clock)
+        use_case = CollectDaily(
+            readers,
+            repository,
+            repository,
+            clock,
+            near_duplicate_similarity=registry.collection.near_duplicate_similarity,
+        )
         since = effective_since(args.since, registry.collection.since)
         report = use_case.run(sources, run_id=_run_id("collect", clock), since=since)
     _print_report(report)
@@ -175,7 +209,13 @@ def _import_legacy(args: argparse.Namespace, settings: Settings, registry: Regis
     reader = LegacyPipelineReader(args.database)
     readers: dict[str, SourceReader] = {kind: reader for kind in LEGACY_KINDS}
     with closing(SqliteRepository(settings.database_path)) as repository:
-        use_case = CollectDaily(readers, repository, repository, clock)
+        use_case = CollectDaily(
+            readers,
+            repository,
+            repository,
+            clock,
+            near_duplicate_similarity=registry.collection.near_duplicate_similarity,
+        )
         # Every configured source, disabled ones included: `enabled` governs live runs.
         report = use_case.run(
             registry.sources,
@@ -246,6 +286,7 @@ def _annotate(args: argparse.Namespace, settings: Settings, registry: Registry) 
             since=registry.collection.since,
             limit=args.limit,
             rebuild=args.rebuild,
+            covered_by=registry.publication.verified_annotators,
         )
     _print_annotation(report)
     if isinstance(client, BatchRequestWriter):
