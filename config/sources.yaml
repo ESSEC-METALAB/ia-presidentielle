@@ -149,18 +149,157 @@ sources:
   # Parliament's (data.europarl.europa.eu, to verify, then a reader to write).
   # No longer running since 2026-07-07 (config/candidates.yaml).
 
-  # --- Added on 2026-10-14: no verified source yet --------------------------------------
-  # Nathalie Arthaud, Nicolas Dupont-Aignan, Raphaël Glucksmann, David Lisnard, Fabien
-  # Roussel, François Ruffin, Marine Tondelier, Éric Zemmour. Nothing is listed for them
-  # because nothing could be fetched from this environment, and a source is fetched,
-  # checked against robots.txt and confirmed to extract before it is added. They show as
-  # "non suivi" until then. What to verify first, by person:
-  #   - each person's own site and party site: an RSS feed of their texts (rss), or a
-  #     standing programme or priorities page (page);
-  #   - François Ruffin, député de la Somme: his Assemblée nationale actor id (PA…), read
-  #     on his assemblee-nationale.fr page, for the existing assemblee_nationale reader;
-  #   - Raphaël Glucksmann, député européen: the European Parliament record, which needs
-  #     a reader of its own (as for Jordan Bardella).
-  # The Parti socialiste feed stays attributed to Olivier Faure: its texts from July to
-  # 11 October predate Raphaël Glucksmann's designation as the joint PS–Place publique
-  # candidate. Re-attributing it from that date is an editorial decision.
+  # --- Added on 2026-11-04 (branch poc) ------------------------------------------------
+  # Each entry below was fetched from a networked machine on 2026-11-04 with the project's
+  # own RobotsPolicy, PoliteHttpClient and extraction settings: robots.txt allows it, it
+  # answers 200 and extracts past min_text_chars; feeds are dated. A page's date is the
+  # one trafilatura finds (the page reader ignores `options.published_on`); on WordPress
+  # sites it can be the date of the last change rather than of publication. The levels of
+  # the three personal blogs (Ruffin, Tondelier, Mélenchon) are defaults to confirm.
+  # Left out, with why: Éric Zemmour (no feed, generic pages, Instagram embeds) and Marine
+  # Le Pen (rassemblementnational.fr behind a firewall that answers 307 with no target,
+  # marinelepen.com a JavaScript app); laec.fr forbids unlisted robots; lesecologistes.fr
+  # answers 403 to our agent; the Place publique programme PDF has an uncertain date.
+  # Raphaël Glucksmann's European Parliament record still needs a reader of its own.
+  # The Parti socialiste feed stays attributed to Olivier Faure (decided 2026-11-04): its
+  # texts after 11 October are signed by him or by the party's bodies, not by Raphaël
+  # Glucksmann, the joint PS–Place publique candidate.
+
+  # --- Nathalie Arthaud ---------------------------------------------------------------
+  - id: nathalie-arthaud/page/meeting-26-septembre-2026
+    candidate_id: nathalie-arthaud
+    kind: page
+    url: https://www.lutte-ouvriere.org/portail/brochures/meeting-26-septembre-2026-discours-nathalie-arthaud-197446.html
+    trust_level: 1
+    label: "Meeting du 26 septembre 2026 : discours de Nathalie Arthaud"
+
+  - id: nathalie-arthaud/rss/lutte-ouvriere
+    candidate_id: nathalie-arthaud
+    kind: rss
+    url: https://www.lutte-ouvriere.org/rss.xml
+    trust_level: 2
+    label: Lutte ouvrière — fil RSS
+    max_items: 15
+
+  # --- Nicolas Dupont-Aignan ----------------------------------------------------------
+  - id: nicolas-dupont-aignan/rss/debout-la-france
+    candidate_id: nicolas-dupont-aignan
+    kind: rss
+    url: https://www.debout-la-france.fr/feed/
+    trust_level: 2
+    label: Debout la France — fil RSS
+    max_items: 15
+
+  # --- Raphaël Glucksmann -------------------------------------------------------------
+  - id: raphael-glucksmann/rss/place-publique
+    candidate_id: raphael-glucksmann
+    kind: rss
+    url: https://place-publique.eu/rss.xml
+    trust_level: 2
+    label: Place publique — fil RSS
+    max_items: 15
+
+  - id: raphael-glucksmann/page/lettre-aux-francais
+    candidate_id: raphael-glucksmann
+    kind: page
+    url: https://place-publique.eu/posts/2fgDdljEIy36rgxBjRyiQZ/raphael-glucksmann-sa-lettre-aux-francais
+    trust_level: 1
+    label: Raphaël Glucksmann — Sa lettre aux Français
+
+  # --- David Lisnard ------------------------------------------------------------------
+  # No feed. Pages written by his team, quoting him: level 2.
+  - id: david-lisnard/page/question-ia
+    candidate_id: david-lisnard
+    kind: page
+    url: https://www.unenouvelleenergie.fr/questions/quel-candidat-a-une-vision-sur-l-intelligence-artificielle/
+    trust_level: 2
+    label: "Nouvelle Énergie — Quel candidat a une vision sur l'intelligence artificielle ?"
+
+  - id: david-lisnard/page/livre-ia
+    candidate_id: david-lisnard
+    kind: page
+    url: https://www.unenouvelleenergie.fr/les-robots-le-pape-lia-et-nous-le-nouveau-livre-de-david-lisnard-est-disponible-en-librairie/
+    trust_level: 2
+    label: "« Les robots, le Pape, l'IA et nous » — présentation du livre"
+
+  # --- Fabien Roussel -----------------------------------------------------------------
+  - id: fabien-roussel/rss/pcf-numeriques
+    candidate_id: fabien-roussel
+    kind: rss
+    url: https://numeriques.pcf.fr/feed/
+    trust_level: 2
+    label: PCF, commission numérique — fil RSS
+    max_items: 15
+
+  - id: fabien-roussel/page/fete-humanite-2026
+    candidate_id: fabien-roussel
+    kind: page
+    url: https://www.pcf.fr/fete_de_lhumanite_2026_discours_de_fabien_roussel
+    trust_level: 1
+    label: Fête de l'Humanité 2026 — discours de Fabien Roussel
+
+  # --- François Ruffin ----------------------------------------------------------------
+  - id: francois-ruffin/rss/francoisruffin
+    candidate_id: francois-ruffin
+    kind: rss
+    url: https://francoisruffin.fr/feed/
+    trust_level: 1
+    label: François Ruffin — fil RSS du site
+    max_items: 15
+
+  - id: francois-ruffin/an/PA722142
+    candidate_id: francois-ruffin
+    kind: assemblee_nationale
+    trust_confirmed: true   # the record names each speaker
+    url: https://data.assemblee-nationale.fr/static/openData/repository/17/vp/syceronbrut/syseron.xml.zip
+    trust_level: 1
+    label: Assemblée nationale — compte rendu intégral
+    options: {acteur: PA722142, legislature: "17"}
+
+  # --- Marine Tondelier ---------------------------------------------------------------
+  - id: marine-tondelier/rss/blog
+    candidate_id: marine-tondelier
+    kind: rss
+    url: https://marinetondelier.fr/blog?format=rss
+    trust_level: 1
+    label: Blog de Marine Tondelier — fil RSS
+    max_items: 15
+
+  # The party's doctrine booklet, not signed by her; only the month (July 2026) is given,
+  # so no published_on: shown as "date non précisée".
+  - id: marine-tondelier/pdf/carnet-numerique
+    candidate_id: marine-tondelier
+    kind: pdf
+    url: https://marinetondelier.fr/s/Carnet-numerique.pdf
+    trust_level: 2
+    label: "Technodiversités — Reprendre la main sur le numérique (carnet de doctrine)"
+
+  # --- Already tracked: additions of 2026-11-04 ---------------------------------------
+  - id: gabriel-attal/page/programme-ia
+    candidate_id: gabriel-attal
+    kind: page
+    url: https://attalpresident.fr/programme/intelligence-artificielle
+    trust_level: 1
+    label: "Programme — Intelligence artificielle (chantier capital 04)"
+
+  - id: edouard-philippe/page/meeting-adidas-arena
+    candidate_id: edouard-philippe
+    kind: page
+    url: https://www.edouardphilippe.fr/actualites/grand-meeting-edouard-philippe-adidas-arena
+    trust_level: 1
+    label: Grand meeting à l'Adidas Arena — discours
+
+  - id: edouard-philippe/page/questions-ecole
+    candidate_id: edouard-philippe
+    kind: page
+    url: https://www.edouardphilippe.fr/questions-reponses/ecoles
+    trust_level: 2
+    label: "L'école : vos questions, les réponses d'Édouard Philippe"
+
+  - id: jean-luc-melenchon/rss/blog
+    candidate_id: jean-luc-melenchon
+    kind: rss
+    url: https://melenchon.fr/feed/
+    trust_level: 1
+    label: Le blog de Jean-Luc Mélenchon — fil RSS
+    max_items: 15
