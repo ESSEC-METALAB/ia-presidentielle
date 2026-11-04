@@ -4,9 +4,13 @@ Request shape from Mistral's documentation, "Custom Structured Outputs"
 (docs.mistral.ai, studio-api/conversations/structured-output/custom) and the Chat
 Completion API reference: `response_format = {"type": "json_schema", "json_schema":
 {"name", "schema", "strict"}}`, answer in `choices[0].message.content`, token counts in
-`usage.prompt_tokens` / `usage.completion_tokens`. Not yet exercised against the live
-API: api.mistral.ai is not reachable from the environment this was written in. The first
-real call is the test; a wrong shape fails loudly, as AnnotationUnavailableError.
+`usage.prompt_tokens` / `usage.completion_tokens`.
+
+First exercised against the live API on 2026-11-04 (mistral-large-4-0), which showed two
+things the documentation had not: greedy sampling (`temperature: 0`) is refused unless
+`top_p` is 1, and a reasoning model answers with a list of chunks, its reasoning
+("thinking") then the answer ("text"). Only the text chunks are the answer; the
+reasoning is neither returned nor logged.
 """
 
 import json
@@ -20,9 +24,21 @@ from observatoire.domain.errors import AnnotationUnavailableError
 API_URL = "https://api.mistral.ai/v1/chat/completions"
 
 
+class _Chunk(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    type: str
+    text: str = ""
+
+
 class _Message(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    content: str
+    content: str | list[_Chunk]
+
+    @property
+    def answer(self) -> str:
+        if isinstance(self.content, str):
+            return self.content
+        return "".join(chunk.text for chunk in self.content if chunk.type == "text")
 
 
 class _Choice(BaseModel):
@@ -48,6 +64,7 @@ def request_body(model: str, prompt: Prompt, schema: ResponseSchema) -> dict[str
     return {
         "model": model,
         "temperature": 0,
+        "top_p": 1,
         "messages": [
             {"role": "system", "content": prompt.system},
             {"role": "user", "content": prompt.user},
@@ -98,7 +115,7 @@ def _parsed(content: bytes) -> LLMResponse:
         raise AnnotationUnavailableError("mistral: no choice in the response")
     return LLMResponse(
         model=completion.model,
-        content=completion.choices[0].message.content,
+        content=completion.choices[0].message.answer,
         input_tokens=completion.usage.prompt_tokens,
         output_tokens=completion.usage.completion_tokens,
     )

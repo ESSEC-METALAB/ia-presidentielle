@@ -82,14 +82,20 @@ class AnnotateDocuments:
         since: date | None = None,
         limit: int | None = None,
         rebuild: bool = False,
+        covered_by: Sequence[str] = (),
     ) -> AnnotationReport:
         """Annotates at most `limit` passages; the rest stay pending for the next run.
 
         `rebuild` annotates again what this annotator already did, so that changed gates
-        or prefilter apply to it too.
+        or prefilter apply to it too. `covered_by`: annotator versions of cross-verified
+        editions. A passage one of them annotated as it is now is not sent again: the
+        register shows the verified annotation anyway, so another one would cost a call
+        and change nothing.
         """
         version = self._annotator.version
-        done = {} if rebuild else self._store.annotated_segments(version)
+        done = self._covered(covered_by, version)
+        if not rebuild:
+            done.update(self._store.annotated_segments(version))
         tally = _Tally()
         for passage in self._passages(candidates, sources, since):
             tally.segments_read += 1
@@ -114,6 +120,13 @@ class AnnotateDocuments:
             statements=tally.statements,
             rejected=dict(tally.rejected),
         )
+
+    def _covered(self, editions: Sequence[str], version: str) -> dict[str, str]:
+        covered: dict[str, str] = {}
+        for edition in editions:
+            if edition != version:
+                covered.update(self._store.annotated_segments(edition))
+        return covered
 
     def _passages(
         self, candidates: Sequence[Candidate], sources: Sequence[Source], since: date | None

@@ -68,6 +68,7 @@ def _run(
     since: date | None = None,
     limit: int | None = None,
     rebuild: bool = False,
+    covered_by: tuple[str, ...] = (),
 ) -> AnnotationReport:
     use_case = AnnotateDocuments(
         corpus=store,
@@ -78,7 +79,9 @@ def _run(
         reviewer=GATES,
         clock=FrozenClock(),
     )
-    return use_case.run([candidate()], [source()], since=since, limit=limit, rebuild=rebuild)
+    return use_case.run(
+        [candidate()], [source()], since=since, limit=limit, rebuild=rebuild, covered_by=covered_by
+    )
 
 
 def test_only_passages_that_pass_the_prefilter_reach_the_annotator() -> None:
@@ -206,3 +209,37 @@ def test_a_rebuild_annotates_again_what_was_already_annotated() -> None:
     report = _run(store, annotator, rebuild=True)
 
     assert (report.annotated, report.already_annotated) == (1, 0)
+
+
+def test_a_passage_a_verified_edition_covers_is_not_sent_again() -> None:
+    store = InMemoryStore()
+    _segmented(store, document(AI), AI)
+    _run(store, ScriptedAnnotator({}, version="edition"))
+    daily = ScriptedAnnotator({}, version="daily")
+
+    report = _run(store, daily, covered_by=("edition",))
+
+    assert (report.already_annotated, daily.asked) == (1, [])
+
+
+def test_a_passage_changed_since_the_verified_edition_is_annotated() -> None:
+    store = InMemoryStore()
+    doc = document(AI)
+    _segmented(store, doc, AI)
+    _run(store, ScriptedAnnotator({}, version="edition"))
+    _segmented(store, doc, AI + " Et la formation.")
+
+    report = _run(store, ScriptedAnnotator({}, version="daily"), covered_by=("edition",))
+
+    assert report.annotated == 1
+
+
+def test_replaying_a_verified_edition_with_a_rebuild_annotates_it_again() -> None:
+    store = InMemoryStore()
+    _segmented(store, document(AI), AI)
+    edition = ScriptedAnnotator({}, version="edition")
+    _run(store, edition)
+
+    report = _run(store, edition, rebuild=True, covered_by=("edition",))
+
+    assert report.annotated == 1

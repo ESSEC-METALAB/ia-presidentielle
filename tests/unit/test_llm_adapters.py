@@ -135,6 +135,41 @@ def test_mistral_sends_a_strict_json_schema_request_and_reads_usage() -> None:
     assert (response.input_tokens, response.output_tokens) == (120, 30)
 
 
+def test_mistral_asks_for_greedy_sampling_with_top_p_one() -> None:
+    seen: list[httpx.Request] = []
+
+    def answer(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        body = {
+            "model": "m-test",
+            "choices": [{"message": {"content": ANSWER}}],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1},
+        }
+        return httpx.Response(200, json=body)
+
+    _mistral(httpx.MockTransport(answer)).complete(_prompt(), SCHEMA)
+
+    sent = json.loads(seen[0].content)
+    assert (sent["temperature"], sent["top_p"]) == (0, 1)
+
+
+def test_a_reasoning_model_answer_keeps_the_text_and_drops_the_reasoning() -> None:
+    chunks = [
+        {"type": "thinking", "thinking": [{"type": "text", "text": "Raisonnement."}]},
+        {"type": "text", "text": ANSWER},
+    ]
+    body = {
+        "model": "m-test",
+        "choices": [{"message": {"role": "assistant", "content": chunks}}],
+        "usage": {"prompt_tokens": 10, "completion_tokens": 40},
+    }
+    client = _mistral(httpx.MockTransport(lambda request: httpx.Response(200, json=body)))
+
+    response = client.complete(_prompt(), SCHEMA)
+
+    assert response.content == ANSWER
+
+
 @pytest.mark.parametrize(
     "reply",
     [
