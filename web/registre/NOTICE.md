@@ -16,9 +16,14 @@ Do not use the runtime's `window.__resources` hook instead: it switches the runt
 "bundled" mode, which skips re-reading the page's template, and the barometer's table rows
 then never render (measured).
 
-`.image-slots.state.json` is the prototype's portrait store, empty: the cards show
-initials. Portraits, if ever added, are shown in black and white at one format for every
-candidate (methodology, "Égalité de traitement").
+`.image-slots.state.json` is the prototype's portrait store: one `portrait-<candidate id>`
+entry per candidate, a JPEG data URL. The 13 portraits come from Wikimedia Commons (each
+person's Wikidata image, or a more neutral one from their Commons category where that one
+showed them mid-speech), under a free licence or reusable with attribution; they were
+cropped to one 4:5 format (480 × 600) and turned to black and white, the same treatment
+for every candidate (methodology, "Égalité de traitement"). Authors and licences are on
+the "Mentions légales" page, "Crédits photos". A candidate added later without a portrait
+shows initials until one is added the same way.
 
 To refresh a font: request the same Google Fonts CSS2 URL with a recent browser's
 User-Agent, keep the latin and latin-ext `@font-face` blocks, download their `woff2`
