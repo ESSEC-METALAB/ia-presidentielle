@@ -13,6 +13,7 @@ from observatoire.domain.models import (
     in_window,
 )
 from observatoire.domain.ports import Clock, DocumentRepository, SourceReader, SourceRunLog
+from observatoire.services.dedup import text_similarity
 
 _log = structlog.get_logger(__name__)
 _MAX_ERROR_CHARS = 300
@@ -24,6 +25,11 @@ class CollectDaily:
     A failing source never stops the run (CLAUDE.md §4): it is logged, recorded as
     failed, and the next source is read. The collection window is enforced here, for
     every reader, whatever each reader does with `since`.
+
+    A text whose similarity to a stored version of the same source and URL reaches
+    `near_duplicate_similarity` is a duplicate too: the same page or PDF extracted twice
+    with small differences would otherwise come back as new passages, to annotate and
+    count again. 1.0, the default, keeps only exact copies out.
     """
 
     def __init__(
@@ -32,11 +38,14 @@ class CollectDaily:
         repository: DocumentRepository,
         run_log: SourceRunLog,
         clock: Clock,
+        *,
+        near_duplicate_similarity: float = 1.0,
     ) -> None:
         self._readers = readers
         self._repository = repository
         self._run_log = run_log
         self._clock = clock
+        self._near_duplicate = near_duplicate_similarity
 
     def run(
         self, sources: Sequence[Source], *, run_id: str, since: date | None = None
@@ -68,11 +77,26 @@ class CollectDaily:
     def _store(self, documents: list[RawDocument]) -> tuple[int, int]:
         new = 0
         for document in documents:
-            if self._repository.exists(document.content_hash):
+            if self._is_known(document):
                 continue
             self._repository.save(document)
             new += 1
         return new, len(documents) - new
+
+    def _is_known(self, document: RawDocument) -> bool:
+        if self._repository.exists(document.content_hash):
+            return True
+        for stored in self._repository.stored_texts(document.source_id, document.url):
+            similarity = text_similarity(stored, document.text)
+            if similarity >= self._near_duplicate:
+                _log.info(
+                    "near_duplicate_skipped",
+                    source_id=document.source_id,
+                    document_id=document.content_hash[:16],
+                    similarity=round(similarity, 4),
+                )
+                return True
+        return False
 
     def _finish(
         self,

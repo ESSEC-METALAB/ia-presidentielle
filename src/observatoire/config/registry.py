@@ -34,11 +34,16 @@ class CrawlerSettings(BaseModel):
 
 
 class CollectionSettings(BaseModel):
-    """What period the corpus covers. Texts published before `since` are not collected."""
+    """What period the corpus covers. Texts published before `since` are not collected.
+
+    `near_duplicate_similarity`: from this similarity to a stored version of the same
+    source and URL, a text is the same text extracted again, not a new one.
+    """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     since: date
+    near_duplicate_similarity: float = Field(default=1.0, gt=0, le=1)
 
 
 class TaxonomySettings(BaseModel):

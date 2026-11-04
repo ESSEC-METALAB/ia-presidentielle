@@ -6,7 +6,7 @@ import pytest
 
 from observatoire.services.candidate_matcher import AliasMatcher
 from observatoire.services.dates import parse_date_prefix
-from observatoire.services.dedup import content_hash
+from observatoire.services.dedup import content_hash, text_similarity
 from support import candidate
 
 
@@ -19,6 +19,29 @@ def test_layout_variants_of_one_text_share_a_dedup_key() -> None:
 
 def test_different_wording_gets_a_different_dedup_key() -> None:
     assert content_hash("Le numérique pour tous.") != content_hash("Le numérique pour chacun.")
+
+
+def test_similarity_ignores_case_punctuation_and_spacing() -> None:
+    first = "L\u2019IA au service des Français : progrès, souveraineté, vigilance."
+    second = "L \u2019 IA AU SERVICE DES FRANÇAIS — progrès souveraineté vigilance"
+
+    assert text_similarity(first, second) == 1.0
+
+
+def test_similarity_of_unrelated_texts_is_low() -> None:
+    first = "Nous créerons une autorité de contrôle des algorithmes publics."
+    second = "La retraite à soixante ans pour les carrières longues sera rétablie."
+
+    assert text_similarity(first, second) < 0.1
+
+
+def test_similarity_of_two_empty_texts_is_complete() -> None:
+    assert text_similarity("", " … ") == 1.0
+
+
+def test_similarity_of_very_short_texts_compares_their_words() -> None:
+    assert text_similarity("Oui.", "oui") == 1.0
+    assert text_similarity("Oui.", "Non.") == 0.0
 
 
 @pytest.mark.parametrize(

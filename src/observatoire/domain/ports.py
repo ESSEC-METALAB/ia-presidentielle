@@ -54,6 +54,10 @@ class TextExtractor(Protocol):
 class DocumentRepository(Protocol):
     def exists(self, content_hash: str) -> bool: ...
 
+    def stored_texts(self, source_id: str, url: str) -> list[str]:
+        """Texts already stored for this source and URL: earlier versions of a page."""
+        ...
+
     def save(self, document: RawDocument) -> None: ...
 
 

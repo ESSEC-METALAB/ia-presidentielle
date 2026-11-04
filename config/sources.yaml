@@ -20,6 +20,13 @@
 # out of scope: they are counted on the corpus page, never silently dropped.
 collection:
   since: 2026-07-01
+  # The same URL read again can extract slightly differently (another PDF library, one
+  # more space): from this share of shared five-word sequences with a stored version, it
+  # is the same text, not a new one. Measured on 2026-11-04: the Retailleau programme PDF
+  # extracted twice scores 0.996; a lafranceinsoumise.fr article edited after publication
+  # 0.92 (kept as a new version: an added sentence may be the one about AI); a
+  # rewritten page below 0.5.
+  near_duplicate_similarity: 0.95
 
 crawler:
   user_agent: "ESSECMetalabBot/1.0 (+https://metalab.essec.edu)"

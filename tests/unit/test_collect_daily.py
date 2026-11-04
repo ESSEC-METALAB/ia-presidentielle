@@ -70,6 +70,57 @@ def test_every_source_outcome_is_logged_with_its_duration() -> None:
     assert [(o.source_id, o.duration_ms) for o in store.outcomes] == [("a", 250), ("b", 250)]
 
 
+_PAGE = (
+    "Nous créerons une autorité indépendante chargée de contrôler les usages publics de "
+    "l'intelligence artificielle, avec un budget propre et des moyens d'enquête réels."
+)
+
+
+def _version(text: str) -> RawDocument:
+    return document(text).model_copy(update={"url": "https://parti-exemple.test/programme"})
+
+
+def _collect_near(store: InMemoryStore, *documents: RawDocument) -> CollectionReport:
+    use_case = CollectDaily(
+        {"rss": FakeReader(documents)}, store, store, FrozenClock(), near_duplicate_similarity=0.9
+    )
+    return use_case.run([source()], run_id="run-1")
+
+
+def test_the_same_page_extracted_slightly_differently_is_a_duplicate() -> None:
+    store = InMemoryStore([_version(_PAGE)])
+
+    report = _collect_near(store, _version(_PAGE.replace("l'intelligence", "l' intelligence")))
+
+    (outcome,) = report.outcomes
+    assert (outcome.new, outcome.duplicates, len(store.documents)) == (0, 1, 1)
+
+
+def test_a_rewritten_page_at_the_same_url_is_stored_as_a_new_version() -> None:
+    store = InMemoryStore([_version(_PAGE)])
+
+    report = _collect_near(store, _version("Une tout autre page, réécrite de fond en comble."))
+
+    (outcome,) = report.outcomes
+    assert (outcome.new, len(store.documents)) == (1, 2)
+
+
+def test_a_similar_text_at_another_url_is_not_a_duplicate() -> None:
+    store = InMemoryStore([_version(_PAGE)])
+
+    report = _collect_near(store, document(_PAGE + " Ajout."))
+
+    assert report.outcomes[0].new == 1
+
+
+def test_by_default_only_exact_copies_are_duplicates() -> None:
+    store = InMemoryStore([_version(_PAGE)])
+
+    report = _collect({"rss": FakeReader([_version(_PAGE + " Ajout.")])}, store, source())
+
+    assert report.outcomes[0].new == 1
+
+
 def test_documents_published_before_the_window_are_counted_not_stored() -> None:
     store = InMemoryStore()
     reader = FakeReader([

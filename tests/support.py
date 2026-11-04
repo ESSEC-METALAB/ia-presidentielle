@@ -78,6 +78,9 @@ class InMemoryStore:
     def exists(self, content_hash: str) -> bool:
         return content_hash in self.documents
 
+    def stored_texts(self, source_id: str, url: str) -> list[str]:
+        return [d.text for d in self.documents.values() if (d.source_id, d.url) == (source_id, url)]
+
     def save(self, document: RawDocument) -> None:
         self.documents.setdefault(document.content_hash, document)
 

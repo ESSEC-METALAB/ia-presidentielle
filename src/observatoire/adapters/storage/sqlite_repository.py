@@ -67,6 +67,10 @@ class SqliteRepository:
         query = "SELECT 1 FROM documents WHERE content_hash = ?"
         return self._connection.execute(query, (content_hash,)).fetchone() is not None
 
+    def stored_texts(self, source_id: str, url: str) -> list[str]:
+        query = "SELECT text FROM documents WHERE source_id = ? AND url = ?"
+        return [row["text"] for row in self._connection.execute(query, (source_id, url))]
+
     def save(self, document: RawDocument) -> None:
         values = (
             document.content_hash,
