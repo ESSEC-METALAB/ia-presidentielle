@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     llm_provider: Literal["fake", "mistral"] = "fake"
     mistral_api_key: SecretStr | None = None
     mistral_model: str | None = None
+    # One annotation call. A reasoning model (mistral-large-4-0) thinks before it answers:
+    # long passages took over 60 s on 2026-11-04 and were left pending.
+    llm_timeout_seconds: float = Field(default=180, gt=0)
     database_path: Path = Path("data/observatoire.db")
     config_dir: Path = Path("config")
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"

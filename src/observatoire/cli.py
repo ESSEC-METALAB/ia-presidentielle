@@ -257,7 +257,7 @@ def _annotate(args: argparse.Namespace, settings: Settings, registry: Registry) 
     clock = SystemClock()
     taxonomy = registry.taxonomy
     with (
-        httpx.Client(timeout=registry.crawler.timeout_seconds) as http,
+        httpx.Client(timeout=settings.llm_timeout_seconds) as http,
         closing(SqliteRepository(settings.database_path)) as repository,
     ):
         client = _llm_client(args, settings, http)
