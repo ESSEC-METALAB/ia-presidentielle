@@ -11,7 +11,7 @@ DATA_DIRS := data/raw data/processed data/reports
 # Recorded annotation answers replayed by `make annotate-replay` (see docs/methodology.md).
 RESPONSES ?= annotations/2026-11-03-brouillon.jsonl
 
-.PHONY: help install install-pip format lint typecheck test check demo collect legacy-db import-legacy segment corpus annotate annotate-batch annotate-replay register site usage watch daily serve schedule unschedule schedule-status clean
+.PHONY: help install install-pip format lint typecheck test check demo collect legacy-db import-legacy segment corpus annotate annotate-batch annotate-replay register site usage watch daily serve package schedule unschedule schedule-status clean
 
 help: ## List the targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) \
@@ -87,6 +87,9 @@ daily: ## The morning update: collect, segment, annotate, watch, rebuild the sit
 
 serve: ## Serve the site on http://localhost:8000 (SITE_PORT in .env); works with no internet
 	scripts/serve.sh
+
+package: ## Zip the built site with double-click launchers for any computer: dist/registre-ia-2027-hors-ligne.zip
+	scripts/package.sh
 
 schedule: ## Install the 08:00 daily update and the local site server on this machine (macOS/Linux)
 	scripts/schedule.sh install

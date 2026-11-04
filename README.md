@@ -30,10 +30,38 @@ sans commentaire ni note. Publié par l'**ESSEC Metalab**.
 
 ---
 
+## Consulter le registre hors ligne, sans rien installer
+
+Pour lire le registre sur n'importe quel ordinateur (Mac, Windows, Linux), sans internet
+et sans installer Python ni le projet :
+
+```bash
+make package     # → dist/registre-ia-2027-hors-ligne.zip (≈ 800 Ko), à partir du site construit
+```
+
+Sur l'ordinateur du lecteur : décompresser l'archive, puis double-cliquer
+« Ouvrir le registre (Mac).command » ou « Ouvrir le registre (Windows).bat »
+(Linux : `bash ouvrir-le-registre-linux.sh`). Le navigateur s'ouvre sur le registre ;
+la petite fenêtre qui reste ouverte est le serveur local, à fermer en fin de lecture.
+Le fichier `LISEZ-MOI.txt` de l'archive détaille les avertissements de sécurité de macOS
+et de Windows au premier lancement.
+
+Un serveur local est indispensable : ouvert directement (`file://`), le site resterait
+sans polices ni composants, que les navigateurs bloquent. Le lanceur utilise ce que le
+système fournit déjà — python3 ou perl sur Mac et Linux, PowerShell sous Windows — et
+n'écoute que sur l'ordinateur lui-même. Cette copie est figée : sa date de fabrication
+figure en bas de chaque page. Pour un registre mis à jour chaque matin, installer le
+projet complet (ci-dessous).
+
+---
+
 ## Démarrer en cinq minutes
 
 Il faut `git`, Python 3.11+, [`uv`](https://docs.astral.sh/uv/) et une machine macOS ou
 Linux (sous Windows : [WSL](https://learn.microsoft.com/fr-fr/windows/wsl/install)).
+Sur un Mac neuf : `xcode-select --install` (fournit git et python3), puis
+`curl -LsSf https://astral.sh/uv/install.sh | sh` (ou `brew install uv`) et rouvrir le
+Terminal.
 
 ```bash
 git clone https://github.com/ESSEC-METALAB/ia-presidentielle.git
@@ -282,7 +310,9 @@ cli.py  (assemble les pièces)
 config/         candidats, sources, découpage, axes et contrôles, veille, éditions vérifiées
 web/registre/   le site (prototype v3) et ses bibliothèques et polices, pour le hors-ligne
 annotations/    réponses d'annotation versionnées et vérification
-scripts/        daily.sh (mise à jour), serve.sh (site), schedule.sh (planification)
+scripts/        daily.sh (mise à jour), serve.sh (site), schedule.sh (planification),
+                package.sh (archive hors ligne)
+packaging/      lanceurs et mini-serveurs de l'archive hors ligne (Mac, Windows, Linux)
 docs/           methodology.md (règles et constats), sources-a-verifier.md, adr/
 tests/          295 tests, sans réseau ni clé ; couverture 100 % du domaine et des cas d'usage
 ```

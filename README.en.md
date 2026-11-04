@@ -30,10 +30,37 @@ with no commentary and no rating. Published by the **ESSEC Metalab**.
 
 ---
 
+## Read the register offline, with nothing to install
+
+To read the register on any computer (Mac, Windows, Linux), without internet and without
+installing Python or the project:
+
+```bash
+make package     # → dist/registre-ia-2027-hors-ligne.zip (≈ 800 KB), from the built site
+```
+
+On the reader's computer: unzip the archive, then double-click
+"Ouvrir le registre (Mac).command" or "Ouvrir le registre (Windows).bat"
+(Linux: `bash ouvrir-le-registre-linux.sh`). The browser opens on the register; the small
+window that stays open is the local server, to close when done.
+The archive's `LISEZ-MOI.txt` (in French) covers the macOS and Windows security prompts
+on first launch.
+
+A local server is required: opened directly (`file://`), the site would have no fonts or
+components, which browsers block. The launcher uses what the system already ships —
+python3 or perl on Mac and Linux, PowerShell on Windows — and listens on that computer
+only. This copy is frozen: its build date is at the bottom of every page. For a register
+updated every morning, install the full project (below).
+
+---
+
 ## Start in five minutes
 
 You need `git`, Python 3.11+, [`uv`](https://docs.astral.sh/uv/) and a macOS or Linux
 machine (on Windows: [WSL](https://learn.microsoft.com/en-us/windows/wsl/install)).
+On a fresh Mac: `xcode-select --install` (provides git and python3), then
+`curl -LsSf https://astral.sh/uv/install.sh | sh` (or `brew install uv`) and reopen
+Terminal.
 
 ```bash
 git clone https://github.com/ESSEC-METALAB/ia-presidentielle.git
@@ -278,7 +305,9 @@ cli.py  (wires the pieces together)
 config/         candidates, sources, splitting, axes and gates, watch, verified editions
 web/registre/   the site (prototype v3) with its libraries and fonts, for offline use
 annotations/    versioned annotation answers and verification
-scripts/        daily.sh (update), serve.sh (site), schedule.sh (scheduling)
+scripts/        daily.sh (update), serve.sh (site), schedule.sh (scheduling),
+                package.sh (offline archive)
+packaging/      launchers and tiny servers of the offline archive (Mac, Windows, Linux)
 docs/           methodology.md (rules and findings), sources-a-verifier.md, adr/
 tests/          295 tests, no network or key; 100 % coverage of domain and use cases
 ```

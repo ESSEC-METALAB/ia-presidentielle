@@ -1,0 +1,43 @@
+REGISTRE IA 2027 — VERSION HORS LIGNE
+=====================================
+
+Ce dossier contient tout le registre : les déclarations, le site, ses polices et ses
+scripts. Aucune connexion internet n'est nécessaire, et rien n'est à installer.
+
+1. Décompresser
+   Double-cliquez sur l'archive .zip, puis ouvrez le dossier « registre-ia-2027 ».
+   Sous Windows : clic droit sur l'archive > « Extraire tout… ». Ne lancez pas le registre
+   depuis l'aperçu du zip : il lui faut le dossier « site » à côté.
+
+2. Ouvrir
+   Mac      Double-cliquez « Ouvrir le registre (Mac).command ».
+            La première fois, macOS peut refuser un fichier téléchargé (« développeur non
+            identifié ») : faites clic droit (ou Ctrl+clic) > Ouvrir > Ouvrir. Si ce n'est pas
+            proposé : Réglages Système > Confidentialité et sécurité > « Ouvrir quand même ».
+   Windows  Double-cliquez « Ouvrir le registre (Windows).bat ».
+            Si Windows affiche « Windows a protégé votre ordinateur » : Informations
+            complémentaires > Exécuter quand même.
+   Linux    Dans un terminal : bash ouvrir-le-registre-linux.sh
+
+   Le navigateur s'ouvre sur http://127.0.0.1:8000 (Windows : http://localhost:8000),
+   ou 8001, 8002… si ce port est déjà pris.
+   Une fenêtre noire reste ouverte : c'est le petit serveur local. Laissez-la ouverte
+   pendant la consultation ; fermez-la pour arrêter.
+
+3. Pourquoi un serveur ?
+   Les navigateurs bloquent les polices et les composants d'une page ouverte directement
+   comme fichier (adresse file://). Le serveur ne sert que ce dossier, et seulement à cet
+   ordinateur : il n'est pas visible depuis le réseau.
+   Il utilise ce qui est déjà fourni avec le système : python3 ou perl sur Mac et Linux,
+   PowerShell sous Windows.
+
+Si rien ne s'ouvre
+   - Le navigateur ne s'est pas ouvert : copiez l'adresse affichée dans la fenêtre noire.
+   - « Aucun port libre » : fermez une autre fenêtre du registre déjà ouverte.
+   - Mac, « Ni python3 ni perl » : ouvrez Terminal et tapez  xcode-select --install
+     puis relancez.
+
+Mise à jour
+   Cette copie est figée à la date de sa fabrication (indiquée en bas du site). Pour une
+   version à jour, demandez une nouvelle archive, ou installez le projet complet
+   (README.md du dépôt : « make install », « make site », « make serve », « make schedule »).
