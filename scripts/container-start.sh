@@ -3,6 +3,7 @@
 #
 #   1. first start, empty volume: build the register from the previous version's data
 #      and the verified edition, without any model call (same steps as `make site`);
+#      later starts: rebuild the site from the stored data, for a new template;
 #   2. every day at DAILY_TIME (Europe/Paris by default, TZ), the morning update;
 #   3. in the foreground, the site and its "Actualiser" button (`observatoire web`).
 #
@@ -11,6 +12,8 @@
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
 mkdir -p data/raw data/reports data/logs
+# A fresh container runs no update: a lock left by a run the redeploy cut short is stale.
+rm -rf data/.daily.lock
 # shellcheck source=scripts/env.sh
 source scripts/env.sh
 
@@ -45,6 +48,11 @@ daily_loop() {
 
 if [[ ! -f data/observatoire.db ]]; then
     bootstrap >>data/logs/bootstrap.log 2>&1 || echo "échec du premier démarrage : data/logs/bootstrap.log"
+else
+    # A redeploy may bring a new site template or configuration: the site is rebuilt from
+    # the stored data at once (seconds, no model call), not at the next update.
+    observatoire register --out data/site >>data/logs/bootstrap.log 2>&1 ||
+        echo "échec de la reconstruction du site : data/logs/bootstrap.log"
 fi
 daily_loop &
 exec observatoire web --port "$(env_value SITE_PORT 8000)"
