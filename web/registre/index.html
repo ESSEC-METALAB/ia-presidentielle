@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IA 2027 — Registre des positions sur l'IA</title>
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+<link rel="icon" href="./favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <!-- Offline: React and ReactDOM from local copies, byte-identical to the CDN files the
      runtime pins (same SHA-384). The runtime downloads them only when window.React is
      missing. Never define window.__resources here: it switches the runtime to bundled
@@ -728,7 +732,9 @@ class Component extends DCLogic {
     fetch(".image-slots.state.json", { cache: "no-store" }).then(r => r.ok ? r.json() : {}).then(j => {
       const m = {};
       Object.keys(j || {}).forEach(k => { if (!k.startsWith("portrait-")) return; const v = j[k]; const u = typeof v === "string" ? v : v && v.u; if (u && /^data:image\//.test(u)) m[k.slice(9)] = u; });
-      this.setState({ portraits: m });
+      // A data URL holds a ";" ("data:image/jpeg;base64,…"), and the runtime splits inline
+      // styles on ";": as a CSS background it would break the declaration. A blob URL has none.
+      return Promise.all(Object.keys(m).map(id => fetch(m[id]).then(r => r.blob()).then(b => { m[id] = URL.createObjectURL(b); }))).then(() => this.setState({ portraits: m }));
     }).catch(() => {});
   }
   route() {
