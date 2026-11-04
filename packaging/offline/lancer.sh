@@ -26,7 +26,8 @@ has_python() {
         ! xcode-select -p >/dev/null 2>&1; then
         return 1
     fi
-    python3 -c "import http.server" >/dev/null 2>&1
+    # --directory needs Python 3.7 or later.
+    python3 -c 'import sys, http.server; sys.exit(sys.version_info < (3, 7))' >/dev/null 2>&1
 }
 
 open_when_ready() {
@@ -36,7 +37,7 @@ open_when_ready() {
         [ "$tries" -gt 100 ] && return 1
         sleep 0.1
     done
-    if command -v open >/dev/null 2>&1; then open "$url"
+    if [ "$(uname)" = Darwin ]; then open "$url"
     elif command -v xdg-open >/dev/null 2>&1; then xdg-open "$url" >/dev/null 2>&1
     fi
 }

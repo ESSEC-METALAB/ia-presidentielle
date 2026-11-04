@@ -11,9 +11,17 @@ scripts. Aucune connexion internet n'est nécessaire, et rien n'est à installer
 
 2. Ouvrir
    Mac      Double-cliquez « Ouvrir le registre (Mac).command ».
-            La première fois, macOS peut refuser un fichier téléchargé (« développeur non
-            identifié ») : faites clic droit (ou Ctrl+clic) > Ouvrir > Ouvrir. Si ce n'est pas
-            proposé : Réglages Système > Confidentialité et sécurité > « Ouvrir quand même ».
+            La première fois, macOS bloque ce fichier téléchargé (« Apple n'a pas pu
+            confirmer… » ou « développeur non identifié »). Sur macOS 15 et plus récent :
+              a. Cliquez « Terminé » (jamais « Placer dans la corbeille »).
+              b. Ouvrez Réglages Système > Confidentialité et sécurité, descendez jusqu'à
+                 « Sécurité » et cliquez « Ouvrir quand même » (ce bouton n'apparaît que
+                 peu de temps après le blocage).
+              c. Double-cliquez à nouveau le fichier, cliquez « Ouvrir quand même », puis
+                 saisissez le mot de passe du Mac (ou Touch ID).
+            Sur macOS 14 et plus ancien : clic droit (ou Ctrl+clic) > Ouvrir > Ouvrir.
+            Si macOS demande si « Terminal » peut accéder au dossier « Téléchargements »
+            (ou Bureau, Documents) : répondez OK (Autoriser).
    Windows  Double-cliquez « Ouvrir le registre (Windows).bat ».
             Si Windows affiche « Windows a protégé votre ordinateur » : Informations
             complémentaires > Exécuter quand même.
@@ -34,6 +42,18 @@ scripts. Aucune connexion internet n'est nécessaire, et rien n'est à installer
 Si rien ne s'ouvre
    - Le navigateur ne s'est pas ouvert : copiez l'adresse affichée dans la fenêtre noire.
    - « Aucun port libre » : fermez une autre fenêtre du registre déjà ouverte.
+   - Mac, « Operation not permitted » ou accès refusé à Terminal : Réglages Système >
+     Confidentialité et sécurité > Fichiers et dossiers > Terminal, activez
+     « Dossier Téléchargements » (ou Bureau, Documents), puis relancez. Ou déplacez le
+     dossier « registre-ia-2027 » dans votre dossier personnel et relancez.
+   - Windows, message en anglais mentionnant « execution policy », « not digitally signed »
+     ou « language mode » : l'ordinateur est géré (travail, école) et son service
+     informatique bloque les scripts PowerShell. Essayez d'abord : supprimez le dossier
+     extrait, faites clic droit sur l'archive .zip > Propriétés > cochez « Débloquer » > OK,
+     puis « Extraire tout… » à nouveau. Si le blocage persiste, utilisez un ordinateur
+     personnel ou demandez à votre service informatique.
+   - Mac, pour les habitués du Terminal : xattr -dr com.apple.quarantine <dossier
+     registre-ia-2027> lève le blocage de sécurité d'un coup.
    - Mac, « Ni python3 ni perl » : ouvrez Terminal et tapez  xcode-select --install
      puis relancez.
 
