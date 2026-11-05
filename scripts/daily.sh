@@ -110,4 +110,8 @@ echo
 echo "##### Bilan"
 printf '  %s\n' "${SUMMARY[@]}"
 echo "  site : data/site/index.html — veille : data/reports/veille.md — journal : $LOG"
+# When the register was last updated, whoever asked (schedule or the site's button): the
+# date the site shows next to its "Actualiser" button (`observatoire web`).
+printf '{"finishedAt": "%s", "exitCode": %d}\n' "$(date -u +%Y-%m-%dT%H:%M:%S+00:00)" \
+    $((SITE == 0 ? 0 : 1)) >data/last-update.json
 exit $((SITE == 0 ? 0 : 1))

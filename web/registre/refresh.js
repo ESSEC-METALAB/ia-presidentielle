@@ -84,15 +84,26 @@
     root.toggleAttribute("data-running", running);
     button.disabled = running;
     label.textContent = running ? t("running") : t("idle");
+    var last = latest(status);
     if (message) {
       note.textContent = message;
-    } else if (status && status.exitCode && status.exitCode !== 0) {
+    } else if (last && last.code) {
       note.textContent = t("failed");
-    } else if (status && status.finishedAt) {
-      note.textContent = t("last") + " : " + time(status.finishedAt, true);
+    } else if (last) {
+      note.textContent = t("last") + " : " + time(last.at, true);
     } else {
       note.textContent = t("never");
     }
+  }
+
+  // The most recent update, scheduled or asked from this button: the scheduled one is only
+  // known through lastUpdateAt; a button run cut short only through finishedAt.
+  function latest(status) {
+    if (!status) return null;
+    var scheduled = status.lastUpdateAt ? { at: status.lastUpdateAt, code: status.lastUpdateExitCode } : null;
+    var asked = status.finishedAt ? { at: status.finishedAt, code: status.exitCode } : null;
+    if (!scheduled || !asked) return scheduled || asked;
+    return new Date(asked.at) > new Date(scheduled.at) ? asked : scheduled;
   }
 
   function getStatus() {

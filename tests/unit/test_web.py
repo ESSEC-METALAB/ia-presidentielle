@@ -105,6 +105,38 @@ def test_the_last_run_survives_a_restart(tmp_path: Path) -> None:
     assert status.next_allowed_at == T0 + timedelta(minutes=10)
 
 
+def _job_with_last_update(tmp_path: Path, content: str) -> RefreshJob:
+    (tmp_path / "last-update.json").write_text(content, encoding="utf-8")
+    return RefreshJob(
+        command=["scripts/daily.sh"],
+        workdir=tmp_path,
+        state_path=tmp_path / "refresh.json",
+        log_path=tmp_path / "logs" / "refresh.log",
+        cooldown=timedelta(minutes=10),
+        clock=FrozenClock(),
+        last_update_path=tmp_path / "last-update.json",
+        launcher=FakeLauncher(),
+    )
+
+
+def test_the_last_update_of_any_origin_is_reported(tmp_path: Path) -> None:
+    job = _job_with_last_update(
+        tmp_path, '{"finishedAt": "2026-11-05T07:04:12+00:00", "exitCode": 0}'
+    )
+
+    body = job.status().as_json()
+
+    assert (body["lastUpdateAt"], body["lastUpdateExitCode"]) == ("2026-11-05T07:04:12+00:00", 0)
+    assert body["finishedAt"] is None
+
+
+@pytest.mark.parametrize("content", ["", "[]", '{"finishedAt": "hier", "exitCode": "0"}'])
+def test_an_unreadable_last_update_is_unknown(tmp_path: Path, content: str) -> None:
+    status = _job_with_last_update(tmp_path, content).status()
+
+    assert (status.last_update_at, status.last_update_exit_code) == (None, None)
+
+
 def test_a_damaged_state_file_is_a_fresh_start(tmp_path: Path) -> None:
     (tmp_path / "refresh.json").write_text("[]", encoding="utf-8")
 

@@ -145,6 +145,7 @@ def _web(args: argparse.Namespace, settings: Settings, registry: Registry) -> in
         workdir=Path.cwd(),
         state_path=settings.database_path.parent / "refresh.json",
         log_path=settings.database_path.parent / "logs" / "refresh.log",
+        last_update_path=settings.database_path.parent / "last-update.json",
         cooldown=timedelta(minutes=settings.refresh_cooldown_minutes),
         clock=SystemClock(),
     )

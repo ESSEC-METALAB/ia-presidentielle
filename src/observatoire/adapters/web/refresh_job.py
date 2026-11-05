@@ -6,7 +6,9 @@ hammering them under the Metalab's name. The annotation step only calls the mode
 passages that are new: a run that collects nothing new costs no model call.
 
 The last run is kept in a small JSON file, so a restarted server still knows when the
-register was last refreshed and how that ended.
+register was last refreshed and how that ended. The last update of any origin (this
+button, or the scheduled morning run) is read from the file the update command writes
+when it ends (`last_update_path`): that is the date the site shows.
 """
 
 import json
@@ -43,6 +45,8 @@ class RefreshStatus:
     finished_at: datetime | None
     exit_code: int | None
     next_allowed_at: datetime | None
+    last_update_at: datetime | None = None
+    last_update_exit_code: int | None = None
 
     def as_json(self) -> dict[str, object]:
         def iso(moment: datetime | None) -> str | None:
@@ -54,6 +58,8 @@ class RefreshStatus:
             "finishedAt": iso(self.finished_at),
             "exitCode": self.exit_code,
             "nextAllowedAt": iso(self.next_allowed_at),
+            "lastUpdateAt": iso(self.last_update_at),
+            "lastUpdateExitCode": self.last_update_exit_code,
         }
 
 
@@ -67,9 +73,11 @@ class RefreshJob:
         log_path: Path,
         cooldown: timedelta,
         clock: Clock,
+        last_update_path: Path | None = None,
         launcher: Launcher = launch_process,
     ) -> None:
         self._command = tuple(command)
+        self._last_update_path = last_update_path
         self._workdir = workdir
         self._state_path = state_path
         self._log_path = log_path
@@ -77,7 +85,7 @@ class RefreshJob:
         self._clock = clock
         self._launch = launcher
         self._process: Process | None = None
-        self._state = self._load()
+        self._state = _read_json(state_path)
         self._lock = threading.Lock()  # the web server answers from several threads
 
     def start(self) -> StartOutcome:
@@ -103,12 +111,15 @@ class RefreshJob:
 
     def _status(self) -> RefreshStatus:
         self._reap()
+        last = _read_json(self._last_update_path) if self._last_update_path else {}
         return RefreshStatus(
             running=self._process is not None,
             started_at=_moment(self._state.get("started_at")),
             finished_at=_moment(self._state.get("finished_at")),
             exit_code=_code(self._state.get("exit_code")),
             next_allowed_at=self._next_allowed(),
+            last_update_at=_moment(last.get("finishedAt")),
+            last_update_exit_code=_code(last.get("exitCode")),
         )
 
     def _reap(self) -> None:
@@ -128,20 +139,26 @@ class RefreshJob:
         started = _moment(self._state.get("started_at"))
         return started + self._cooldown if started else None
 
-    def _load(self) -> dict[str, object]:
-        try:
-            loaded = json.loads(self._state_path.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            return {}
-        return loaded if isinstance(loaded, dict) else {}
-
     def _save(self) -> None:
         self._state_path.parent.mkdir(parents=True, exist_ok=True)
         self._state_path.write_text(json.dumps(self._state), encoding="utf-8")
 
 
+def _read_json(path: Path) -> dict[str, object]:
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return loaded if isinstance(loaded, dict) else {}
+
+
 def _moment(value: object) -> datetime | None:
-    return datetime.fromisoformat(value) if isinstance(value, str) else None
+    if not isinstance(value, str):
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None
 
 
 def _code(value: object) -> int | None:
