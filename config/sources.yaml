@@ -375,3 +375,66 @@ sources:
     url: https://melenchon2027.fr/programme/plans-thematiques/esr/
     trust_level: 1
     label: "Programme de Jean-Luc Mélenchon — plan thématique Enseignement supérieur et recherche"
+
+  - id: jean-luc-melenchon/transcript/clermont-ferrand-2026-10-11
+    candidate_id: jean-luc-melenchon
+    kind: transcript
+    url: https://www.youtube.com/watch?v=uDNj7Jh6Hq0
+    trust_level: 1
+    trust_confirmed: true   # a speech on video: the speaker is seen
+    label: "Meeting de Jean-Luc Mélenchon à Clermont-Ferrand, 11 octobre 2026 (vidéo franceinfo, transcription)"
+    options: {file: transcripts/jean-luc-melenchon-clermont-ferrand-2026-10-11.txt, published_on: "2026-10-11"}
+
+  # Cut before the closing song (L'Internationale, sung by the crowd).
+  - id: jean-luc-melenchon/transcript/fete-humanite-2026-09-12
+    candidate_id: jean-luc-melenchon
+    kind: transcript
+    url: https://www.youtube.com/watch?v=80bBtk2lTiI
+    trust_level: 1
+    trust_confirmed: true   # a speech on video, on his own channel: the speaker is seen
+    label: "Discours de Jean-Luc Mélenchon à la Fête de l'Humanité, 12 septembre 2026 (vidéo de sa chaîne, transcription)"
+    options: {file: transcripts/jean-luc-melenchon-fete-humanite-2026-09-12.txt, published_on: "2026-09-12"}
+
+  # Written in the first person, on his campaign site: level 1 by default, to confirm.
+  - id: francois-ruffin/page/plan-data-centers
+    candidate_id: francois-ruffin
+    kind: page
+    url: https://nouspresident.fr/plan-data-centers/
+    trust_level: 1
+    label: "François Ruffin — Plan data centers"
+
+  - id: francois-ruffin/page/education
+    candidate_id: francois-ruffin
+    kind: page
+    url: https://nouspresident.fr/education-une-ecole-de-tous-les-savoirs/
+    trust_level: 1
+    label: "François Ruffin — Éducation : une école de tous les savoirs"
+
+  # News items written by his campaign team about him, quoting him: level 2.
+  - id: gabriel-attal/page/mistral-ai
+    candidate_id: gabriel-attal
+    kind: page
+    url: https://attalpresident.fr/actualites/gabriel-attal-recu-chez-mistral-ai-arthur-mensch-intelligence-artificielle
+    trust_level: 2
+    label: "Gabriel Attal reçu chez Mistral AI par Arthur Mensch pour échanger sur les enjeux de l'intelligence artificielle"
+
+  - id: gabriel-attal/page/politico-quatre-priorites
+    candidate_id: gabriel-attal
+    kind: page
+    url: https://attalpresident.fr/actualites/gabriel-attal-dans-politico-europe-ukraine-ia-et-finances-publiques-quatre-priorites-pour-preparer-la-france-de-demain
+    trust_level: 2
+    label: "Gabriel Attal dans Politico : Europe, Ukraine, IA et finances publiques, quatre priorités"
+
+  - id: gabriel-attal/page/vision-economique
+    candidate_id: gabriel-attal
+    kind: page
+    url: https://attalpresident.fr/actualites/gabriel-attal-vision-economique-liberer-innover-independance-france
+    trust_level: 2
+    label: "La vision économique de Gabriel Attal : libérer, innover, l'indépendance de la France"
+
+  - id: gabriel-attal/page/ecole-meilleure-europe
+    candidate_id: gabriel-attal
+    kind: page
+    url: https://attalpresident.fr/actualites/dans-le-monde-gabriel-attal-devoile-son-projet-pour-faire-notre-ecole-la-meilleure-d-europe
+    trust_level: 2
+    label: "Dans Le Monde, Gabriel Attal dévoile son projet pour faire de notre école la meilleure d'Europe"

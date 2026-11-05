@@ -211,7 +211,8 @@ sont retenus : les sous-titres d'un entretien ne disent pas qui parle, et la que
 journaliste serait attribuée au candidat ; une conférence de presse est coupée là où le
 candidat passe la parole. Premiers ajouts : Éric Zemmour à Port-Marly (13 septembre
 2026) ; Marine Le Pen à Hénin-Beaumont (13 septembre), en conférence de presse
-(6 octobre) et à Orléans (25 octobre 2026).
+(6 octobre) et à Orléans (25 octobre 2026) ; Jean-Luc Mélenchon à la Fête de
+l'Humanité (12 septembre) et à Clermont-Ferrand (11 octobre 2026).
 
 ## Indicateur
 
