@@ -6,8 +6,10 @@ A public register of what the candidates in France's 2027 presidential election 
 about artificial intelligence: **their exact words, dated, sourced, filed by subject**,
 with no commentary and no rating. Published by the **ESSEC Metalab**.
 
-> **Status: prototype, not published.** The quotes are real; their classification is
-> automated and **has not yet been reviewed by an editor**. The site says so on every page.
+> **Status: proof of concept online for demonstration, not officially published** (branch
+> `poc`): **https://ia2027.the10x.tech**. The quotes are real; their classification is
+> automated (Mistral) and **has not yet been reviewed by a person**. The site says so on
+> every page.
 
 | The feed: every statement, word for word | The barometer: every candidate against the nine axes |
 |---|---|
@@ -19,14 +21,45 @@ with no commentary and no rating. Published by the **ESSEC Metalab**.
 
 - **What goes in:** public texts from the candidates themselves or their party: official
   websites, RSS feeds, PDF programmes, National Assembly transcripts.
-- **What comes out:** a local website, usable **with no internet connection**, listing
+- **What comes out:** a website, online or usable **with no internet connection**, listing
   every position on AI with its exact quote, its subject (one of nine axes), a neutral
   summary, the source and the date.
 - **What never comes out:** a score, a ranking, a "tone" rating, an opinion. The register
   records; it does not judge.
-- **When:** every morning at 08:00, collection, classification and the site update on
-  their own. Editorial decisions (adding a candidate or a subject) stay human: the system
+- **When:** every morning at 08:00 (Paris time), collection, classification and the site
+  update on their own; the site's "Actualiser les données" button runs the same update on
+  demand. Editorial decisions (adding a candidate or a subject) stay human: the system
   **proposes** them in a watch note.
+
+---
+
+## The online version (branch `poc`)
+
+**https://ia2027.the10x.tech**: the full register, updated every morning, with an
+"Actualiser les données" (refresh) button at the bottom right.
+
+- **The button** runs the same update as the 08:00 one (`scripts/daily.sh`), follows it,
+  then reloads the page. One update at a time, and at most one every 10 minutes
+  (`REFRESH_COOLDOWN_MINUTES`): each update reads the candidates' sites again under the
+  Metalab's name, and a button pressed in a loop must not hammer them. Under the button,
+  the date of the last update, whether it came from the button or the 08:00 job.
+- **AI cost:** only new passages about AI go to Mistral. An update that finds nothing new
+  makes **no** model call (about 4 minutes, mostly collection).
+- **The server** is `observatoire web`: it serves the site and two endpoints, in standard
+  Python, with no web framework: `GET /api/status` (update running, last update, next one
+  allowed) and `POST /api/refresh` (202 started, 409 already running, 429 too soon).
+- **The container** (`Dockerfile`, `scripts/container-start.sh`) holds the server and the
+  08:00 update. On first start, with an empty volume, it builds the register from the
+  previous version's data and the verified edition, with no model call (the same steps as
+  `make site`); on every restart, it rebuilds the site from the database in a few seconds,
+  so a new template shows at once.
+- **Hosting:** Dokploy, an application built from the `poc` branch's `Dockerfile`, a
+  persistent volume on `/app/data` (database, site, logs), variables
+  `LLM_PROVIDER=mistral`, `MISTRAL_API_KEY`, `MISTRAL_MODEL=mistral-large-4-0`, `TZ`,
+  `DAILY_TIME`. No automatic deployment: after a `git push` to `poc`, redeploy in Dokploy.
+- **Caching:** the page is never cached, and it loads `data.js` and `refresh.js` with
+  their content hash (`data.js?v=…`): a CDN that keeps scripts in browsers for hours
+  (Cloudflare does) cannot show stale data.
 
 ---
 
@@ -64,7 +97,7 @@ Terminal.
 
 ```bash
 git clone https://github.com/ESSEC-METALAB/ia-presidentielle.git
-cd ia-presidentielle && git checkout archi
+cd ia-presidentielle && git checkout poc
 make install      # Python environment and dependencies
 make site         # builds the register from the data already collected (≈ 1 min;
                   #   first fetches the previous version's database from GitHub)
@@ -74,10 +107,14 @@ make serve        # opens http://localhost:8000 — works without internet
 For the automatic update every morning:
 
 ```bash
-cp .env.example .env     # then set LLM_PROVIDER=mistral, MISTRAL_API_KEY, MISTRAL_MODEL
+cp .env.example .env     # then set LLM_PROVIDER=mistral, MISTRAL_API_KEY and
+                         #   MISTRAL_MODEL=mistral-large-4-0
 make schedule            # installs the 08:00 update and keeps the site up locally
 make schedule-status     # check; "make unschedule" removes everything
 ```
+
+To try the site with its refresh button, as online:
+`uv run observatoire web --host 127.0.0.1 --port 8000`.
 
 Without a Mistral key everything still works: the site is rebuilt every morning, and new
 passages about AI are shown as "pending" until they are classified.
@@ -96,7 +133,7 @@ flowchart LR
     F -- "not about AI" --> X["set aside"]
     A --> G["5 · Gates<br/>exact quote ·<br/>known axis · neutrality"]
     G --> R["6 · Register<br/>data.js"]
-    R --> W["Local site<br/>offline"]
+    R --> W["Site: online<br/>or offline"]
     DB --> V["Watch: candidates<br/>and topics to examine"]
 ```
 
@@ -105,10 +142,10 @@ or more simply the matching `make` targets.
 
 | Step | What it does | Command |
 |---|---|---|
-| 1. Collect | Reads the sources declared in `config/sources.yaml`, honouring `robots.txt` and a delay between requests. Keeps the URL, the publication date (never guessed) and the fetch time. A text already seen is not stored twice. | `observatoire collect` |
+| 1. Collect | Reads the sources declared in `config/sources.yaml`, honouring `robots.txt` and a delay between requests. Keeps the URL, the publication date (never guessed) and the fetch time. A text already seen is not stored twice, nor a page read again with small extraction differences (95 % of five-word sequences shared with the stored version, `near_duplicate_similarity`). | `observatoire collect` |
 | 2. Split | Cuts each text into passages readable on their own and removes noise (cookie banners, page numbers, Assembly stage directions…). Every passage set aside keeps its reason. | `observatoire segment` |
 | 3. AI filter | Keeps only passages about AI: one strong term ("intelligence artificielle", "IA", "algorithme"…) or two distinct weak ones ("numérique", "données"…). | (inside `annotate`) |
-| 4. Annotate | A language model reads each kept passage and proposes its statements: quote, axis, summary, context, translation. **"Nothing" is the expected answer for most passages.** | `observatoire annotate` |
+| 4. Annotate | A language model (Mistral, `mistral-large-4-0`) reads each kept passage and proposes its statements: quote, axis, summary, context, translation. **"Nothing" is the expected answer for most passages.** A passage already annotated, or covered as it is by a verified edition, is not sent again. | `observatoire annotate` |
 | 5. Gates | Code rejects any proposal whose quote is not word for word in the text, whose axis is unknown, or whose summary contains a judgement word. The stored quote is the source's own text, never the model's copy. | (inside `annotate`) |
 | 6. Register | Picks the annotation each passage shows (a verified edition first, else the day's annotator, else "pending"), attaches its provenance (candidate, source, date, archive) from the database, then writes the site. | `observatoire register` |
 | Watch | Compares our candidate list with an outside list, counts subjects that are not yet axes, lists pending passages. Changes nothing. | `observatoire watch` |
@@ -125,6 +162,9 @@ or more simply the matching `make` targets.
 2. **the site server**, on `http://localhost:8000`, restarted if it stops (with cron:
    checked every ten minutes). If there is no site yet, `make schedule` first runs an
    update.
+
+Online, the container runs the same update every day at `DAILY_TIME` (08:00, time zone
+`TZ=Europe/Paris`): see "The online version".
 
 On macOS, the repository must not live in Documents, Desktop, Downloads or iCloud Drive:
 macOS forbids those folders to scheduled jobs (`make schedule` refuses and says what to
@@ -148,13 +188,21 @@ text is kept and shown as "date not specified": a missing date is not evidence o
 
 | Source | Candidate | Level | Note |
 |---|---|---|---|
-| Programme "L'IA au service des Français" (PDF, 7 July 2026) | Bruno Retailleau | 1 | 167 of the current 182 statements |
+| Programme "L'IA au service des Français" (PDF, 7 July 2026) | Bruno Retailleau | 1 | 167 of Bruno Retailleau's 178 statements |
 | republicains.fr RSS feed | Bruno Retailleau | 2 | |
-| lafranceinsoumise.fr RSS feed | Jean-Luc Mélenchon | 2 | |
-| edouardphilippe.fr "Priorités" page | Édouard Philippe | 1 | |
-| National Assembly transcripts (open data) | Gabriel Attal, Marine Le Pen | 1, confirmed | the transcript names the speaker |
-| National Assembly transcripts | Bruno Retailleau | 1, confirmed | ministerial interventions, until 2025: nothing in the window |
-| Parti socialiste RSS feed, Assembly | Olivier Faure | 2 / 1 | withdrew on 11 October: off the register |
+| National Assembly transcripts (open data) | Bruno Retailleau | 1, confirmed | ministerial interventions, until 2025: nothing in the window |
+| lafranceinsoumise.fr RSS feed; melenchon.fr blog | Jean-Luc Mélenchon | 2; 1 | |
+| "Priorités" page, Adidas Arena speech (5 July 2026); "L'école" Q&A | Édouard Philippe | 1; 2 | edouardphilippe.fr |
+| Programme page on AI (attalpresident.fr) | Gabriel Attal | 1 | |
+| National Assembly transcripts | Gabriel Attal, Marine Le Pen, François Ruffin | 1, confirmed | the transcript names the speaker |
+| Rally speech of 26 September 2026; Lutte ouvrière RSS feed | Nathalie Arthaud | 1; 2 | |
+| Debout la France RSS feed | Nicolas Dupont-Aignan | 2 | |
+| Place publique RSS feed; "Lettre aux Français" | Raphaël Glucksmann | 2; 1 | |
+| Two Nouvelle Énergie pages (his view of AI, his book on AI) | David Lisnard | 2 | no feed on the site |
+| PCF digital commission RSS feed; Fête de l'Humanité 2026 speech | Fabien Roussel | 2; 1 | |
+| francoisruffin.fr RSS feed | François Ruffin | 1 | |
+| marinetondelier.fr blog; Les Écologistes' digital booklet (PDF, July 2026) | Marine Tondelier | 1; 2 | |
+| Parti socialiste RSS feed, Assembly | Olivier Faure | 2 / 1 | withdrew on 11 October: off the register; the feed is not attributed to Raphaël Glucksmann, its texts are signed by Olivier Faure or the party's bodies |
 | Previous version's database (branch `daily`, GitHub Actions) | all monitored | — | a bridge while the old collection runs |
 | MieuxVoter list of candidacies (community) | — | — | **watch only**, never evidence |
 
@@ -175,9 +223,14 @@ transcript, which names the speaker, is confirmed from the start.
 social networks (paid X API, not wired); auto-captioned video (no indication of who is
 speaking); open-web crawling (an arbitrary page cannot say whose words it carries).
 
-**Unmonitored candidates:** eight declared candidates have no verified source yet; the
-site marks them "Not tracked". Their official websites have been located:
-`docs/sources-a-verifier.md`.
+The sources added on 4 November were each fetched from a networked machine with the
+project's own `robots.txt` policy, client and extraction settings before entering
+`config/sources.yaml` (the details, and what was left out, are noted there).
+
+**Untracked candidate:** Éric Zemmour. No official source passes the checks (no feed,
+generic pages, news published as embedded Instagram posts); the site marks him "Not
+tracked". Marine Le Pen is tracked only at the Assembly: the Rassemblement national's
+site refuses our agent.
 
 ### Compliance
 
@@ -242,13 +295,20 @@ assistants, not people** (substance ×3, axis ×2, fidelity ×1): 188 proposals,
 axis changed, 45 statements with corrected notes (summary, context or translation), 182
 statements published. Everything is versioned in `annotations/`.
 
+**The day's annotator, since 4 November 2026:** Mistral, `mistral-large-4-0`, a model that
+reasons before answering. Its first real calls showed two differences from the
+documentation, fixed in `adapters/llm/mistral_client.py`: `top_p` must be 1 with a zero
+temperature, and the answer arrives in chunks (reasoning, then text), of which only the
+text is kept. A call can take over a minute: 180 s timeout (`LLM_TIMEOUT_SECONDS`).
+Count about 2,600 generated tokens per annotated passage.
+
 ---
 
 ## What you get
 
 | Where | What |
 |---|---|
-| `data/site/` → `http://localhost:8000` | **The register**, in French and English: the feed, the barometer, one page per candidate, the methodology. Works without internet. |
+| https://ia2027.the10x.tech, or `data/site/` → `http://localhost:8000` | **The register**, in French and English: the feed, the barometer, one page per candidate with their portrait, the methodology. The local copy works without internet. |
 | `data/reports/veille.md` | **The morning watch note**: candidates and topics to examine, pending passages. |
 | `data/reports/corpus.html` | The raw corpus, source by source: what was collected, split or set aside, and why. |
 | `data/logs/daily-YYYY-MM-DD.log` | The log of each update, with a step-by-step summary. |
@@ -277,10 +337,13 @@ statements published. Everything is versioned in `annotations/`.
   they talk about it more than another (that depends first on our sources), or that a
   position is good or bad.
 
-**Warning about the current edition:** 178 of the 182 statements are Bruno Retailleau's,
-167 of them from his AI programme alone. The imbalance measures **our sources** (8
-candidates not tracked, 2 tracked only at the Assembly), not the candidates' interest in
-AI. To be fixed before any publication.
+**Warning about the current edition (5 November 2026):** 287 statements, 182 from the
+verified edition and 105 classified by Mistral. 178 are Bruno Retailleau's, 167 of them
+from his programme devoted to AI; next come Marine Tondelier, Édouard Philippe, David
+Lisnard and Gabriel Attal. Three tracked candidates have no statement (Nicolas
+Dupont-Aignan, Raphaël Glucksmann, Marine Le Pen: "no position identified" in our
+sources), one is not tracked (Éric Zemmour). The imbalance measures **our sources** first,
+not the candidates' interest in AI.
 
 ---
 
@@ -298,18 +361,21 @@ cli.py  (wires the pieces together)
    ├─ domain/        models and ports, with no outside dependency
    ├─ services/      deterministic rules: dedup, splitting, AI filter, gates
    └─ adapters/      the real world: sources (RSS, page, PDF, Assembly), extraction,
-                     llm (Mistral, fake, recorded, batch), SQLite storage, rendering (site, watch)
+                     llm (Mistral, fake, recorded, batch), SQLite storage, rendering (site, watch),
+                     web (the online site's server and its refresh button)
 ```
 
 ```
 config/         candidates, sources, splitting, axes and gates, watch, verified editions
-web/registre/   the site (prototype v3) with its libraries and fonts, for offline use
+web/registre/   the site (prototype v3), its libraries and fonts, the portraits
+                (.image-slots.state.json) and refresh.js, the refresh button
 annotations/    versioned annotation answers and verification
 scripts/        daily.sh (update), serve.sh (site), schedule.sh (scheduling),
-                package.sh (offline archive)
+                package.sh (offline archive), container-start.sh (online container)
+Dockerfile      the online server's image (site, button, 08:00 update)
 packaging/      launchers and tiny servers of the offline archive (Mac, Windows, Linux)
 docs/           methodology.md (rules and findings), sources-a-verifier.md, adr/
-tests/          295 tests, no network or key; 100 % coverage of domain and use cases
+tests/          328 tests, no network or key; 100 % coverage of domain and use cases
 ```
 
 | Command | Role |
@@ -317,6 +383,7 @@ tests/          295 tests, no network or key; 100 % coverage of domain and use c
 | `make site` | the whole register, no API key, from the previous version's data (fetched from GitHub; offline, the last copy) |
 | `make daily` | the morning update, by hand |
 | `make serve` | the site on `http://localhost:8000` |
+| `uv run observatoire web` | the site with its refresh button and `/api/status`, `/api/refresh` (what the online container serves) |
 | `make schedule` / `unschedule` / `schedule-status` | install, remove, check the 08:00 job and the server |
 | `make watch` | the watch note alone |
 | `make annotate` | classify pending passages with Mistral (`.env`); without a key, a dry run that writes nothing |
@@ -337,22 +404,34 @@ tests/          295 tests, no network or key; 100 % coverage of domain and use c
   recorded answers no longer match and the passages become "pending".
 - **Publish a verified edition**: once its answers are verified and recorded, add it to
   `config/register.yaml`; it then takes precedence over the day's annotation.
-- **Change the model**: `MISTRAL_MODEL` in `.env`. Another provider = a new adapter in
-  `adapters/llm/`, without touching the use cases.
+- **Change the model**: `MISTRAL_MODEL` in `.env` (online: in Dokploy's variables).
+  Another provider = a new adapter in `adapters/llm/`, without touching the use cases.
+- **Add a portrait**: a `portrait-<candidate id>` entry in
+  `web/registre/.image-slots.state.json` (a JPEG data URL, 4:5, black and white, like the
+  others) and its credit in the legal notices (`web/registre/index.html`). The current
+  portraits come from Wikimedia Commons (`web/registre/NOTICE.md`).
+- **Deploy**: `git push` to `poc`, then redeploy the application in Dokploy. The database
+  and the logs, on the volume, are kept.
 
 ---
 
 ## Known limits and open decisions
 
 - No statement has been **reviewed by a person** yet.
-- The **Mistral client** was written from the documentation and tested against a
-  simulated response; its first real call will happen on your machine.
-- **Uneven coverage**: 5 candidates tracked out of 13 (see the warning above).
+- **Uneven coverage**: 12 candidates tracked out of 13, but very unevenly (see the warning
+  above). Readers to write: the Sénat (Bruno Retailleau since November 2025), the European
+  Parliament (Raphaël Glucksmann), site archives (`sitemap`). La France insoumise's
+  programme, announced for 6 November, is to be added.
+- The **level** of the three personal blogs (Ruffin, Tondelier, Mélenchon) is a default
+  for an editor to confirm. On WordPress sites, the date extracted from a page can be that
+  of its last change.
+- The **portraits** are free-licensed or reusable with attribution: the credits are to be
+  checked one last time before publication. The screenshots in this README predate them.
 - The licence of the flag animation (adapted from React Bits' "Silk" shader) is to be
   confirmed before publication (`web/registre/NOTICE.md`).
-- The **Parti socialiste** feed is still attributed to Olivier Faure, who withdrew;
-  attributing it to Raphaël Glucksmann (joint candidate since 11 October) is an editorial
-  decision.
+- The **Parti socialiste** feed stays attributed to Olivier Faure, who withdrew: it is not
+  attributed to Raphaël Glucksmann (joint candidate since 11 October), because its texts
+  since then are signed by Olivier Faure or the party's bodies, not by him.
 - Before any publication: a publication director, legal notices, a GDPR framework
   (political opinions are sensitive data), legal review.
 
