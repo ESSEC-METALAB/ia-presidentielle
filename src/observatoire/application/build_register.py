@@ -71,7 +71,8 @@ class BuildRegister:
     ) -> Register:
         """`verified`: annotator versions of cross-verified editions, in precedence order."""
         running = [c for c in candidates if c.is_running]
-        passages = self._current_passages({c.id for c in running}, sources, since)
+        documents = self._documents({c.id for c in running}, sources, since)
+        passages = self._current_passages(documents, sources)
         hashes = {pid: content_hash(p.segment.text) for pid, p in passages.items()}
         chosen = published_annotations(self._annotations.list_annotations(), hashes, verified)
         return Register(
@@ -83,20 +84,27 @@ class BuildRegister:
             annotators=_annotators(chosen, verified),
             pending=self._pending(passages, chosen),
             withdrawn=tuple(c for c in candidates if not c.is_running),
+            documents=dict(Counter(d.source_id for d in documents.values())),
         )
 
-    def _current_passages(
+    def _documents(
         self, people: set[str], sources: Sequence[Source], since: date | None
-    ) -> dict[str, _Passage]:
-        """Passages of running people's level-1 and level-2 sources, in the window."""
-        by_source = {
-            s.id: s for s in sources if s.candidate_id in people and s.trust_level in _PUBLISHABLE
+    ) -> dict[str, RawDocument]:
+        """Running people's level-1 and level-2 documents in the window, by content hash."""
+        publishable = {
+            s.id for s in sources if s.candidate_id in people and s.trust_level in _PUBLISHABLE
         }
-        documents = {
+        return {
             d.content_hash: d
             for d in self._corpus.list_documents()
-            if d.source_id in by_source and in_window(d.published_on, since)
+            if d.source_id in publishable and in_window(d.published_on, since)
         }
+
+    def _current_passages(
+        self, documents: dict[str, RawDocument], sources: Sequence[Source]
+    ) -> dict[str, _Passage]:
+        """Passages of the documents the register reads, with their source."""
+        by_source = {s.id: s for s in sources}
         return {
             segment.id: _Passage(segment, document, by_source[document.source_id])
             for segmentation in self._segments.list_segmentations()

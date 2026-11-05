@@ -56,6 +56,7 @@ button{font:inherit}
         <nav aria-label="{{ t.navLabel }}" style="display:flex;gap:4px;margin-left:auto;font-size:14px;font-weight:500;flex-wrap:wrap">
           <a href="{{ hrefFil }}" aria-current="{{ curFil }}" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:3px;color:#F3F1EC;text-decoration:none;background:{{ bgFil }};transition:background .2s" style-hover="background:rgba(243,241,236,.12)" style-focus="outline:2px solid #F3F1EC;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:17px">view_stream</i>{{ t.fil }}</a>
           <a href="{{ hrefGrille }}" aria-current="{{ curGrille }}" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:3px;color:#F3F1EC;text-decoration:none;background:{{ bgGrille }};transition:background .2s" style-hover="background:rgba(243,241,236,.12)" style-focus="outline:2px solid #F3F1EC;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:17px">bar_chart</i>{{ t.grille }}</a>
+          <a href="{{ hrefSources }}" aria-current="{{ curSources }}" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:3px;color:#F3F1EC;text-decoration:none;background:{{ bgSources }};transition:background .2s" style-hover="background:rgba(243,241,236,.12)" style-focus="outline:2px solid #F3F1EC;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:17px">rss_feed</i>{{ t.sources }}</a>
           <a href="{{ hrefMethodo }}" aria-current="{{ curMethodo }}" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:3px;color:#F3F1EC;text-decoration:none;background:{{ bgMethodo }};transition:background .2s" style-hover="background:rgba(243,241,236,.12)" style-focus="outline:2px solid #F3F1EC;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:17px">menu_book</i>{{ t.methodo }}</a>
         </nav>
         <div role="group" aria-label="{{ t.langLabel }}" style="display:flex;border:1px solid rgba(243,241,236,.35);border-radius:3px;overflow:hidden;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em">
@@ -398,6 +399,46 @@ button{font:inherit}
         </section>
     </sc-if>
 
+    <sc-if value="{{ isSources }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="Les sources" style="max-width:1400px;margin:0 auto;padding:56px 40px 104px">
+        <p data-reveal style="margin:0 0 18px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#5F646E">03 · {{ t.viewLabel }}</p>
+        <h1 data-reveal style="display:flex;align-items:center;gap:22px;margin:0 0 14px;font-weight:500;font-size:clamp(48px,6vw,96px);line-height:.95;letter-spacing:-.035em"><i class="msi" aria-hidden="true" style="font-size:.55em;color:#5F646E">rss_feed</i>{{ t.sources }}</h1>
+        <p data-reveal style="margin:0 0 40px;max-width:68ch;font-size:18px;color:#3A3E46">{{ t.sourcesLead }}</p>
+        <div role="list" aria-label="{{ t.sourcesCaption }}" style="display:flex;flex-direction:column;border-top:2px solid #0B0C0F">
+          <sc-for list="{{ sourceRows }}" as="r" hint-placeholder-count="13">
+            <section role="listitem" data-reveal style="display:grid;grid-template-columns:minmax(220px,300px) minmax(0,1fr);gap:16px 48px;padding:28px 0;border-bottom:1px solid #D8D5CE">
+              <a href="{{ r.href }}" style="display:flex;align-items:flex-start;gap:14px;color:#0B0C0F;text-decoration:none;align-self:start" style-hover="text-decoration:underline" style-focus="outline:2px solid #1B33B4;outline-offset:2px">
+                <span aria-hidden="true" style="display:grid;place-items:center;flex:none;width:48px;height:60px;border-radius:3px;overflow:hidden;background:#0B0C0F {{ r.photoCss }} center/cover;filter:grayscale(1);color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.04em">
+                  <sc-if value="{{ r.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ r.initials }}</span></sc-if>
+                </span>
+                <span style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font-size:20px;line-height:1.1;font-weight:500;letter-spacing:-.02em">{{ r.name }}</span><span style="font-size:13px;color:#5F646E">{{ r.party }}</span><span style="margin-top:4px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.04em;color:#3A3E46">{{ r.summary }}</span></span>
+              </a>
+              <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+                <sc-if value="{{ r.untracked }}" hint-placeholder-val="{{ false }}"><p style="margin:0;display:flex;align-items:center;gap:10px;padding:14px 18px;border:1px dashed #0B0C0F;border-radius:10px;font-size:14px;color:#3A3E46"><i class="msi" aria-hidden="true" style="font-size:18px;color:#0B0C0F">mic_off</i>{{ t.untrackedNote }}</p></sc-if>
+                <sc-for list="{{ r.sources }}" as="s" hint-placeholder-count="2">
+                  <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 24px;align-items:center;padding:14px 18px;border:1px solid #E3E0D8;border-radius:10px;background:#FAF9F6">
+                    <div style="display:flex;flex-direction:column;gap:7px;min-width:0">
+                      <a href="{{ s.url }}" rel="external noopener" style="display:inline-flex;align-items:baseline;gap:8px;color:#0B0C0F;font-size:16px;font-weight:500;line-height:1.3;text-decoration:none;overflow-wrap:anywhere" style-hover="text-decoration:underline" style-focus="outline:2px solid #1B33B4;outline-offset:2px">{{ s.label }}<i class="msi" aria-hidden="true" style="font-size:14px;color:#5F646E;position:relative;top:2px">open_in_new</i></a>
+                      <div style="display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:#5F646E">
+                        <span style="display:inline-flex;align-items:center;gap:6px;color:#3A3E46"><i class="msi" aria-hidden="true" style="font-size:15px">{{ s.kindIcon }}</i>{{ s.kindLabel }}</span>
+                        <span style="display:inline-flex;align-items:center;gap:6px;border:1px {{ s.tierBorderStyle }} {{ s.tierBorderColor }};border-radius:3px;padding:3px 9px;color:#3A3E46"><i class="msi" aria-hidden="true" style="font-size:14px">{{ s.tierIcon }}</i>{{ s.tierShort }} · {{ s.tierState }}</span>
+                        <span>{{ s.host }}</span>
+                      </div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-family:'JetBrains Mono',monospace;font-size:12px;white-space:nowrap">
+                      <sc-if value="{{ s.hasStatements }}" hint-placeholder-val="{{ true }}"><span style="color:#0B0C0F;font-weight:500">{{ s.statsLabel }}</span></sc-if>
+                      <sc-if value="{{ s.noStatements }}" hint-placeholder-val="{{ false }}"><span style="color:#8A8F99">{{ s.statsLabel }}</span></sc-if>
+                      <span style="color:#5F646E;font-size:11px">{{ s.docsLabel }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </section>
+          </sc-for>
+        </div>
+      </section>
+    </sc-if>
+
     <sc-if value="{{ isCand }}" hint-placeholder-val="{{ false }}">
       <section data-screen-label="Candidat" style="position:relative;isolation:isolate;background:#0B0C0F;color:#F3F1EC;overflow:hidden">
         <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;overflow:hidden">
@@ -516,6 +557,7 @@ button{font:inherit}
       <nav aria-label="{{ t.footerNavLabel }}" style="display:flex;flex-direction:column;gap:8px">
         <a href="{{ hrefFil }}" style="color:#F3F1EC;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #F3F1EC;outline-offset:2px">{{ t.fil }}</a>
         <a href="{{ hrefGrille }}" style="color:#F3F1EC;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #F3F1EC;outline-offset:2px">{{ t.grille }}</a>
+        <a href="{{ hrefSources }}" style="color:#F3F1EC;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #F3F1EC;outline-offset:2px">{{ t.sources }}</a>
         <a href="{{ hrefMethodo }}" style="color:#F3F1EC;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #F3F1EC;outline-offset:2px">{{ t.methodo }}</a>
         <a href="{{ hrefCorrections }}" style="color:#F3F1EC;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #F3F1EC;outline-offset:2px">{{ t.corrections }}</a>
         <a href="{{ hrefLegal }}" style="color:#F3F1EC;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #F3F1EC;outline-offset:2px">{{ t.legal }}</a>
@@ -528,6 +570,8 @@ button{font:inherit}
 const I18N = {
   fr: {
     skip: "Aller au contenu", siteSub: "Registre des positions sur l'IA", navLabel: "Navigation principale", langLabel: "Langue",
+    sources: "Les sources", sourcesLead: "Ce que nous lisons pour chaque candidat : son type, son niveau (qui parle), combien de textes il a fournis depuis le début de la fenêtre de collecte, et combien de déclarations sur l'IA en sont issues. Une source n'est ajoutée qu'après vérification de son robots.txt et de l'extraction de son texte.", sourcesCaption: "Sources suivies, par candidat", sourceDoc1: "texte lu", sourceDocN: "textes lus", sourceN1: "source", sourceNN: "sources",
+    sourceKinds: { rss: "Flux RSS", page: "Page du site", pdf: "Document PDF", assemblee_nationale: "Comptes rendus de l'Assemblée nationale", sitemap: "Archives du site" },
     fil: "Le fil", grille: "Le baromètre", methodo: "Méthodologie", corrections: "Corrections", legal: "Mentions légales", viewLabel: "Vue", open: "Ouvrir",
     heroKicker: "Registre public · Présidentielle 2027", heroVersion: "Édition du", heroTitle: "Ce que les candidats disent de l'IA.",
     principles: [["format_quote", "Mot pour mot"], ["archive", "Source et archive datées"], ["block", "Ni commentaire, ni score"]],
@@ -569,6 +613,8 @@ const I18N = {
   },
   en: {
     skip: "Skip to content", siteSub: "Register of AI positions", navLabel: "Main navigation", langLabel: "Language",
+    sources: "The sources", sourcesLead: "What we read for each candidate: its kind, its level (who is speaking), how many texts it has given since the collection window opened, and how many statements on AI came from them. A source is added only once its robots.txt and the extraction of its text have been checked.", sourcesCaption: "Tracked sources, by candidate", sourceDoc1: "text read", sourceDocN: "texts read", sourceN1: "source", sourceNN: "sources",
+    sourceKinds: { rss: "RSS feed", page: "Website page", pdf: "PDF document", assemblee_nationale: "National Assembly verbatim records", sitemap: "Website archive" },
     fil: "The feed", grille: "The barometer", methodo: "Methodology", corrections: "Corrections", legal: "Legal notices", viewLabel: "View", open: "Open",
     heroKicker: "Public register · Presidential election 2027", heroVersion: "Edition of", heroTitle: "What the candidates say about AI.",
     principles: [["format_quote", "Word for word"], ["archive", "Dated source and archive"], ["block", "No commentary, no score"]],
@@ -609,13 +655,14 @@ const I18N = {
     legalDoc: [["Publisher", ["ESSEC Metalab, an institute of ESSEC Business School. Address, publication director and contact to be completed before launch."]], ["Hosting", ["Static site generated from a data file and deployed as files. Host to be completed."]], ["Personal data", ["The site collects no personal data: no accounts, no cookies, no trackers, no audience measurement."]], ["Reuse", ["Quotes belong to their authors and are reproduced under the right of quotation. The register's summaries, context notes and structured data may be reused with attribution."]], ["Photo credits", ["Portraits from Wikimedia Commons, under free licences or reusable with attribution; cropped to one format and turned to black and white, which modifies the original.", "Nathalie Arthaud: Kokluts, 2024 — CC BY-SA 4.0.", "Gabriel Attal: Ismail Aissoub, 2025 — CC BY 4.0.", "Nicolas Dupont-Aignan: Debout la France, 2019 — CC BY-SA 4.0.", "Raphaël Glucksmann: © European Union 2024, source: European Parliament — reuse permitted with attribution.", "Marine Le Pen: Vox España, 2025 — CC0.", "David Lisnard: Grégor Sauvagère, 2026 — CC BY-SA 4.0.", "Jean-Luc Mélenchon: jlm2017.fr, 2026 — CC BY 4.0.", "Édouard Philippe: Jacques Paquier, 2019 — CC BY 2.0.", "Bruno Retailleau: © European Union, 2024 — reuse permitted with attribution.", "Fabien Roussel: Zouhaïr Nakara, 2021 — CC BY-SA 4.0.", "François Ruffin: Thinkerview, 2022 — CC BY-SA 4.0.", "Marine Tondelier: Greenbox, 2021 — CC BY-SA 4.0.", "Éric Zemmour: Anh De France, 2022 — CC0."]]]
   }
 };
-const SLUGS = { fr: { home: "", fil: "fil", grille: "grille", cand: "candidat", methodo: "methodologie", corrections: "corrections", legal: "mentions-legales" }, en: { home: "", fil: "feed", grille: "grid", cand: "candidate", methodo: "methodology", corrections: "corrections", legal: "legal" } };
-const PAGE_OF = { fil: "fil", feed: "fil", grille: "grille", grid: "grille", candidat: "cand", candidate: "cand", methodologie: "methodo", methodology: "methodo", corrections: "corrections", "mentions-legales": "legal", legal: "legal" };
+const SLUGS = { fr: { home: "", fil: "fil", grille: "grille", sources: "sources", cand: "candidat", methodo: "methodologie", corrections: "corrections", legal: "mentions-legales" }, en: { home: "", fil: "feed", grille: "grid", sources: "sources", cand: "candidate", methodo: "methodology", corrections: "corrections", legal: "legal" } };
+const PAGE_OF = { fil: "fil", feed: "fil", grille: "grille", grid: "grille", sources: "sources", candidat: "cand", candidate: "cand", methodologie: "methodo", methodology: "methodo", corrections: "corrections", "mentions-legales": "legal", legal: "legal" };
 const ICON = {
   kind: { speech: "mic", programme: "description", interview: "forum", "press-release": "campaign", video: "videocam", vote: "how_to_vote", seance: "account_balance", article: "article", page: "web", pdf: "picture_as_pdf" },
   axis: { regulation: "balance", souverainete: "dns", environnement: "eco", emploi: "work", formation: "school", services: "account_balance", surveillance: "visibility", "securite-defense": "shield", financement: "payments" },
   tier: { 1: "person", 2: "group" }
 };
+const SRC_ICON = { rss: "rss_feed", page: "web", pdf: "picture_as_pdf", assemblee_nationale: "account_balance", sitemap: "web" };
 const AX_HUE = { regulation: 258, souverainete: 300, environnement: 155, emploi: 42, formation: 92, services: 196, surveillance: 330, "securite-defense": 15, financement: 120 };
 const hueOf = id => AX_HUE[id] !== undefined ? AX_HUE[id] : 258;
 const axInk = id => "oklch(.47 .12 " + hueOf(id) + ")";
@@ -900,11 +947,11 @@ class Component extends DCLogic {
 
     return {
       hasPending: (D.pending || 0) > 0, pendingNote: (D.pending || 0) + " " + t.pendingNote,
-      lang, t, isHome: page === "home", isFil: page === "fil", isGrille: page === "grille", isCand: page === "cand", isDoc, isCorrections: page === "corrections",
-      hrefHome: H("home"), hrefFil: H("fil"), hrefGrille: H("grille"), hrefMethodo: H("methodo"), hrefCorrections: H("corrections"), hrefLegal: H("legal"),
+      lang, t, isHome: page === "home", isFil: page === "fil", isGrille: page === "grille", isSources: page === "sources", isCand: page === "cand", isDoc, isCorrections: page === "corrections",
+      hrefHome: H("home"), hrefFil: H("fil"), hrefGrille: H("grille"), hrefSources: H("sources"), hrefMethodo: H("methodo"), hrefCorrections: H("corrections"), hrefLegal: H("legal"),
       hrefFr: lang === "fr" ? location.hash || H("home") : otherHref, hrefEn: lang === "en" ? location.hash || H("home") : otherHref,
-      curFil: cur("fil"), curGrille: cur("grille"), curMethodo: cur("methodo"), curCorrections: cur("corrections"), curLegal: cur("legal"),
-      bgFil: bgNav("fil"), bgGrille: bgNav("grille"), bgMethodo: bgNav("methodo"), bgDocMethodo: bgDoc("methodo"), bgDocCorrections: bgDoc("corrections"), bgDocLegal: bgDoc("legal"),
+      curFil: cur("fil"), curGrille: cur("grille"), curSources: cur("sources"), curMethodo: cur("methodo"), curCorrections: cur("corrections"), curLegal: cur("legal"),
+      bgFil: bgNav("fil"), bgGrille: bgNav("grille"), bgSources: bgNav("sources"), bgMethodo: bgNav("methodo"), bgDocMethodo: bgDoc("methodo"), bgDocCorrections: bgDoc("corrections"), bgDocLegal: bgDoc("legal"),
       curFr: lang === "fr" ? "true" : undefined, curEn: lang === "en" ? "true" : undefined,
       frColor: lang === "fr" ? "#0B0C0F" : "#F3F1EC", frBg: lang === "fr" ? "#F3F1EC" : "transparent", enColor: lang === "en" ? "#0B0C0F" : "#F3F1EC", enBg: lang === "en" ? "#F3F1EC" : "transparent",
       nClaims: D.claims.length, nCands: D.candidates.length, nTracked, lastUpdate: this.fmtDate(lastIso, lang) || "", generatedLabel: this.fmtDate(D.generated, lang) || "", generatedIso: D.generated,
@@ -927,6 +974,24 @@ class Component extends DCLogic {
           lastAxis: last ? axLabel(axisById[last.axis]) : "", lastInk: last ? axInk(last.axis) : "#8A8F99",
           status: c.tracked ? n + " " + nWord(n) : t.untrackedShort, offY: i % 2 ? "30px" : "0px", offNum: i % 2 ? 30 : 0, par: [26, 18, 30, 21][i % 4],
           spectrum: D.axes.map(a => { const k = mine.filter(x => x.axis === a.id).length; return { title: axLabel(a) + " : " + k, bg: !c.tracked ? "repeating-linear-gradient(135deg,#D8D5CE 0 2px,transparent 2px 5px)" : k ? axStep(a.id, k) : "#E3E0D8" }; })
+        };
+      }),
+      sourceRows: cands.map(c => {
+        const n = countOf(c.id);
+        const sources = c.sources.map(src => {
+          const docs = src.documents || 0, stated = src.statements || 0;
+          let host = src.url; try { host = new URL(src.url).hostname.replace(/^www\./, ""); } catch (e) { /* not a URL: shown as is */ }
+          return {
+            label: src[lang] || src.fr, url: src.url, host,
+            kindLabel: (t.sourceKinds || {})[src.kind] || src.kind || "", kindIcon: SRC_ICON[src.kind] || "web",
+            tierShort: src.tier === 1 ? t.tierShort1 : t.tierShort2, tierIcon: ICON.tier[src.tier] || "group",
+            tierState: src.tierConfirmed ? t.confirmed : t.defaulted, tierBorderStyle: src.tierConfirmed ? "solid" : "dashed", tierBorderColor: src.tierConfirmed ? "#0B0C0F" : "#8A8F99",
+            docsLabel: docs + " " + (docs === 1 ? t.sourceDoc1 : t.sourceDocN), statsLabel: stated + " " + nWord(stated), hasStatements: stated > 0, noStatements: stated === 0
+          };
+        });
+        return {
+          name: fullName(c), party: c.party, href: H("cand", c.id), ...face(c), tracked: c.tracked, untracked: !c.tracked, sources,
+          summary: c.tracked ? sources.length + " " + (sources.length === 1 ? t.sourceN1 : t.sourceNN) + " · " + n + " " + nWord(n) : t.untracked
         };
       }),
       candTiles: cands.map(c => { const n = countOf(c.id); return { name: fullName(c), party: c.party, partyShort: c.partyShort, href: H("cand", c.id), slotId: "portrait-" + c.id, ...face(c), status: c.tracked ? n + " " + nWord(n) : t.untracked, statusIcon: c.tracked ? "format_quote" : "mic_off" }; }),

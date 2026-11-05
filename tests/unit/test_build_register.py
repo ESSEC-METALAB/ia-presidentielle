@@ -287,3 +287,28 @@ def test_an_ai_passage_nobody_annotated_is_pending_for_its_candidate() -> None:
     register = _build(store, [candidate()], [FEED])
 
     assert register.pending == {"camille-exemple": 1}
+
+
+def test_texts_read_are_counted_per_source_statements_or_not() -> None:
+    store = InMemoryStore()
+    _annotated(store, document(TEXT))
+    store.save(document("Un autre texte, sans rien sur le sujet."))
+    store.save(document("Hors fenêtre.", published_on=date(2026, 6, 1)))
+
+    register = _build(store, [candidate()], [FEED])
+
+    assert register.documents == {FEED.id: 2}
+
+
+def test_texts_of_a_withdrawn_person_or_the_press_are_not_counted() -> None:
+    store = InMemoryStore()
+    store.save(document("Presse.", source_id="press", trust_level=TrustLevel.PRESS))
+    store.save(document("Retrait.", source_id="x/rss/y", candidate_id="dominique-temoin"))
+    sources = [
+        source("press", trust_level=TrustLevel.PRESS),
+        source("x/rss/y", candidate_id="dominique-temoin"),
+    ]
+
+    register = _build(store, [candidate(), _withdrawn()], sources)
+
+    assert register.documents == {}

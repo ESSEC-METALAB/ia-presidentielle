@@ -46,3 +46,5 @@ class Register(_Frozen):
     pending: dict[str, int] = Field(default_factory=dict)
     # Configured people left out because they withdrew (config/candidates.yaml).
     withdrawn: tuple[Candidate, ...] = ()
+    # Texts read in the window, per source id: what a source gave us, statements or not.
+    documents: dict[str, int] = Field(default_factory=dict)

@@ -71,6 +71,7 @@ def _register() -> Register:
         ),
         annotators=("edition", "daily"),
         pending={"camille-de-exemple": 2},
+        documents={"camille-de-exemple/an/PA1": 5},
     )
 
 
@@ -108,6 +109,25 @@ def test_a_candidate_is_listed_by_surname_with_what_we_listen_to() -> None:
     assert person["tracked"] is True
     assert person["pending"] == 2
     assert person["sources"][0]["url"].startswith("https://")
+
+
+def test_each_source_says_what_it_is_and_what_it_gave() -> None:
+    (person,) = _data(RegisterDataScript().render(_register()))["candidates"]
+
+    (hall,) = person["sources"]
+    assert (hall["id"], hall["kind"], hall["tier"]) == (
+        "camille-de-exemple/an/PA1",
+        "assemblee_nationale",
+        1,
+    )
+    assert hall["tierConfirmed"] is True
+    assert (hall["documents"], hall["statements"]) == (5, 1)
+
+
+def test_a_statement_names_its_source() -> None:
+    first, second = _data(RegisterDataScript().render(_register()))["claims"]
+
+    assert (first["source"], second["source"]) == ("camille-de-exemple/an/PA1", source().id)
 
 
 def test_a_statement_carries_its_source_archive_and_confirmed_level() -> None:

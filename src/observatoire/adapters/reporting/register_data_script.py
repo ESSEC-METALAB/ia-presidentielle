@@ -6,10 +6,12 @@ dimension, the quote it located and the descriptive notes that passed the gates.
 """
 
 import json
+from collections import Counter
 from datetime import date
 from urllib.parse import urlsplit
 
 from observatoire.domain.annotation import Dimension
+from observatoire.domain.models import Source
 from observatoire.domain.register import Register, RegisterCandidate, RegisterEntry
 
 # Source kind -> the site's statement kind. Describes the medium, which is a fact; the
@@ -41,7 +43,24 @@ def _axis(dimension: Dimension) -> dict[str, object]:
     }
 
 
-def _candidate(listed: RegisterCandidate, pending: int) -> dict[str, object]:
+def _source(source: Source, documents: int, statements: int) -> dict[str, object]:
+    """A tracked source as the site's sources page lists it."""
+    return {
+        "id": source.id,
+        "fr": source.label,
+        "en": source.label,
+        "url": source.url,
+        "kind": source.kind,
+        "tier": int(source.trust_level),
+        "tierConfirmed": source.trust_confirmed,
+        "documents": documents,  # texts read in the window
+        "statements": statements,  # statements on the register
+    }
+
+
+def _candidate(
+    listed: RegisterCandidate, register: Register, statements: Counter[str]
+) -> dict[str, object]:
     person = listed.candidate
     return {
         "id": person.id,
@@ -52,8 +71,10 @@ def _candidate(listed: RegisterCandidate, pending: int) -> dict[str, object]:
         "tracked": listed.monitored,
         # AI passages nobody has annotated yet: the site says "en attente" for this
         # candidate's empty cells instead of "aucune position identifiée".
-        "pending": pending,
-        "sources": [{"fr": s.label, "en": s.label, "url": s.url} for s in listed.sources],
+        "pending": register.pending.get(person.id, 0),
+        "sources": [
+            _source(s, register.documents.get(s.id, 0), statements[s.id]) for s in listed.sources
+        ],
     }
 
 
@@ -63,6 +84,7 @@ def _claim(entry: RegisterEntry) -> dict[str, object]:
     return {
         "id": statement.id,
         "cand": document.candidate_id,
+        "source": source.id,
         "axis": statement.dimension,
         "date": _iso(document.published_on),
         "tier": int(document.trust_level),
@@ -85,6 +107,7 @@ def _claim(entry: RegisterEntry) -> dict[str, object]:
 
 class RegisterDataScript:
     def render(self, register: Register) -> str:
+        statements = Counter(entry.source.id for entry in register.entries)
         data = {
             "generated": register.generated_at.date().isoformat(),
             "windowStart": _iso(register.window_start),
@@ -92,9 +115,7 @@ class RegisterDataScript:
             "reviewed": False,  # no statement has been through editorial review yet
             "pending": sum(register.pending.values()),
             "axes": [_axis(d) for d in register.dimensions],
-            "candidates": [
-                _candidate(c, register.pending.get(c.candidate.id, 0)) for c in register.candidates
-            ],
+            "candidates": [_candidate(c, register, statements) for c in register.candidates],
             "claims": [_claim(e) for e in register.entries],
             "corrections": [],
         }
