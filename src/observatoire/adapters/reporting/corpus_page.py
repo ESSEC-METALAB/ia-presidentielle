@@ -34,6 +34,7 @@ _KIND_LABELS = {
     "pdf": "PDF",
     "assemblee_nationale": "Compte rendu AN",
     "sitemap": "Archives du site",
+    "transcript": "Transcription vidéo",
 }
 _LEVEL_LABELS = {1: "paroles propres", 2: "parti", 3: "presse", 4: "tiers"}
 _STATUS_LABELS = {

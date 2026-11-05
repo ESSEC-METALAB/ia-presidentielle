@@ -126,9 +126,17 @@ def test_every_enabled_source_kind_has_a_live_reader() -> None:
         max_redirects=1,
     )
 
-    readers = _live_readers(httpx.Client(), crawler, FrozenClock())
+    readers = _live_readers(httpx.Client(), crawler, FrozenClock(), CONFIG)
 
     assert {s.kind for s in registry.sources if s.enabled} <= readers.keys()
+
+
+def test_every_configured_transcript_is_in_the_repository() -> None:
+    transcripts = [s for s in load_registry(CONFIG).sources if s.kind == "transcript"]
+
+    assert transcripts
+    for source in transcripts:
+        assert (CONFIG / source.options["file"]).read_text(encoding="utf-8").strip()
 
 
 def _write_config(directory: Path, sources: str) -> Path:

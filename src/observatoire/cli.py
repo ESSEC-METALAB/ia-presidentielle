@@ -34,6 +34,7 @@ from observatoire.adapters.sources.legacy_pipeline_reader import LEGACY_KINDS, L
 from observatoire.adapters.sources.mieuxvoter_roster import MieuxVoterRoster
 from observatoire.adapters.sources.pdf_reader import PdfReader
 from observatoire.adapters.sources.rss_reader import RssReader
+from observatoire.adapters.sources.transcript_reader import TranscriptReader
 from observatoire.adapters.storage.discarding_store import DiscardingAnnotationStore
 from observatoire.adapters.storage.sqlite_repository import SqliteRepository
 from observatoire.adapters.system_clock import SystemClock
@@ -189,7 +190,7 @@ def _collect(args: argparse.Namespace, settings: Settings, registry: Registry) -
         httpx.Client(headers=headers, timeout=crawler.timeout_seconds) as client,
         closing(SqliteRepository(settings.database_path)) as repository,
     ):
-        readers = _live_readers(client, crawler, clock)
+        readers = _live_readers(client, crawler, clock, settings.config_dir)
         use_case = CollectDaily(
             readers,
             repository,
@@ -415,7 +416,7 @@ def _usage(args: argparse.Namespace, settings: Settings, registry: Registry) -> 
 
 
 def _live_readers(
-    client: httpx.Client, crawler: CrawlerSettings, clock: Clock
+    client: httpx.Client, crawler: CrawlerSettings, clock: Clock, config_dir: Path
 ) -> dict[str, SourceReader]:
     policy = RobotsPolicy(crawler.user_agent, crawler.min_delay_seconds, robots_fetcher(client))
     http = PoliteHttpClient(client, policy, crawler.max_redirects)
@@ -425,6 +426,7 @@ def _live_readers(
         "page": HtmlPageReader(http, extractor, clock),
         "pdf": PdfReader(http, clock),
         "assemblee_nationale": AssembleeNationaleReader(http, clock),
+        "transcript": TranscriptReader(config_dir, clock),
     }
 
 

@@ -17,6 +17,7 @@ from observatoire.adapters.sources.http_client import PoliteHttpClient, robots_f
 from observatoire.adapters.sources.legacy_pipeline_reader import LegacyPipelineReader
 from observatoire.adapters.sources.pdf_reader import PdfReader
 from observatoire.adapters.sources.rss_reader import RssReader
+from observatoire.adapters.sources.transcript_reader import TranscriptReader
 from observatoire.domain.errors import SourceUnavailableError
 from observatoire.domain.models import Source, TrustLevel
 from observatoire.services.robots_policy import RobotsPolicy
@@ -153,6 +154,40 @@ def test_a_pdf_yields_its_text_layer_and_the_configured_date() -> None:
 
     assert "Programme fictif pour le numerique" in document.text
     assert document.published_on == date(2026, 7, 7)
+
+
+def test_a_transcript_is_the_stored_file_linked_to_its_recording(tmp_path: Path) -> None:
+    (tmp_path / "transcripts").mkdir()
+    (tmp_path / "transcripts" / "discours.txt").write_text("Mes chers amis.\n\nL'IA.\n")
+    speech = source(
+        kind="transcript",
+        trust_level=TrustLevel.OWN_WORDS,
+        options={"file": "transcripts/discours.txt", "published_on": "2026-09-13"},
+    )
+
+    (document,) = TranscriptReader(tmp_path, FrozenClock()).fetch(speech, since=None)
+
+    assert document.text == "Mes chers amis.\n\nL'IA."
+    assert (document.url, document.title) == (speech.url, speech.label)
+    assert document.published_on == date(2026, 9, 13)
+
+
+def test_a_transcript_before_since_is_skipped(tmp_path: Path) -> None:
+    (tmp_path / "t.txt").write_text("Discours.")
+    speech = source(kind="transcript", options={"file": "t.txt", "published_on": "2026-06-01"})
+
+    assert TranscriptReader(tmp_path, FrozenClock()).fetch(speech, since=date(2026, 7, 1)) == []
+
+
+@pytest.mark.parametrize("options", [{}, {"file": "absent.txt"}, {"file": "vide.txt"}])
+def test_a_missing_or_empty_transcript_fails_the_source(
+    tmp_path: Path, options: dict[str, str]
+) -> None:
+    (tmp_path / "vide.txt").write_text("  \n")
+    speech = source(kind="transcript", options=options)
+
+    with pytest.raises(SourceUnavailableError):
+        TranscriptReader(tmp_path, FrozenClock()).fetch(speech, since=None)
 
 
 def test_a_file_that_is_not_a_pdf_fails_the_source() -> None:

@@ -10,7 +10,7 @@
 # URL. A new entry is fetched, checked against robots.txt and confirmed to extract before
 # it is added.
 #
-# kind selects the reader: rss, page, pdf, assemblee_nationale. `sitemap` sources are
+# kind selects the reader: rss, page, pdf, assemblee_nationale, transcript. `sitemap` sources are
 # one-off archive crawls whose reader is not written yet: enabled: false, so only
 # `observatoire import-legacy` fills them, from what the previous version collected.
 
@@ -156,9 +156,9 @@ sources:
   # one trafilatura finds (the page reader ignores `options.published_on`); on WordPress
   # sites it can be the date of the last change rather than of publication. The levels of
   # the three personal blogs (Ruffin, Tondelier, Mélenchon) are defaults to confirm.
-  # Left out, with why: Éric Zemmour (no feed, generic pages, Instagram embeds) and Marine
-  # Le Pen (rassemblementnational.fr behind a firewall that answers 307 with no target,
-  # marinelepen.com a JavaScript app); laec.fr forbids unlisted robots; lesecologistes.fr
+  # Left out, with why: Éric Zemmour's and Marine Le Pen's websites (no feed, generic
+  # pages, a JavaScript app; both are followed through speech transcripts since
+  # 2026-11-05, below); laec.fr forbids unlisted robots; lesecologistes.fr
   # answers 403 to our agent; the Place publique programme PDF has an uncertain date.
   # Raphaël Glucksmann's European Parliament record still needs a reader of its own.
   # The Parti socialiste feed stays attributed to Olivier Faure (decided 2026-11-04): its
@@ -303,3 +303,53 @@ sources:
     trust_level: 1
     label: Le blog de Jean-Luc Mélenchon — fil RSS
     max_items: 15
+
+  # --- Added on 2026-11-05 (branch poc) ------------------------------------------------
+  # Pages: fetched on 2026-11-05 with the project's agent; robots.txt allows them, they
+  # extract, and trafilatura dates them inside the window.
+  # Transcripts (kind: transcript): a speech recorded on video has no text to fetch. Its
+  # transcript is kept in config/transcripts/, and the source URL is the recording, which
+  # the register links to. Each one is the video's automatic transcript (YouTube captions,
+  # read on 2026-11-05), with the timestamps, the crowd noise markers and the chants after
+  # the closing words removed, and nothing else changed: a quote can carry a captioning
+  # error ("l'IA développé"), to be checked against the recording at review. Only
+  # monologues: an interview's captions do not say who is speaking (Éric Zemmour on
+  # « Face à BFM », 17 September 2026, is left out for that reason).
+  - id: eric-zemmour/transcript/port-marly-2026-09-13
+    candidate_id: eric-zemmour
+    kind: transcript
+    url: https://www.youtube.com/watch?v=hL2bzAFgNYQ
+    trust_level: 1
+    trust_confirmed: true   # a speech on video: the speaker is seen
+    label: "Discours de rentrée d'Éric Zemmour, universités d'été de Reconquête, Port-Marly, 13 septembre 2026 (vidéo BFMTV, transcription)"
+    options: {file: transcripts/eric-zemmour-port-marly-2026-09-13.txt, published_on: "2026-09-13"}
+
+  - id: marine-le-pen/transcript/orleans-2026-10-25
+    candidate_id: marine-le-pen
+    kind: transcript
+    url: https://www.youtube.com/watch?v=3jM21BgsATw
+    trust_level: 1
+    trust_confirmed: true   # a speech on video, on her own channel: the speaker is seen
+    label: "Discours de Marine Le Pen au congrès du Rassemblement national, Orléans, 25 octobre 2026 (vidéo de sa chaîne, transcription)"
+    options: {file: transcripts/marine-le-pen-orleans-2026-10-25.txt, published_on: "2026-10-25"}
+
+  - id: nicolas-dupont-aignan/page/projet-ia
+    candidate_id: nicolas-dupont-aignan
+    kind: page
+    url: https://www.debout-la-france.fr/projet/intelligence-artificielle/
+    trust_level: 2
+    label: "Debout la France — Le projet : intelligence artificielle"
+
+  - id: nicolas-dupont-aignan/page/discours-rentree-2026
+    candidate_id: nicolas-dupont-aignan
+    kind: page
+    url: "https://www.dupontaignan.fr/actualite/liberons-la-france-%c2%b7-discours-de-rentree-de-nicolas-dupont-aignan/"
+    trust_level: 1
+    label: "« Libérons la France » : discours de rentrée de Nicolas Dupont-Aignan, 19 septembre 2026"
+
+  - id: jean-luc-melenchon/page/plan-esr
+    candidate_id: jean-luc-melenchon
+    kind: page
+    url: https://melenchon2027.fr/programme/plans-thematiques/esr/
+    trust_level: 1
+    label: "Programme de Jean-Luc Mélenchon — plan thématique Enseignement supérieur et recherche"

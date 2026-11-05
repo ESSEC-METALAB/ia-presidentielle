@@ -200,6 +200,17 @@ Repris du README. Seuls les niveaux 1 et 2 deviennent des déclarations ; la pre
 (niveau 3) et les tiers (niveau 4) jamais, même avec une citation directe attribuée : ils
 peuvent signaler une piste à un éditeur, pas établir une position.
 
+**Discours en vidéo (depuis le 5 novembre 2026).** Un discours prononcé par le candidat
+est de niveau 1, même quand la vidéo est diffusée par une chaîne de télévision : ce sont
+ses mots, pas un article sur lui. Faute de texte publié, sa transcription est conservée
+dans `config/transcripts/` (source `transcript`) et le registre renvoie à la vidéo. C'est
+la transcription automatique de la vidéo (sous-titres YouTube), débarrassée des
+horodatages et des bruits de salle, sans autre retouche : une citation peut donc porter
+une erreur de sous-titrage, à vérifier sur la vidéo à la relecture. Seuls les monologues
+sont retenus : les sous-titres d'un entretien ne disent pas qui parle, et la question du
+journaliste serait attribuée au candidat. Premiers ajouts : Éric Zemmour à Port-Marly
+(13 septembre 2026) et Marine Le Pen à Orléans (25 octobre 2026).
+
 ## Indicateur
 
 À définir, dans `config/scoring.yaml`, si un score est un jour publié : pondération par
