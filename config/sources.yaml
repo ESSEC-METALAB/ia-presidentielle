@@ -311,8 +311,10 @@ sources:
   # transcript is kept in config/transcripts/, and the source URL is the recording, which
   # the register links to. Each one is the video's automatic transcript (YouTube captions,
   # read on 2026-11-05), with the timestamps, the crowd noise markers and the chants after
-  # the closing words removed, and nothing else changed: a quote can carry a captioning
-  # error ("l'IA développé"), to be checked against the recording at review. Only
+  # the closing words removed, and nothing else changed (the two later Le Pen entries were
+  # read with yt-dlp, their rolling captions de-duplicated line by line): a quote can
+  # carry a captioning error ("l'IA développé"), to be checked against the recording at
+  # review. A press conference is cut where the candidate hands over. Only
   # monologues: an interview's captions do not say who is speaking (Éric Zemmour on
   # « Face à BFM », 17 September 2026, is left out for that reason).
   - id: eric-zemmour/transcript/port-marly-2026-09-13
@@ -332,6 +334,26 @@ sources:
     trust_confirmed: true   # a speech on video, on her own channel: the speaker is seen
     label: "Discours de Marine Le Pen au congrès du Rassemblement national, Orléans, 25 octobre 2026 (vidéo de sa chaîne, transcription)"
     options: {file: transcripts/marine-le-pen-orleans-2026-10-25.txt, published_on: "2026-10-25"}
+
+  - id: marine-le-pen/transcript/henin-beaumont-2026-09-13
+    candidate_id: marine-le-pen
+    kind: transcript
+    url: https://www.youtube.com/watch?v=axv_QAYe4Z8
+    trust_level: 1
+    trust_confirmed: true   # a speech on video, on her own channel: the speaker is seen
+    label: "Discours de rentrée de Marine Le Pen, Hénin-Beaumont, 13 septembre 2026 (vidéo de sa chaîne, transcription)"
+    options: {file: transcripts/marine-le-pen-henin-beaumont-2026-09-13.txt, published_on: "2026-09-13"}
+
+  # Her opening statement only: the transcript stops where she hands over to Jordan
+  # Bardella, before his presentation and the questions.
+  - id: marine-le-pen/transcript/conference-trajectoire-financiere-2026-10-06
+    candidate_id: marine-le-pen
+    kind: transcript
+    url: https://www.youtube.com/watch?v=YYwoEaAKdeE
+    trust_level: 1
+    trust_confirmed: true   # her statement on video, on her own channel: the speaker is seen
+    label: "« La trajectoire financière de mon quinquennat » : conférence de presse de Marine Le Pen, 6 octobre 2026 (vidéo de sa chaîne, transcription de sa déclaration)"
+    options: {file: transcripts/marine-le-pen-conference-trajectoire-financiere-2026-10-06.txt, published_on: "2026-10-06"}
 
   - id: nicolas-dupont-aignan/page/projet-ia
     candidate_id: nicolas-dupont-aignan

@@ -208,8 +208,10 @@ la transcription automatique de la vidéo (sous-titres YouTube), débarrassée d
 horodatages et des bruits de salle, sans autre retouche : une citation peut donc porter
 une erreur de sous-titrage, à vérifier sur la vidéo à la relecture. Seuls les monologues
 sont retenus : les sous-titres d'un entretien ne disent pas qui parle, et la question du
-journaliste serait attribuée au candidat. Premiers ajouts : Éric Zemmour à Port-Marly
-(13 septembre 2026) et Marine Le Pen à Orléans (25 octobre 2026).
+journaliste serait attribuée au candidat ; une conférence de presse est coupée là où le
+candidat passe la parole. Premiers ajouts : Éric Zemmour à Port-Marly (13 septembre
+2026) ; Marine Le Pen à Hénin-Beaumont (13 septembre), en conférence de presse
+(6 octobre) et à Orléans (25 octobre 2026).
 
 ## Indicateur
 
