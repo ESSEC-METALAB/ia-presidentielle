@@ -210,6 +210,7 @@ une preuve d'ancienneté.
 | Flux RSS de francoisruffin.fr | François Ruffin | 1 | |
 | Blog de marinetondelier.fr ; carnet numérique des Écologistes (PDF, juillet 2026) | Marine Tondelier | 1 ; 2 | |
 | Flux RSS du Parti socialiste, Assemblée | Olivier Faure | 2 / 1 | ne se présente plus depuis le 11 octobre, affiché depuis le 6 novembre ; le flux n'est pas rattaché à Raphaël Glucksmann, ses textes sont signés d'Olivier Faure ou des instances du parti |
+| Comptes X, Facebook, Instagram, LinkedIn, TikTok et YouTube (44 comptes, via Apify, `APIFY_TOKEN`) | les 13 | 1 (non confirmé) | depuis le 9 novembre ; posts du compte seulement, jamais de commentaires ; voir `docs/methodology.md` |
 | Base de la version précédente (branche `daily`, GitHub Actions) | tous les suivis | — | pont, tant que l'ancienne collecte tourne |
 | Liste MieuxVoter des candidatures (communautaire) | — | — | **veille seulement**, jamais une preuve |
 

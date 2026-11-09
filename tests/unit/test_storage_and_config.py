@@ -126,7 +126,9 @@ def test_every_enabled_source_kind_has_a_live_reader() -> None:
         max_redirects=1,
     )
 
-    readers = _live_readers(httpx.Client(), crawler, FrozenClock(), CONFIG)
+    readers = _live_readers(
+        httpx.Client(), crawler, FrozenClock(), CONFIG, social=registry.social, apify_token=None
+    )
 
     assert {s.kind for s in registry.sources if s.enabled} <= readers.keys()
 

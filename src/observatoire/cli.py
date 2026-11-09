@@ -27,6 +27,7 @@ from observatoire.adapters.reporting.corpus_html_renderer import CorpusHtmlRende
 from observatoire.adapters.reporting.register_data_script import RegisterDataScript
 from observatoire.adapters.reporting.static_site import write_site
 from observatoire.adapters.reporting.watch_markdown import WatchMarkdown
+from observatoire.adapters.sources.apify_client import ApifyClient
 from observatoire.adapters.sources.assemblee_nationale_reader import AssembleeNationaleReader
 from observatoire.adapters.sources.html_page_reader import HtmlPageReader
 from observatoire.adapters.sources.http_client import PoliteHttpClient, robots_fetcher
@@ -34,6 +35,7 @@ from observatoire.adapters.sources.legacy_pipeline_reader import LEGACY_KINDS, L
 from observatoire.adapters.sources.mieuxvoter_roster import MieuxVoterRoster
 from observatoire.adapters.sources.pdf_reader import PdfReader
 from observatoire.adapters.sources.rss_reader import RssReader
+from observatoire.adapters.sources.social_reader import SocialReader
 from observatoire.adapters.sources.transcript_reader import TranscriptReader
 from observatoire.adapters.storage.discarding_store import DiscardingAnnotationStore
 from observatoire.adapters.storage.sqlite_repository import SqliteRepository
@@ -46,7 +48,7 @@ from observatoire.application.collect_daily import CollectDaily
 from observatoire.application.inspect_corpus import InspectCorpus
 from observatoire.application.segment_documents import SegmentDocuments
 from observatoire.application.watch_changes import WatchChanges
-from observatoire.config.registry import CrawlerSettings, Registry, load_registry
+from observatoire.config.registry import CrawlerSettings, Registry, SocialSettings, load_registry
 from observatoire.config.settings import Settings
 from observatoire.domain.annotation import AnnotationReport
 from observatoire.domain.errors import ConfigurationError
@@ -92,6 +94,11 @@ def _parser() -> argparse.ArgumentParser:
         help="AAAA-MM-JJ ; jamais avant le début de la fenêtre de collecte (config/sources.yaml)",
     )
     collect.add_argument("--source-id", action="append", dest="source_ids", help="répétable")
+    collect.add_argument(
+        "--full-window",
+        action="store_true",
+        help="réseaux sociaux : toute la fenêtre de collecte, pas seulement les derniers jours",
+    )
     collect.set_defaults(handler=_collect)
     legacy = commands.add_parser(
         "import-legacy", help="importe la base de la version précédente (branche daily)"
@@ -190,7 +197,17 @@ def _collect(args: argparse.Namespace, settings: Settings, registry: Registry) -
         httpx.Client(headers=headers, timeout=crawler.timeout_seconds) as client,
         closing(SqliteRepository(settings.database_path)) as repository,
     ):
-        readers = _live_readers(client, crawler, clock, settings.config_dir)
+        token = settings.apify_token.get_secret_value() if settings.apify_token else None
+        readers = _live_readers(
+            client,
+            crawler,
+            clock,
+            settings.config_dir,
+            social=registry.social,
+            apify_token=token,
+            full_window=args.full_window,
+            known=frozenset(d.source_id for d in repository.list_documents()),
+        )
         use_case = CollectDaily(
             readers,
             repository,
@@ -416,7 +433,15 @@ def _usage(args: argparse.Namespace, settings: Settings, registry: Registry) -> 
 
 
 def _live_readers(
-    client: httpx.Client, crawler: CrawlerSettings, clock: Clock, config_dir: Path
+    client: httpx.Client,
+    crawler: CrawlerSettings,
+    clock: Clock,
+    config_dir: Path,
+    *,
+    social: SocialSettings,
+    apify_token: str | None,
+    full_window: bool = False,
+    known: frozenset[str] = frozenset(),
 ) -> dict[str, SourceReader]:
     policy = RobotsPolicy(crawler.user_agent, crawler.min_delay_seconds, robots_fetcher(client))
     http = PoliteHttpClient(client, policy, crawler.max_redirects)
@@ -427,6 +452,20 @@ def _live_readers(
         "pdf": PdfReader(http, clock),
         "assemblee_nationale": AssembleeNationaleReader(http, clock),
         "transcript": TranscriptReader(config_dir, clock),
+        "social": SocialReader(
+            ApifyClient(
+                client,
+                apify_token,
+                max_charge_usd=social.max_charge_usd,
+                timeout_seconds=social.timeout_seconds,
+            ),
+            client,
+            clock,
+            daily_max_items=social.daily_max_items,
+            lookback_days=None if full_window else social.lookback_days,
+            skip_titles=social.youtube_skip_titles,
+            known=known,
+        ),
     }
 
 

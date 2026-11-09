@@ -46,6 +46,34 @@ class CollectionSettings(BaseModel):
     near_duplicate_similarity: float = Field(default=1.0, gt=0, le=1)
 
 
+class SocialSettings(BaseModel):
+    """How social media accounts are read through Apify (config/sources.yaml, `social`)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    # A daily run reads only the posts of the last days, and at most this many per
+    # account; `observatoire collect --full-window` reads the whole window instead, up to
+    # each source's max_items.
+    lookback_days: int = Field(default=3, ge=1)
+    daily_max_items: int = Field(default=15, ge=1)
+    # Spending cap of one Apify run (one account), in US dollars.
+    max_charge_usd: float = Field(default=0.5, gt=0)
+    timeout_seconds: int = Field(default=280, ge=30, le=3600)
+    # YouTube videos whose title matches one of these are skipped: interviews and
+    # debates, whose transcript does not say who is speaking.
+    youtube_skip_titles: tuple[str, ...] = ()
+
+    @field_validator("youtube_skip_titles")
+    @classmethod
+    def _titles_compile(cls, patterns: tuple[str, ...]) -> tuple[str, ...]:
+        for pattern in patterns:
+            try:
+                re.compile(pattern)
+            except re.error as error:
+                raise ValueError(f"{pattern!r}: {error}") from error
+        return patterns
+
+
 class TaxonomySettings(BaseModel):
     """config/taxonomy.yaml: the dimensions, the prefilter and the annotation gates."""
 
@@ -117,6 +145,7 @@ class Registry(BaseModel):
     sources: tuple[Source, ...]
     crawler: CrawlerSettings
     collection: CollectionSettings
+    social: SocialSettings
     segmentation: SegmentationSettings
     taxonomy: TaxonomySettings
     watch: WatchSettings
@@ -134,6 +163,7 @@ class _SourcesFile(BaseModel):
 
     crawler: CrawlerSettings
     collection: CollectionSettings
+    social: SocialSettings = SocialSettings()  # no social source: never read
     sources: list[Source]
 
 
@@ -150,6 +180,7 @@ def load_registry(config_dir: Path) -> Registry:
         sources=tuple(sources_file.sources),
         crawler=sources_file.crawler,
         collection=sources_file.collection,
+        social=sources_file.social,
         segmentation=_load(config_dir / "segmentation.yaml", SegmentationSettings),
         taxonomy=taxonomy,
         watch=_load(config_dir / "watch.yaml", WatchSettings),

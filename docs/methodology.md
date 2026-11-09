@@ -249,6 +249,23 @@ Repris du README. Seuls les niveaux 1 et 2 deviennent des déclarations ; la pre
 (niveau 3) et les tiers (niveau 4) jamais, même avec une citation directe attribuée : ils
 peuvent signaler une piste à un éditeur, pas établir une position.
 
+**Réseaux sociaux (depuis le 9 novembre 2026).** Les comptes officiels des candidats sur
+X, Facebook, Instagram, LinkedIn, TikTok et YouTube sont lus par des outils d'Apify
+(apify.com), faute d'accès officiel abordable : l'API de X est payante, celles de Meta et
+de TikTok sont réservées à des programmes de recherche sur dossier, LinkedIn n'en a pas.
+Ces outils lisent les pages publiques ; c'est contraire aux conditions d'utilisation des
+plateformes, un choix assumé pour ce prototype. Chaque compte a été vérifié en lisant ses
+derniers posts avant d'être ajouté (`config/sources.yaml`). Seuls les posts écrits par le
+compte sont gardés : ni republications, ni réponses à d'autres comptes, et jamais les
+commentaires des internautes, qui ne sont pas stockés. Un post est de niveau 1 par
+défaut, non confirmé : l'équipe de campagne écrit souvent les posts d'un candidat. Une
+vidéo compte par ses mots : la légende, plus les sous-titres français quand TikTok les
+fournit, ou la transcription automatique pour YouTube, où seuls les discours sont gardés
+(les vidéos dont le titre ou la description annoncent un entretien, un débat ou des
+questions sont écartées, mais le filtre peut en laisser passer). La première lecture d'un
+compte remonte au début de la fenêtre, dans la limite de son `max_items` ; la mise à jour
+quotidienne ne lit que les deux derniers jours.
+
 **Discours en vidéo (depuis le 5 novembre 2026).** Un discours prononcé par le candidat
 est de niveau 1, même quand la vidéo est diffusée par une chaîne de télévision : ce sont
 ses mots, pas un article sur lui. Faute de texte publié, sa transcription est conservée
