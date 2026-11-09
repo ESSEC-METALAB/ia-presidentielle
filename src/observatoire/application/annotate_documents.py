@@ -131,13 +131,16 @@ class AnnotateDocuments:
     def _passages(
         self, candidates: Sequence[Candidate], sources: Sequence[Source], since: date | None
     ) -> Iterator[_Passage]:
-        """Segments of configured sources' in-window documents, in a stable order."""
-        people = {candidate.id: candidate for candidate in candidates}
+        """Segments of in-window documents of the people on the register, in a stable
+        order. Nobody else's text is sent to the model: it would never be shown."""
+        people = {candidate.id: candidate for candidate in candidates if candidate.on_register}
         by_id = {source.id: source for source in sources}
         documents = {
             d.content_hash: d
             for d in self._corpus.list_documents()
-            if d.source_id in by_id and in_window(d.published_on, since)
+            if d.source_id in by_id
+            and d.candidate_id in people
+            and in_window(d.published_on, since)
         }
         segmentations = sorted(self._segments.list_segmentations(), key=lambda s: s.document_hash)
         for segmentation in segmentations:

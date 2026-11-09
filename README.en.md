@@ -195,14 +195,14 @@ text is kept and shown as "date not specified": a missing date is not evidence o
 | "Priorités" page, Adidas Arena speech (5 July 2026); "L'école" Q&A | Édouard Philippe | 1; 2 | edouardphilippe.fr |
 | Programme page on AI (attalpresident.fr) | Gabriel Attal | 1 | |
 | National Assembly transcripts | Gabriel Attal, Marine Le Pen, François Ruffin | 1, confirmed | the transcript names the speaker |
-| Rally speech of 26 September 2026; Lutte ouvrière RSS feed | Nathalie Arthaud | 1; 2 | |
-| Debout la France RSS feed | Nicolas Dupont-Aignan | 2 | |
+| Rally speech of 26 September 2026; Lutte ouvrière RSS feed | Nathalie Arthaud | 1; 2 | disabled: off the register since 6 November |
+| Debout la France RSS feed | Nicolas Dupont-Aignan | 2 | disabled: off the register since 6 November |
 | Place publique RSS feed; "Lettre aux Français" | Raphaël Glucksmann | 2; 1 | |
 | Two Nouvelle Énergie pages (his view of AI, his book on AI) | David Lisnard | 2 | no feed on the site |
 | PCF digital commission RSS feed; Fête de l'Humanité 2026 speech | Fabien Roussel | 2; 1 | |
 | francoisruffin.fr RSS feed | François Ruffin | 1 | |
 | marinetondelier.fr blog; Les Écologistes' digital booklet (PDF, July 2026) | Marine Tondelier | 1; 2 | |
-| Parti socialiste RSS feed, Assembly | Olivier Faure | 2 / 1 | withdrew on 11 October: off the register; the feed is not attributed to Raphaël Glucksmann, its texts are signed by Olivier Faure or the party's bodies |
+| Parti socialiste RSS feed, Assembly | Olivier Faure | 2 / 1 | no longer running since 11 October, shown since 6 November; the feed is not attributed to Raphaël Glucksmann, its texts are signed by Olivier Faure or the party's bodies |
 | Previous version's database (branch `daily`, GitHub Actions) | all monitored | — | a bridge while the old collection runs |
 | MieuxVoter list of candidacies (community) | — | — | **watch only**, never evidence |
 

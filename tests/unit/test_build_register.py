@@ -127,8 +127,23 @@ def test_withdrawn_people_are_listed_apart_and_never_shown() -> None:
     register = _build(store, [candidate(), _withdrawn()], [FEED, theirs])
 
     assert [c.candidate.id for c in register.candidates] == ["camille-exemple"]
-    assert [c.id for c in register.withdrawn] == ["dominique-temoin"]
+    assert [c.id for c in register.left_out] == ["dominique-temoin"]
     assert register.entries == ()
+
+
+def test_the_editorial_list_decides_who_is_shown_whatever_the_candidacy() -> None:
+    store = InMemoryStore()
+    _annotated(store, document(TEXT, source_id="x/rss/y", candidate_id="dominique-temoin"))
+    theirs = source("x/rss/y", candidate_id="dominique-temoin")
+    kept = _withdrawn().model_copy(update={"shown": True})
+    dropped = candidate().model_copy(update={"shown": False})
+
+    register = _build(store, [dropped, kept], [FEED, theirs])
+
+    assert [c.candidate.id for c in register.candidates] == ["dominique-temoin"]
+    assert [c.id for c in register.left_out] == ["camille-exemple"]
+    (entry,) = register.entries
+    assert entry.document.candidate_id == "dominique-temoin"
 
 
 def test_a_person_without_an_enabled_source_is_not_monitored() -> None:

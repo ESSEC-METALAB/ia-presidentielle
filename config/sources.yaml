@@ -134,6 +134,30 @@ sources:
     trust_level: 1
     label: Pour une France plus conquérante — priorités
 
+  # --- François Hollande -------------------------------------------------------------
+  # Added on 2026-11-09. Deputy for Corrèze since 2024: identifier PA1654 in the
+  # Assemblée nationale's open data (AMO10, active deputies, read on 2026-11-09).
+  - id: francois-hollande/an/PA1654
+    candidate_id: francois-hollande
+    kind: assemblee_nationale
+    trust_confirmed: true   # the record names each speaker
+    url: https://data.assemblee-nationale.fr/static/openData/repository/17/vp/syceronbrut/syseron.xml.zip
+    trust_level: 1
+    label: Assemblée nationale — compte rendu intégral
+    options: {acteur: PA1654, legislature: "17"}
+
+  # No campaign site: francoishollande.fr is an unrelated blog on an expired domain
+  # (checked on 2026-11-09), never a source. A speech on video instead (see the
+  # transcripts note below).
+  - id: francois-hollande/transcript/fete-de-la-rose-2026-09-12
+    candidate_id: francois-hollande
+    kind: transcript
+    url: https://www.youtube.com/watch?v=aE_-Aict8UA
+    trust_level: 1
+    trust_confirmed: true   # a speech on video: the speaker is seen
+    label: "Discours de François Hollande à la fête de la Rose, Frangy-en-Bresse, 12 septembre 2026 (vidéo BFMTV, transcription)"
+    options: {file: transcripts/francois-hollande-fete-de-la-rose-2026-09-12.txt, published_on: "2026-09-12"}
+
   # --- Marine Le Pen ------------------------------------------------------------------
   - id: marine-le-pen/an/PA720614
     candidate_id: marine-le-pen
@@ -172,6 +196,7 @@ sources:
     url: https://www.lutte-ouvriere.org/portail/brochures/meeting-26-septembre-2026-discours-nathalie-arthaud-197446.html
     trust_level: 1
     label: "Meeting du 26 septembre 2026 : discours de Nathalie Arthaud"
+    enabled: false   # not shown on the register since 2026-11-06 (config/candidates.yaml)
 
   - id: nathalie-arthaud/rss/lutte-ouvriere
     candidate_id: nathalie-arthaud
@@ -182,6 +207,7 @@ sources:
     max_items: 15
 
   # --- Nicolas Dupont-Aignan ----------------------------------------------------------
+    enabled: false   # not shown on the register since 2026-11-06 (config/candidates.yaml)
   - id: nicolas-dupont-aignan/rss/debout-la-france
     candidate_id: nicolas-dupont-aignan
     kind: rss
@@ -191,6 +217,7 @@ sources:
     max_items: 15
 
   # --- Raphaël Glucksmann -------------------------------------------------------------
+    enabled: false   # not shown on the register since 2026-11-06 (config/candidates.yaml)
   - id: raphael-glucksmann/rss/place-publique
     candidate_id: raphael-glucksmann
     kind: rss
@@ -361,6 +388,7 @@ sources:
     url: https://www.debout-la-france.fr/projet/intelligence-artificielle/
     trust_level: 2
     label: "Debout la France — Le projet : intelligence artificielle"
+    enabled: false   # not shown on the register since 2026-11-06 (config/candidates.yaml)
 
   - id: nicolas-dupont-aignan/page/discours-rentree-2026
     candidate_id: nicolas-dupont-aignan
@@ -368,6 +396,7 @@ sources:
     url: "https://www.dupontaignan.fr/actualite/liberons-la-france-%c2%b7-discours-de-rentree-de-nicolas-dupont-aignan/"
     trust_level: 1
     label: "« Libérons la France » : discours de rentrée de Nicolas Dupont-Aignan, 19 septembre 2026"
+    enabled: false   # not shown on the register since 2026-11-06 (config/candidates.yaml)
 
   - id: jean-luc-melenchon/page/plan-esr
     candidate_id: jean-luc-melenchon

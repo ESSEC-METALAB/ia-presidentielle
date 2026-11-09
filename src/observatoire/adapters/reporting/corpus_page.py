@@ -272,6 +272,7 @@ _CANDIDACY_LABELS = {
     CandidacyStatus.DECLARED: "Candidature déclarée",
     CandidacyStatus.DESIGNATED: "Désigné par son parti",
     CandidacyStatus.WITHDRAWN: "Ne se présente plus",
+    CandidacyStatus.PROSPECTIVE: "Pressenti, non déclaré",
 }
 
 

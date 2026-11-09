@@ -265,3 +265,19 @@ def test_a_candidate_is_sorted_by_surname_and_withdrawn_people_are_not_running()
     assert people["jean-luc-melenchon"].surname == "Mélenchon"
     assert not people["jordan-bardella"].is_running
     assert people["bruno-retailleau"].is_running
+
+
+def test_the_register_shows_the_thirteen_people_of_the_editorial_list() -> None:
+    people = load_registry(CONFIG).candidates
+    shown = {c.id for c in people if c.on_register}
+
+    assert shown == {
+        "bruno-retailleau", "david-lisnard", "edouard-philippe", "eric-zemmour",
+        "fabien-roussel", "francois-hollande", "francois-ruffin", "gabriel-attal",
+        "jean-luc-melenchon", "marine-le-pen", "marine-tondelier", "olivier-faure",
+        "raphael-glucksmann",
+    }  # fmt: skip
+    status = {c.id: c.candidacy.status for c in people if c.candidacy}
+    assert status["francois-hollande"] == CandidacyStatus.PROSPECTIVE
+    assert status["olivier-faure"] == CandidacyStatus.WITHDRAWN
+    assert status["nathalie-arthaud"] == CandidacyStatus.DECLARED  # declared, not shown

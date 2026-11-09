@@ -96,7 +96,7 @@ class WatchChanges:
     ) -> WatchReport:
         """Topics and passages count running candidates only, as the register shows them."""
         leads, roster_error = self._candidate_leads(candidates)
-        running = {c.id for c in candidates if c.is_running}
+        running = {c.id for c in candidates if c.on_register}
         passages = [
             p
             for p in self._passages(running, sources, since)

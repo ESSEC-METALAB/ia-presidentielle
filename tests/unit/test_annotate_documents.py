@@ -69,6 +69,7 @@ def _run(
     limit: int | None = None,
     rebuild: bool = False,
     covered_by: tuple[str, ...] = (),
+    shown: bool | None = None,
 ) -> AnnotationReport:
     use_case = AnnotateDocuments(
         corpus=store,
@@ -80,7 +81,12 @@ def _run(
         clock=FrozenClock(),
     )
     return use_case.run(
-        [candidate()], [source()], since=since, limit=limit, rebuild=rebuild, covered_by=covered_by
+        [candidate().model_copy(update={"shown": shown})],
+        [source()],
+        since=since,
+        limit=limit,
+        rebuild=rebuild,
+        covered_by=covered_by,
     )
 
 
@@ -197,6 +203,17 @@ def test_documents_outside_the_window_or_unconfigured_are_not_read() -> None:
 
     report = _run(store, ScriptedAnnotator({}), since=date(2026, 7, 1))
 
+    assert report.segments_read == 0
+
+
+def test_the_text_of_someone_off_the_register_is_never_sent() -> None:
+    store = InMemoryStore()
+    _segmented(store, document(AI), AI)
+    annotator = ScriptedAnnotator({})
+
+    report = _run(store, annotator, shown=False)
+
+    assert annotator.asked == []
     assert report.segments_read == 0
 
 

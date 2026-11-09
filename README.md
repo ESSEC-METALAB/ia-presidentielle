@@ -202,14 +202,14 @@ une preuve d'ancienneté.
 | Page « Priorités », discours de l'Adidas Arena (5 juillet 2026) ; questions-réponses « L'école » | Édouard Philippe | 1 ; 2 | edouardphilippe.fr |
 | Page « Intelligence artificielle » du programme (attalpresident.fr) | Gabriel Attal | 1 | |
 | Comptes rendus de l'Assemblée nationale | Gabriel Attal, Marine Le Pen, François Ruffin | 1, confirmé | le compte rendu nomme l'orateur |
-| Discours du meeting du 26 septembre 2026 ; flux RSS de Lutte ouvrière | Nathalie Arthaud | 1 ; 2 | |
-| Flux RSS de Debout la France | Nicolas Dupont-Aignan | 2 | |
+| Discours du meeting du 26 septembre 2026 ; flux RSS de Lutte ouvrière | Nathalie Arthaud | 1 ; 2 | désactivées : hors registre depuis le 6 novembre |
+| Flux RSS de Debout la France ; deux pages | Nicolas Dupont-Aignan | 2 ; 1 | désactivées : hors registre depuis le 6 novembre |
 | Flux RSS de Place publique ; « Lettre aux Français » | Raphaël Glucksmann | 2 ; 1 | |
 | Deux pages de Nouvelle Énergie (sa vision de l'IA, son livre sur l'IA) | David Lisnard | 2 | pas de flux sur le site |
 | Flux RSS de la commission numérique du PCF ; discours de la Fête de l'Humanité 2026 | Fabien Roussel | 2 ; 1 | |
 | Flux RSS de francoisruffin.fr | François Ruffin | 1 | |
 | Blog de marinetondelier.fr ; carnet numérique des Écologistes (PDF, juillet 2026) | Marine Tondelier | 1 ; 2 | |
-| Flux RSS du Parti socialiste, Assemblée | Olivier Faure | 2 / 1 | retiré le 11 octobre : hors registre ; le flux n'est pas rattaché à Raphaël Glucksmann, ses textes sont signés d'Olivier Faure ou des instances du parti |
+| Flux RSS du Parti socialiste, Assemblée | Olivier Faure | 2 / 1 | ne se présente plus depuis le 11 octobre, affiché depuis le 6 novembre ; le flux n'est pas rattaché à Raphaël Glucksmann, ses textes sont signés d'Olivier Faure ou des instances du parti |
 | Base de la version précédente (branche `daily`, GitHub Actions) | tous les suivis | — | pont, tant que l'ancienne collecte tourne |
 | Liste MieuxVoter des candidatures (communautaire) | — | — | **veille seulement**, jamais une preuve |
 

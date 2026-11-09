@@ -351,8 +351,8 @@ def _register(args: argparse.Namespace, settings: Settings, registry: Registry) 
     )
     for version in register.annotators:
         print(f"  annotateur : {version}")
-    if register.withdrawn:
-        print(f"  Hors registre (retrait) : {', '.join(c.name for c in register.withdrawn)}")
+    if register.left_out:
+        print(f"  Hors registre : {', '.join(c.name for c in register.left_out)}")
     print(f"Site écrit dans {page}")
     return 0
 

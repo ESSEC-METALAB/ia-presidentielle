@@ -32,6 +32,8 @@ class CandidacyStatus(StrEnum):
     DECLARED = "declared"
     DESIGNATED = "designated"  # chosen by a party or a primary
     WITHDRAWN = "withdrawn"  # no longer running; kept so that past coverage stays readable
+    # Not declared, but tested in first-round polls: a possible candidate, not a candidate.
+    PROSPECTIVE = "prospective"
 
 
 class Candidacy(_Frozen):
@@ -55,6 +57,9 @@ class Candidate(_Frozen):
     family_name: str | None = None
     aliases: tuple[str, ...] = ()
     candidacy: Candidacy | None = None
+    # On the public register or not: an editorial choice, separate from the candidacy,
+    # which is a fact. Unset, the register shows the people who are running.
+    shown: bool | None = None
 
     @property
     def surname(self) -> str:
@@ -66,8 +71,17 @@ class Candidate(_Frozen):
 
     @property
     def is_running(self) -> bool:
-        """Withdrawn people stay configured, so their past coverage stays readable."""
-        return self.candidacy is None or self.candidacy.status != CandidacyStatus.WITHDRAWN
+        """Declared or designated. Withdrawn people stay configured, so their past
+        coverage stays readable; a prospective one has not declared."""
+        return self.candidacy is None or self.candidacy.status in (
+            CandidacyStatus.DECLARED,
+            CandidacyStatus.DESIGNATED,
+        )
+
+    @property
+    def on_register(self) -> bool:
+        """Shown on the public register: the editorial list, else whoever is running."""
+        return self.is_running if self.shown is None else self.shown
 
 
 class Source(_Frozen):

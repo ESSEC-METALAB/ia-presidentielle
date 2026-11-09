@@ -44,7 +44,7 @@ class Register(_Frozen):
     # Current AI passages nobody has annotated yet, per candidate id: until they are, an
     # empty cell for that candidate means "en attente", not "aucune position identifiée".
     pending: dict[str, int] = Field(default_factory=dict)
-    # Configured people left out because they withdrew (config/candidates.yaml).
-    withdrawn: tuple[Candidate, ...] = ()
+    # Configured people left off the register (config/candidates.yaml, `shown`).
+    left_out: tuple[Candidate, ...] = ()
     # Texts read in the window, per source id: what a source gave us, statements or not.
     documents: dict[str, int] = Field(default_factory=dict)

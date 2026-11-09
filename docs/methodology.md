@@ -23,7 +23,43 @@ antérieurs au 1er juillet et n'entrent pas ; 88 documents restent après dédou
 
 ### Candidats
 
-**Règle d'inclusion**, appliquée le 14 octobre 2026. Une personne est suivie si :
+**Qui est affiché (depuis le 6 novembre 2026).** Après la démonstration du 5 novembre,
+le registre affiche treize personnes : celles qui ont le meilleur score au premier tour
+dans un sondage dont le terrain s'achève le 1er juillet 2026 ou après, parmi celles
+testées dans au moins cinq de ces sondages. La liste ne dépend donc plus de la
+déclaration de candidature : elle suit les personnes que les instituts mesurent.
+
+Être affiché est un choix éditorial (`shown` dans `config/candidates.yaml`) ; la
+candidature reste un fait, sourcé et daté, que le site indique quand la personne ne se
+présente pas : Olivier Faure (battu à la primaire du 11 octobre) et François Hollande
+(pressenti, non déclaré). Nathalie Arthaud et Nicolas Dupont-Aignan, déclarés, ne sont
+plus affichés : leurs textes restent stockés, aucun n'est effacé, leurs sources ne sont
+plus lues et leurs passages ne sont plus envoyés au modèle.
+
+| Personne | Statut au 9 novembre 2026 | Meilleur score depuis juillet | Sondages |
+|---|---|---|---|
+| Marine Le Pen (RN) | déclarée | 38 % (Harris Interactive, août) | 142 |
+| Édouard Philippe (Horizons) | déclaré | 24 % (Ifop, septembre) | 98 |
+| Jean-Luc Mélenchon (LFI) | déclaré | 20,5 % (Cluster17, octobre) | 142 |
+| Raphaël Glucksmann (PP-PS) | désigné, primaire du 11 octobre | 18 % (Ifop, août) | 106 |
+| Bruno Retailleau (LR) | désigné | 17,5 % (Cluster17, octobre) | 137 |
+| Gabriel Attal (Renaissance) | déclaré ; appelle à une primaire | 17 % (Ifop, septembre) | 82 |
+| David Lisnard (Nouvelle Énergie) | déclaré | 17 % (Cluster17, octobre) | 25 |
+| François Hollande (PS) | **pressenti, non déclaré** (« la réponse est au mois de décembre ») | 12 % (Ifop, août) | 23 |
+| Marine Tondelier (Les Écologistes) | déclarée ; vote des militants le 13 décembre | 7 % (YouGov, septembre) | 130 |
+| Éric Zemmour (Reconquête) | déclaré | 6 % (YouGov, septembre) | 141 |
+| François Ruffin (Debout !) | déclaré | 6 % (Elabe, juillet) | 11 |
+| Olivier Faure (PS) | **ne se présente plus**, battu à la primaire | 5,5 % (Ipsos BVA, septembre) | 11 |
+| Fabien Roussel (PCF) | désigné | 4,5 % (Elabe, août) | 136 |
+
+Juste en dessous : Dominique de Villepin (4,3 %, 20 sondages) et Nicolas Dupont-Aignan
+(4 %, 133 sondages). Bruno Le Maire (6 %) n'est testé que dans deux sondages. Données
+MieuxVoter, état du 9 novembre 2026 (dernier terrain : 29 octobre). La coupure entre le
+13e et le 14e tient à quelques dixièmes de point : un nouveau sondage peut la déplacer, et
+la liste est revue à la main, jamais automatiquement.
+
+**Règle d'inclusion précédente**, appliquée le 14 octobre 2026, qui a constitué la
+configuration. Une personne était suivie si :
 
 1. elle a publiquement déclaré sa candidature à l'élection présidentielle de 2027, ou a
    été désignée par son parti ou par une primaire, et ne s'est pas retirée ;
@@ -176,8 +212,9 @@ au minimum : mention « citations réelles, classement non relu », lien d'archi
 quand une capture existe, natures de source réelles, historique fictif des axes retiré)
 et d'un fichier `data.js` généré.
 
-- **Qui figure.** Les personnes de `config/candidates.yaml` qui ne se sont pas retirées,
-  par ordre alphabétique du nom. Olivier Faure et Jordan Bardella sont hors registre ;
+- **Qui figure.** Les treize personnes de la liste éditoriale (`shown` dans
+  `config/candidates.yaml`, section « Candidats » ci-dessus), par ordre alphabétique du
+  nom. Nathalie Arthaud, Nicolas Dupont-Aignan et Jordan Bardella sont hors registre ;
   leurs documents restent stockés.
 - **Suivi.** Un candidat est « suivi » s'il a au moins une source active. Sinon, chaque
   case porte « Non suivi » : nous n'écoutons pas, ce n'est pas un silence.

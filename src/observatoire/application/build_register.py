@@ -70,8 +70,8 @@ class BuildRegister:
         verified: Sequence[str] = (),
     ) -> Register:
         """`verified`: annotator versions of cross-verified editions, in precedence order."""
-        running = [c for c in candidates if c.is_running]
-        documents = self._documents({c.id for c in running}, sources, since)
+        shown = [c for c in candidates if c.on_register]
+        documents = self._documents({c.id for c in shown}, sources, since)
         passages = self._current_passages(documents, sources)
         hashes = {pid: content_hash(p.segment.text) for pid, p in passages.items()}
         chosen = published_annotations(self._annotations.list_annotations(), hashes, verified)
@@ -79,18 +79,18 @@ class BuildRegister:
             generated_at=self._clock.now(),
             window_start=since,
             dimensions=tuple(dimensions),
-            candidates=tuple(_listed(candidate, sources) for candidate in running),
+            candidates=tuple(_listed(candidate, sources) for candidate in shown),
             entries=_entries(passages, chosen, verified),
             annotators=_annotators(chosen, verified),
             pending=self._pending(passages, chosen),
-            withdrawn=tuple(c for c in candidates if not c.is_running),
+            left_out=tuple(c for c in candidates if not c.on_register),
             documents=dict(Counter(d.source_id for d in documents.values())),
         )
 
     def _documents(
         self, people: set[str], sources: Sequence[Source], since: date | None
     ) -> dict[str, RawDocument]:
-        """Running people's level-1 and level-2 documents in the window, by content hash."""
+        """Shown people's level-1 and level-2 documents in the window, by content hash."""
         publishable = {
             s.id for s in sources if s.candidate_id in people and s.trust_level in _PUBLISHABLE
         }

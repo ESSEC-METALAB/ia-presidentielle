@@ -70,6 +70,9 @@ def _candidate(
         "party": person.party,
         "partyShort": person.party_short or person.party,
         "tracked": listed.monitored,
+        # declared | designated | withdrawn | prospective: the site labels the last two,
+        # shown by editorial choice although they are not running.
+        "status": person.candidacy.status.value if person.candidacy else None,
         # AI passages nobody has annotated yet: the site says "en attente" for this
         # candidate's empty cells instead of "aucune position identifiée".
         "pending": register.pending.get(person.id, 0),

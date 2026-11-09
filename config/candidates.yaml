@@ -1,6 +1,17 @@
 # Candidate registry: the only place a candidate exists (CLAUDE.md §8 — never in Python).
 #
-# Inclusion rule, applied on 2026-10-14 (docs/methodology.md, "Candidats"). A person is
+# Who is shown (decided on 2026-11-06, after the 5 November demonstration; docs/
+# methodology.md, "Candidats"): the thirteen people with the best first-round score in
+# a poll with fieldwork ending on or after 2026-07-01, among those tested in at least
+# five such polls (MieuxVoter dataset, checked on 2026-11-09: 13th Fabien Roussel 4.5 %,
+# then Dominique de Villepin 4.3 % and Nicolas Dupont-Aignan 4 %; Bruno Le Maire, 6 %,
+# was tested in two polls only). Being shown is an editorial choice, written as `shown`;
+# the candidacy is a fact, and the site states it when the person is not running
+# (Olivier Faure, withdrawn; François Hollande, prospective: not declared, tested in
+# polls). A person who is declared but not on the list stays configured with
+# `shown: false`: their stored texts are kept, never shown, and their sources are off.
+#
+# Previous rule, applied on 2026-10-14, which made up the configuration. A person was
 # added when they
 #   (a) have publicly declared a candidacy for the 2027 presidential election, or been
 #       designated by their party or a primary, and have not withdrawn; and
@@ -26,6 +37,7 @@
 # "Arthaud".
 candidates:
   - id: nathalie-arthaud
+    shown: false   # not among the thirteen (2026-11-06)
     name: Nathalie Arthaud
     party: Lutte ouvrière
     party_short: "LO"
@@ -66,6 +78,7 @@ candidates:
         - https://www.parismatch.be/actualites/monde/2026/07/07/marine-le-pen-condamnee-a-15-mois-ferme-dineligibilite-et-un-an-de-bracelet-electronique-K23HT444CZB4TK7AI7QZLWSCFA/
 
   - id: nicolas-dupont-aignan
+    shown: false   # not among the thirteen (2026-11-06)
     name: Nicolas Dupont-Aignan
     party: Debout la France
     party_short: "DLF"
@@ -79,6 +92,7 @@ candidates:
         - https://www.sudradio.fr/sud-radio/presidentielle-2027-qui-sont-les-candidats-declares
 
   - id: olivier-faure
+    shown: true   # among the thirteen (2026-11-06), although no longer running
     name: Olivier Faure
     party: Parti socialiste
     party_short: "PS"
@@ -86,7 +100,7 @@ candidates:
     candidacy:
       status: withdrawn
       since: 2026-10-11
-      checked_on: 2026-10-14
+      checked_on: 2026-11-09
       note: Battu à la primaire de la gauche sociale-démocrate du 11 octobre 2026 (14,48 %) ; soutient Raphaël Glucksmann.
       sources:
         - https://lematin.ma/monde/france-glucksmann-gagne-la-primaire-de-gauche-pour-la-presidentielle/369807
@@ -106,6 +120,20 @@ candidates:
         - https://lematin.ma/monde/france-glucksmann-gagne-la-primaire-de-gauche-pour-la-presidentielle/369807
         - https://www.parismatch.be/actualites/monde/2026/10/12/largement-elu-candidat-de-la-gauche-sociale-democrate-a-la-presidentielle-francaise-raphael-glucksmann-enfarine-dans-les-rues-de-paris-video-TEQ6BAP5RZAO3H43KTQKEH52JA/
         - https://www.lagazettefrance.fr/article/victorieux-a-la-primaire-les-choses-serieuses-commencent-pour-raphael-glucksmann
+
+  - id: francois-hollande
+    shown: true   # among the thirteen (2026-11-06), although not declared
+    name: François Hollande
+    party: Parti socialiste
+    party_short: "PS"
+    aliases: [François Hollande]
+    candidacy:
+      status: prospective
+      checked_on: 2026-11-09
+      note: Non déclaré ; « la réponse est au mois de décembre » (podcast de François Lenglet, TF1 Info, début novembre 2026). Testé dans 23 sondages depuis juillet, 12 % au mieux (Ifop, 25 août).
+      sources:
+        - https://www.tf1info.fr/politique/elections/presidentielle/francois-hollande-candidat-en-2027-la-reponse-est-au-mois-de-decembre-declare-l-ancien-chef-de-l-etat-dans-le-podcast-video-de-francois-lenglet-2467706.html
+        - https://raw.githubusercontent.com/MieuxVoter/presidentielle2027/main/presidentielle2027.csv
 
   - id: marine-le-pen
     name: Marine Le Pen
