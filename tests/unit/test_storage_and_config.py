@@ -251,7 +251,7 @@ def test_usage_is_added_up_per_step_and_model(tmp_path: Path) -> None:
 def test_the_taxonomy_loads_with_unique_dimensions_and_a_working_prefilter() -> None:
     taxonomy = load_registry(CONFIG).taxonomy
 
-    assert len(taxonomy.dimension_ids) == len(set(taxonomy.dimension_ids)) == 9
+    assert len(taxonomy.dimension_ids) == len(set(taxonomy.dimension_ids)) == 10
     assert TermRelevanceFilter(taxonomy.relevance).is_relevant("Former à l'IA dès le lycée.")
 
 

@@ -11,7 +11,7 @@ sans commentaire ni note. Publié par l'**ESSEC Metalab**.
 > automatique (Mistral) et **n'a pas encore été relu par une personne**. Le site le dit sur
 > chaque page.
 
-| Le fil : chaque déclaration, mot pour mot | Le baromètre : chaque candidat face aux neuf axes |
+| Le fil : chaque déclaration, mot pour mot | Le baromètre : chaque candidat face aux dix axes |
 |---|---|
 | ![Le fil](docs/img/registre-fil.jpg) | ![Le baromètre](docs/img/registre-barometre.jpg) |
 
@@ -22,7 +22,7 @@ sans commentaire ni note. Publié par l'**ESSEC Metalab**.
 - **Ce qui entre :** des textes publics venant des candidats eux-mêmes ou de leur parti :
   sites officiels, flux RSS, programmes en PDF, comptes rendus de l'Assemblée nationale.
 - **Ce qui sort :** un site, en ligne ou consultable **sans connexion**, qui liste chaque
-  prise de position sur l'IA avec sa citation exacte, son sujet (un des neuf axes), un
+  prise de position sur l'IA avec sa citation exacte, son sujet (un des dix axes), un
   résumé neutre, la source et la date.
 - **Ce qui n'en sort jamais :** un score, un classement, une note de « tonalité », une
   opinion. Le registre enregistre ; il ne juge pas.
@@ -261,24 +261,25 @@ le site du Rassemblement national refuse notre agent.
 | Champ | Exemple | D'où il vient |
 |---|---|---|
 | Citation | « Je propose un plan d'urgence numérique, le « plan Vauban »… » | le texte source, mot pour mot |
-| Axe | Sécurité & défense | proposé par le modèle, contrôlé |
+| Axe | IA de défense | proposé par le modèle, contrôlé |
 | Résumé | Propose un plan d'urgence numérique… | modèle, contrôlé (aucun mot de jugement) |
 | Contexte | Texte publié sur le site des Républicains… | modèle, contrôlé |
 | Traduction | I propose a digital emergency plan… | modèle (aide à la lecture seulement) |
 | Candidat, source, date, niveau, archive | Bruno Retailleau, republicains.fr, 7 juillet 2026… | **le code**, depuis la base ; jamais le modèle |
 
-**Les neuf axes** (`config/taxonomy.yaml`). Un axe nomme un sujet, jamais une direction :
+**Les dix axes** (`config/taxonomy.yaml`, revus le 9 novembre 2026). Un axe nomme un sujet, jamais une direction :
 
 | Axe | Ce qu'il couvre |
 |---|---|
 | Régulation | règles, interdictions, contrôle, responsabilité, ou dérégulation assumée |
-| Souveraineté & infra | cloud souverain, puissance de calcul, dépendance aux fournisseurs étrangers ; l'énergie comme atout national |
-| Environnement & ressources | eau et électricité des centres de données, implantation, empreinte carbone |
+| Souveraineté & infra | cloud souverain, puissance de calcul, puces, données, dépendance aux fournisseurs étrangers |
+| Énergie | électricité et nucléaire pour le calcul, réseau, eau et électricité des centres de données, implantation, empreinte carbone ; y compris l'énergie présentée comme atout national |
 | Emploi | emplois créés ou supprimés, automatisation, droit du travail |
 | Éducation & formation | école, université, ingénieurs, reconversion ; une mesure de formation reste ici même si elle vise l'emploi |
 | Services publics | l'IA dans l'État, l'administration, la santé, la lutte contre la fraude |
 | Surveillance & libertés | reconnaissance faciale, police, décisions algorithmiques, vie privée |
-| Sécurité & défense | cyberdéfense, infrastructures critiques, IA militaire, ingérences, désinformation |
+| IA de défense | armées, drones et armes autonomes, renseignement, cyberdéfense, infrastructures critiques, ingérences, désinformation |
+| Sécurité des modèles | sûreté et sécurité des systèmes d'IA eux-mêmes : robustesse, attaques contre les modèles, évaluation des modèles avancés ; l'étiquetage des contenus générés reste en régulation |
 | Financement | investissement public et privé, fiscalité, commande publique, budgets |
 
 **Ce que l'analyse ne fait pas :** pas de score, pas de classement, pas d'orientation
@@ -297,7 +298,7 @@ dans cet ordre (`config/register.yaml`) :
 Une mise à jour du matin ne remplace donc jamais une édition vérifiée ; elle complète ce
 qu'elle ne couvre pas.
 
-**L'édition du 3 novembre 2026** a été classée hors ligne par un assistant d'IA (Mistral
+**L'édition du 3 novembre 2026** (retirée le 9 novembre : elle était classée sur les neuf anciens axes, et ses déclarations sont reclassées par Mistral sur les dix nouveaux) a été classée hors ligne par un assistant d'IA (Mistral
 n'était pas joignable depuis l'environnement de développement), avec la même consigne et
 le même schéma que Mistral, puis vérifiée, déclaration par déclaration, par **six
 vérificateurs automatiques indépendants — des assistants d'IA, pas des personnes** (fond

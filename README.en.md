@@ -11,7 +11,7 @@ with no commentary and no rating. Published by the **ESSEC Metalab**.
 > automated (Mistral) and **has not yet been reviewed by a person**. The site says so on
 > every page.
 
-| The feed: every statement, word for word | The barometer: every candidate against the nine axes |
+| The feed: every statement, word for word | The barometer: every candidate against the ten axes |
 |---|---|
 | ![The feed](docs/img/registre-fil.jpg) | ![The barometer](docs/img/registre-barometre.jpg) |
 
@@ -22,7 +22,7 @@ with no commentary and no rating. Published by the **ESSEC Metalab**.
 - **What goes in:** public texts from the candidates themselves or their party: official
   websites, RSS feeds, PDF programmes, National Assembly transcripts.
 - **What comes out:** a website, online or usable **with no internet connection**, listing
-  every position on AI with its exact quote, its subject (one of nine axes), a neutral
+  every position on AI with its exact quote, its subject (one of ten axes), a neutral
   summary, the source and the date.
 - **What never comes out:** a score, a ranking, a "tone" rating, an opinion. The register
   records; it does not judge.
@@ -253,24 +253,25 @@ site refuses our agent.
 | Field | Example | Where it comes from |
 |---|---|---|
 | Quote | « Je propose un plan d'urgence numérique, le « plan Vauban »… » | the source text, word for word |
-| Axis | Security & defence | proposed by the model, checked |
+| Axis | AI for defence | proposed by the model, checked |
 | Summary | Proposes a digital emergency plan… | model, checked (no judgement words) |
 | Context | Text published on the Les Républicains website… | model, checked |
 | Translation | I propose a digital emergency plan… | model (a reading aid only) |
 | Candidate, source, date, level, archive | Bruno Retailleau, republicains.fr, 7 July 2026… | **the code**, from the database; never the model |
 
-**The nine axes** (`config/taxonomy.yaml`). An axis names a subject, never a direction:
+**The ten axes** (`config/taxonomy.yaml`, revised on 9 November 2026). An axis names a subject, never a direction:
 
 | Axis | What it covers |
 |---|---|
 | Regulation | rules, bans, oversight, liability, or an explicit deregulation stance |
-| Sovereignty & infra | sovereign cloud, compute, dependence on foreign providers; energy as a national asset |
-| Environment & resources | water and electricity use of data centres, siting, carbon footprint |
+| Sovereignty & infra | sovereign cloud, compute, chips, data, dependence on foreign providers |
+| Energy | electricity and nuclear power for compute, the grid, water and electricity use of data centres, siting, carbon footprint; including energy framed as a national asset |
 | Jobs | jobs created or displaced, automation, labour law |
 | Education & training | schools, universities, engineers, reconversion; a measure delivered as training stays here even if it aims at jobs |
 | Public services | AI inside the state, administration, healthcare, fraud detection |
 | Surveillance & liberties | facial recognition, policing, algorithmic decisions, privacy |
-| Security & defence | cyberdefence, critical infrastructure, military AI, interference, disinformation |
+| AI for defence | armed forces, drones and autonomous weapons, intelligence, cyberdefence, critical infrastructure, interference, disinformation |
+| Model security | safety and security of AI systems themselves: robustness, attacks on models, evaluation of advanced models; labelling generated content stays under regulation |
 | Funding | public and private investment, tax, procurement, budgets |
 
 **What the analysis does not do:** no score, no ranking, no "for / against" orientation,
@@ -288,7 +289,7 @@ order (`config/register.yaml`):
 A morning update therefore never replaces a verified edition; it fills in what the
 edition does not cover.
 
-**The edition of 3 November 2026** was classified offline by an AI assistant (Mistral could
+**The edition of 3 November 2026** (retired on 9 November: it was classified on the nine former axes, and its statements are reclassified by Mistral on the ten new ones) was classified offline by an AI assistant (Mistral could
 not be reached from the development environment), with the same prompt and schema Mistral
 gets, then checked statement by statement by **six independent automated verifiers — AI
 assistants, not people** (substance ×3, axis ×2, fidelity ×1): 188 proposals, 6 dropped, 1

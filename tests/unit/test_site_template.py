@@ -11,8 +11,11 @@ from pathlib import Path
 
 import pytest
 
+from observatoire.config.registry import load_registry
+
 TEMPLATE = Path(__file__).resolve().parents[2] / "web" / "registre" / "index.html"
 HTML = TEMPLATE.read_text(encoding="utf-8")
+CONFIG = TEMPLATE.parents[2] / "config"
 SCRIPT = re.search(r'<script type="text/x-dc"[^>]*>(.*?)</script>', HTML, re.DOTALL)
 # Addresses the page may contain without loading them: XML namespaces.
 NOT_FETCHED = re.compile(r"http://www\.w3\.org/")
@@ -66,3 +69,15 @@ def test_the_runtime_is_never_switched_to_bundled_mode() -> None:
     """window.__resources makes the runtime skip re-reading the page's template; the
     browser's parse of the barometer's <table> then loses its row loop (measured)."""
     assert "__resources" not in HTML.replace("Never define window.__resources here", "")
+
+
+def test_every_axis_of_the_taxonomy_has_an_icon_and_a_colour() -> None:
+    icons = re.search(r"^  axis: \{(.*)\},$", HTML, re.MULTILINE)
+    hues = re.search(r"^const AX_HUE = \{(.*)\};$", HTML, re.MULTILINE)
+    assert icons
+    assert hues
+
+    for axis in load_registry(CONFIG).taxonomy.dimension_ids:
+        key = rf'(^|[ {{,])"?{re.escape(axis)}"?:'
+        assert re.search(key, icons.group(1)), axis
+        assert re.search(key, hues.group(1)), axis

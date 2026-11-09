@@ -74,7 +74,15 @@ class BuildRegister:
         documents = self._documents({c.id for c in shown}, sources, since)
         passages = self._current_passages(documents, sources)
         hashes = {pid: content_hash(p.segment.text) for pid, p in passages.items()}
-        chosen = published_annotations(self._annotations.list_annotations(), hashes, verified)
+        # An annotation naming an axis that no longer exists (the taxonomy changed) is not
+        # shown: its passage is pending until the current annotator reads it again.
+        known = {dimension.id for dimension in dimensions}
+        usable = [
+            a
+            for a in self._annotations.list_annotations()
+            if all(statement.dimension in known for statement in a.annotations)
+        ]
+        chosen = published_annotations(usable, hashes, verified)
         return Register(
             generated_at=self._clock.now(),
             window_start=since,

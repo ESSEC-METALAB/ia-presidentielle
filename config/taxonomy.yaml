@@ -6,11 +6,14 @@
 # prefilter and the gates are not: a change applies to new annotations, and
 # `observatoire annotate --rebuild` re-applies it to stored ones (free when replaying a
 # recorded batch).
-version: "2026-11-03b"
+version: "2026-11-09"
 
-# The nine axes of the public register prototype ("IA 2027 — Registre", v3). Each
-# annotation is attached to exactly one: the main object of the sentence. The
-# definitions carry the three boundary rules (energy, surveillance/security, training).
+# The ten axes of the public register. Each annotation is attached to exactly one: the
+# main object of the sentence. The nine axes of the site prototype ("IA 2027 — Registre",
+# v3) were revised on 2026-11-09 after the 5 November demonstration: "Environnement &
+# ressources" became "Énergie", and "Sécurité & défense" was split into "IA de défense"
+# and "Sécurité des modèles". The definitions carry the boundary rules (energy,
+# surveillance/defence, defence/model security, training).
 # Descriptive, never normative: an axis names a subject, not a direction.
 dimensions:
   - id: regulation
@@ -22,21 +25,23 @@ dimensions:
     label_fr: Souveraineté & infra
     label_en: Sovereignty & infra
     definition_fr: >-
-      Cloud souverain, capacité de calcul, dépendance aux fournisseurs étrangers. L'énergie
-      présentée comme atout national relève d'ici, pas de l'environnement.
+      Cloud souverain, capacité de calcul, puces, données, dépendance aux fournisseurs
+      étrangers. L'électricité et le nucléaire au service de l'IA relèvent de l'énergie,
+      même présentés comme un atout national.
     definition_en: >-
-      Sovereign cloud, compute, dependence on foreign providers. Energy framed as a
-      national asset belongs here, not under environment.
-  - id: environnement
-    label_fr: Environnement & ressources
-    label_en: Environment & resources
+      Sovereign cloud, compute, chips, data, dependence on foreign providers. Electricity
+      and nuclear power for AI belong to energy, even when framed as a national asset.
+  - id: energie
+    label_fr: Énergie
+    label_en: Energy
     definition_fr: >-
-      Coût environnemental et besoins en ressources de l'IA : consommation d'eau et
-      d'électricité des centres de données, récupération de chaleur, implantation,
-      empreinte carbone.
+      L'énergie et les ressources de l'IA : électricité et nucléaire pour le calcul,
+      réseau, consommation d'électricité et d'eau des centres de données, récupération de
+      chaleur, implantation, empreinte carbone.
     definition_en: >-
-      The environmental cost and resource demand of AI: water and electricity use of
-      data centres, waste-heat recovery, siting, carbon footprint.
+      Energy and resources for AI: electricity and nuclear power for compute, the grid,
+      electricity and water use of data centres, waste-heat recovery, siting, carbon
+      footprint.
   - id: emploi
     label_fr: Emploi
     label_en: Jobs
@@ -63,19 +68,33 @@ dimensions:
     label_en: Surveillance & liberties
     definition_fr: >-
       Reconnaissance faciale, police, décisions algorithmiques, vie privée. L'IA tournée
-      vers la population ; défendre les systèmes contre une attaque relève de la sécurité.
+      vers la population ; défendre le pays ou ses systèmes contre une attaque relève de
+      la défense.
     definition_en: >-
       Facial recognition, policing, algorithmic decisions, privacy. AI turned on the
-      population; defending systems from attack is security.
-  - id: securite-defense
-    label_fr: Sécurité & défense
-    label_en: Security & defence
+      population; defending the country or its systems from attack is defence.
+  - id: defense
+    label_fr: IA de défense
+    label_en: AI for defence
     definition_fr: >-
-      Cyberdéfense, protection des infrastructures critiques, IA militaire, drones et
-      systèmes autonomes, ingérences et désinformation.
+      L'IA au service de la défense et de la sécurité nationale : armées, drones et
+      systèmes d'armes autonomes, renseignement, cyberdéfense, protection des
+      infrastructures critiques, ingérences étrangères et désinformation.
     definition_en: >-
-      Cyberdefence, critical-infrastructure protection, military AI, drones and
-      autonomous systems, foreign interference and disinformation.
+      AI for defence and national security: the armed forces, drones and autonomous
+      weapons, intelligence, cyberdefence, critical-infrastructure protection, foreign
+      interference and disinformation.
+  - id: securite-modeles
+    label_fr: Sécurité des modèles
+    label_en: Model security
+    definition_fr: >-
+      La sûreté et la sécurité des systèmes d'IA eux-mêmes : robustesse, attaques contre
+      les modèles, évaluation et audit des modèles avancés, risques des IA les plus
+      puissantes. Les règles d'étiquetage des contenus générés relèvent de la régulation.
+    definition_en: >-
+      The safety and security of AI systems themselves: robustness, attacks on models,
+      evaluation and auditing of advanced models, risks of the most capable AI. Labelling
+      rules for generated content are regulation.
   - id: financement
     label_fr: Financement
     label_en: Funding

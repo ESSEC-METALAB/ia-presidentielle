@@ -327,3 +327,14 @@ def test_texts_of_a_withdrawn_person_or_the_press_are_not_counted() -> None:
     register = _build(store, [candidate(), _withdrawn()], sources)
 
     assert register.documents == {}
+
+
+def test_an_annotation_on_an_axis_that_no_longer_exists_leaves_its_passage_pending() -> None:
+    store = InMemoryStore()
+    _annotated(store, document(TEXT))
+    register = BuildRegister(
+        corpus=store, segments=store, annotations=store, relevance=RELEVANCE, clock=FrozenClock()
+    ).build([candidate()], [FEED], (), since=date(2026, 7, 1))
+
+    assert register.entries == ()
+    assert register.pending == {"camille-exemple": 1}

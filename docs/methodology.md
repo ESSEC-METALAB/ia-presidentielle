@@ -114,15 +114,27 @@ apparaissent « non suivi ». Ce qu'il faut vérifier en premier est listé dans
 
 ## Dimensions et axes
 
-Les neuf axes du prototype de site « IA 2027 — Registre » (v3), dans
-`config/taxonomy.yaml` : régulation ; souveraineté et infrastructure ; environnement et
-ressources ; emploi ; éducation et formation ; services publics ; surveillance et
-libertés ; sécurité et défense ; financement. Chaque déclaration est rattachée à un seul
-axe, celui de l'objet principal de la phrase. Trois frontières ont une règle explicite,
-écrite dans les définitions : l'énergie présentée comme atout national relève de la
-souveraineté, la consommation des centres de données de l'environnement ; l'IA tournée
-vers la population relève de la surveillance, la défense des systèmes de la sécurité ; une
+Dix axes, dans `config/taxonomy.yaml` : régulation ; souveraineté et infrastructure ;
+énergie ; emploi ; éducation et formation ; services publics ; surveillance et libertés ;
+IA de défense ; sécurité des modèles ; financement. Chaque déclaration est rattachée à un
+seul axe, celui de l'objet principal de la phrase. Quatre frontières ont une règle
+explicite, écrite dans les définitions : l'électricité et le nucléaire au service de l'IA
+relèvent de l'énergie, même présentés comme un atout national, le cloud, le calcul et les
+puces de la souveraineté ; l'IA tournée vers la population relève de la surveillance, la
+défense du pays ou de ses systèmes de l'IA de défense ; la sûreté des modèles eux-mêmes
+relève de la sécurité des modèles, l'étiquetage des contenus générés de la régulation ; une
 mesure délivrée sous forme de formation relève de l'éducation.
+
+**Révision du 9 novembre 2026.** Les neuf axes du prototype de site (« IA 2027 —
+Registre », v3) ont été revus après la démonstration du 5 novembre : « Environnement &
+ressources » devient « Énergie », et « Sécurité & défense » est scindé en « IA de défense »
+et « Sécurité des modèles ». La liste des axes fait partie de la consigne : changer d'axes
+change d'annotateur, et tous les passages sont classés de nouveau. Une annotation qui
+nomme un axe disparu n'est plus montrée ; son passage reste « en attente » jusqu'à sa
+relecture. L'édition vérifiée du 3 novembre, classée sur les neuf anciens axes, n'est plus
+publiée pour la même raison : son enregistrement reste dans `annotations/`, et ses
+déclarations sont reclassées par l'annotateur du jour, sans le badge « Vérifiée », tant
+qu'une nouvelle vérification croisée n'a pas été faite sur les dix axes.
 
 Un axe nomme un sujet, jamais une direction : pas de pôles, pas d'orientation chiffrée.
 C'est le choix du prototype de site (« Ni commentaire, ni score »), qui tranche la

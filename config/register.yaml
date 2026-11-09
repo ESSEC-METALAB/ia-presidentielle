@@ -9,10 +9,12 @@
 #      position identifiée", about text nobody has read.
 # An edition is listed here by an editor, once its verification record exists. Listing
 # it is what lets it outrank the daily annotator: a morning run never replaces it.
-verified_editions:
-  - annotator: claude-code-session-draft+classify_dimension.v1@6c8d9c67b81d
-    record: annotations/2026-11-03-verification.json
-    note: >-
-      Édition du 3 novembre 2026 : 117 requêtes annotées hors ligne par un assistant,
-      188 propositions vérifiées chacune par six vérificateurs automatiques (fond ×3,
-      axe ×2, fidélité ×1) ; 6 écartées, 1 axe changé, 45 déclarations aux notes corrigées.
+# Retired on 2026-11-09: the edition of 3 November 2026 (annotator
+# claude-code-session-draft+classify_dimension.v1@6c8d9c67b81d, record
+# annotations/2026-11-03-verification.json: 117 requests annotated offline by an assistant,
+# 188 proposals each checked by six automatic verifiers; 6 discarded, 1 axis changed, 45
+# statements with corrected notes) classified statements on the nine axes of the
+# prototype. The ten-axis taxonomy of 2026-11-09 replaced them: its statements name axes
+# that no longer exist, so it can no longer outrank the daily annotator. Its record stays
+# in the repository. A new cross-verified edition, on the ten axes, is to be listed here.
+verified_editions: []
