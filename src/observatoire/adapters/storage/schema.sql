@@ -76,3 +76,14 @@ CREATE TABLE IF NOT EXISTS llm_usage (
     output_tokens INTEGER NOT NULL,
     recorded_at   TEXT NOT NULL
 );
+
+-- Framing: whether a statement presents AI as an opportunity, a threat, both or neither.
+-- One row per (statement, framer version); key = passage id and a hash of the quote.
+CREATE TABLE IF NOT EXISTS statement_framings (
+    key            TEXT NOT NULL,
+    framer_version TEXT NOT NULL,
+    framed_at      TEXT NOT NULL,
+    framing        TEXT NOT NULL,
+    payload        TEXT NOT NULL,     -- StatementFraming as JSON
+    PRIMARY KEY (key, framer_version)
+);

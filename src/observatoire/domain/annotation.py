@@ -6,6 +6,7 @@ model. A proposal becomes a `DimensionAnnotation` only after the gates have foun
 quote in the passage, and the stored quote is the passage's own text, not the model's copy.
 """
 
+import hashlib
 from collections.abc import Mapping, Sequence
 from datetime import date
 from enum import StrEnum
@@ -199,3 +200,41 @@ class UsageRecord(_Frozen):
     input_tokens: int = Field(ge=0)
     output_tokens: int = Field(ge=0)
     recorded_at: AwareDatetime
+
+
+class Framing(StrEnum):
+    """How a statement presents AI: as a chance, as a danger, both, or neither."""
+
+    OPPORTUNITY = "opportunity"
+    THREAT = "threat"
+    BOTH = "both"
+    NONE = "none"  # a measure or a fact, with no stated view of AI as such
+
+
+class FramingDraft(_Frozen):
+    """What a framer proposes for one statement. `evidence`: words of the quote."""
+
+    framing: Framing
+    evidence: str = ""
+
+
+class StatementFraming(_Frozen):
+    """An accepted framing, keyed by the statement's passage and quote.
+
+    A framing other than NONE stands only on words of the quote itself (`evidence`,
+    checked by code); a proposal whose evidence is not in the quote is stored as NONE,
+    with `rejected` saying why: in doubt, nothing is claimed.
+    """
+
+    key: str
+    framer_version: str
+    framed_at: AwareDatetime
+    framing: Framing
+    evidence: str = ""
+    rejected: str | None = None
+
+
+def framing_key(segment_id: str, quote: str) -> str:
+    """Stable while the passage and the quote are: a new annotator's same quote keeps it."""
+    digest = hashlib.sha256(quote.encode()).hexdigest()[:16]
+    return f"{segment_id}:{digest}"

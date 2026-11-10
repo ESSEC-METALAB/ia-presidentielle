@@ -1,5 +1,7 @@
 """Token accounting: a decorator that records every LLM call's usage, whatever the client."""
 
+import threading
+
 from observatoire.domain.annotation import LLMResponse, Prompt, ResponseSchema, UsageRecord
 from observatoire.domain.ports import Clock, LLMClient, UsageTracker
 
@@ -29,3 +31,22 @@ class UsageRecordingClient:
             )
         )
         return response
+
+
+class BufferedUsage:
+    """A UsageTracker for calls made from several threads: records are kept in memory,
+    then written by the thread that owns the database (`flush`)."""
+
+    def __init__(self) -> None:
+        self._records: list[UsageRecord] = []
+        self._lock = threading.Lock()
+
+    def record_usage(self, record: UsageRecord) -> None:
+        with self._lock:
+            self._records.append(record)
+
+    def flush(self, tracker: UsageTracker) -> None:
+        with self._lock:
+            records, self._records = self._records, []
+        for record in records:
+            tracker.record_usage(record)

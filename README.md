@@ -24,8 +24,10 @@ sans commentaire ni note. Publié par l'**ESSEC Metalab**.
 - **Ce qui sort :** un site, en ligne ou consultable **sans connexion**, qui liste chaque
   prise de position sur l'IA avec sa citation exacte, son sujet (un des dix axes), un
   résumé neutre, la source et la date.
-- **Ce qui n'en sort jamais :** un score, un classement, une note de « tonalité », une
-  opinion. Le registre enregistre ; il ne juge pas.
+- **Ce qui n'en sort jamais :** un score, un classement, une note, une opinion. Le
+  registre enregistre ; il ne juge pas. Seule exception, décidée le 10 novembre 2026 :
+  chaque déclaration indique si elle présente l'IA comme une opportunité ou une menace,
+  sur la foi de ses propres mots (voir plus bas).
 - **Quand :** chaque matin à 8 h (heure de Paris), la collecte, le classement et le site
   se mettent à jour tout seuls ; le bouton « Actualiser les données » du site relance la
   même mise à jour à la demande. Les décisions éditoriales (ajouter un candidat, un sujet)
@@ -283,8 +285,17 @@ le site du Rassemblement national refuse notre agent.
 | Sécurité des modèles | sûreté et sécurité des systèmes d'IA eux-mêmes : robustesse, attaques contre les modèles, évaluation des modèles avancés ; l'étiquetage des contenus générés reste en régulation |
 | Financement | investissement public et privé, fiscalité, commande publique, budgets |
 
-**Ce que l'analyse ne fait pas :** pas de score, pas de classement, pas d'orientation
-« pour / contre », pas de tonalité ni de sentiment, pas de prédiction. Ce sont des
+**Opportunité ou menace** (depuis le 10 novembre 2026, à la demande du CTO) : une
+seconde étape (`observatoire frame`, consigne `frame_statement.v1.md`) dit pour chaque
+déclaration si elle présente l'IA comme une opportunité, une menace, les deux, ou rien de
+tel. Le modèle doit citer les mots de la citation qui le montrent, et le code les
+retrouve ; sinon, rien n'est compté. Le baromètre en donne les comptes bruts par
+candidat (une case coupée en diagonale : opportunités en haut à gauche, menaces en bas à
+droite), et le fil permet de filtrer. C'est une lecture du cadrage de chaque phrase, et
+une entorse assumée au principe « ni tonalité ni sentiment » des versions précédentes.
+
+**Ce que l'analyse ne fait pas :** pas de score, pas de classement, pas de pourcentage
+« pour / contre », pas de sentiment sur le candidat, pas de prédiction. Ce sont des
 jugements ; publiés sous le nom d'une institution en pleine campagne, ils seraient le
 premier risque pour sa neutralité (ADR 0002).
 

@@ -4,7 +4,7 @@ from datetime import date
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
-from observatoire.domain.annotation import Dimension, DimensionAnnotation
+from observatoire.domain.annotation import Dimension, DimensionAnnotation, Framing
 from observatoire.domain.models import Candidate, RawDocument, Source
 
 
@@ -34,6 +34,8 @@ class RegisterEntry(_Frozen):
     annotator_version: str
     # From a cross-verified edition (config/register.yaml), not only the automatic gates.
     verified: bool = False
+    # Opportunity, threat, both or none, from the framing step; None: not framed yet.
+    framing: Framing | None = None
 
 
 class Register(_Frozen):

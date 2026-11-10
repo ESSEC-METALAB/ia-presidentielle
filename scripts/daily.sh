@@ -106,6 +106,7 @@ fi
 [[ "$(env_value DAILY_IMPORT_LEGACY 1)" == "1" ]] && step import-legacy import_legacy
 step segment obs segment
 step annotate annotate
+[[ "$(env_value LLM_PROVIDER fake)" == "mistral" ]] && step frame obs frame
 step watch obs watch --out data/reports/veille.md
 step register obs register --out data/site
 SITE=$?

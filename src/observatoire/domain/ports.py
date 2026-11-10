@@ -11,12 +11,14 @@ from typing import Protocol
 from observatoire.domain.annotation import (
     AnnotationContext,
     DimensionAnnotation,
+    FramingDraft,
     LLMResponse,
     Prompt,
     RejectedDraft,
     ResponseSchema,
     SegmentAnnotation,
     StatementDraft,
+    StatementFraming,
     UsageRecord,
 )
 from observatoire.domain.models import (
@@ -29,7 +31,7 @@ from observatoire.domain.models import (
     Source,
     SourceOutcome,
 )
-from observatoire.domain.register import Register
+from observatoire.domain.register import Register, RegisterEntry
 from observatoire.domain.watch import RosterEntry, WatchReport
 
 
@@ -152,6 +154,27 @@ class AnnotationStore(Protocol):
 
 class AnnotationReader(Protocol):
     def list_annotations(self) -> list[SegmentAnnotation]: ...
+
+
+class Framer(Protocol):
+    @property
+    def version(self) -> str:
+        """Model and prompt: changes whenever either changes."""
+        ...
+
+    def frame(self, entry: RegisterEntry, speaker: str, axis_label: str) -> FramingDraft:
+        """A proposal. Raises AnnotationUnavailableError or MalformedAnnotationError."""
+        ...
+
+
+class FramingStore(Protocol):
+    def framed_keys(self, framer_version: str) -> set[str]: ...
+
+    def save_framing(self, framing: StatementFraming) -> None: ...
+
+
+class FramingReader(Protocol):
+    def list_framings(self) -> list[StatementFraming]: ...
 
 
 class UsageTracker(Protocol):

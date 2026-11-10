@@ -15,7 +15,13 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
 
-from observatoire.domain.annotation import Dimension, SegmentAnnotation, published_annotations
+from observatoire.domain.annotation import (
+    Dimension,
+    SegmentAnnotation,
+    StatementFraming,
+    framing_key,
+    published_annotations,
+)
 from observatoire.domain.models import (
     Candidate,
     RawDocument,
@@ -68,6 +74,7 @@ class BuildRegister:
         *,
         since: date | None = None,
         verified: Sequence[str] = (),
+        framings: Sequence[StatementFraming] = (),
     ) -> Register:
         """`verified`: annotator versions of cross-verified editions, in precedence order."""
         shown = [c for c in candidates if c.on_register]
@@ -89,7 +96,7 @@ class BuildRegister:
             window_start=since,
             dimensions=tuple(dimensions),
             candidates=tuple(_listed(candidate, sources, read) for candidate in shown),
-            entries=_entries(passages, chosen, verified),
+            entries=_framed(_entries(passages, chosen, verified), framings),
             annotators=_annotators(chosen, verified),
             pending=self._pending(passages, chosen),
             left_out=tuple(c for c in candidates if not c.on_register),
@@ -149,6 +156,21 @@ def _entries(
         for statement in annotation.annotations
     ]
     return tuple(sorted(_one_per_quote(entries), key=lambda e: e.annotation.id))
+
+
+def _framed(
+    entries: tuple[RegisterEntry, ...], framings: Sequence[StatementFraming]
+) -> tuple[RegisterEntry, ...]:
+    """Each statement with its most recent framing, if it has one."""
+    latest: dict[str, StatementFraming] = {}
+    for framing in sorted(framings, key=lambda f: f.framed_at):
+        latest[framing.key] = framing
+    return tuple(
+        entry.model_copy(update={"framing": found.framing})
+        if (found := latest.get(framing_key(entry.annotation.segment_id, entry.annotation.quote)))
+        else entry
+        for entry in entries
+    )
 
 
 def _annotators(chosen: dict[str, SegmentAnnotation], verified: Sequence[str]) -> tuple[str, ...]:

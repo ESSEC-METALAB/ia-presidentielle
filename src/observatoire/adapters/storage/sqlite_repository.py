@@ -10,7 +10,7 @@ from pathlib import Path
 
 from pydantic import TypeAdapter
 
-from observatoire.domain.annotation import SegmentAnnotation, UsageRecord
+from observatoire.domain.annotation import SegmentAnnotation, StatementFraming, UsageRecord
 from observatoire.domain.models import (
     CandidateMention,
     DocumentSegmentation,
@@ -201,6 +201,33 @@ class SqliteRepository:
             "SELECT payload FROM segment_annotations ORDER BY segment_id, annotator_version"
         )
         return [SegmentAnnotation.model_validate_json(row["payload"]) for row in rows]
+
+    def framed_keys(self, framer_version: str) -> set[str]:
+        rows = self._connection.execute(
+            "SELECT key FROM statement_framings WHERE framer_version = ?", (framer_version,)
+        )
+        return {row["key"] for row in rows}
+
+    def save_framing(self, framing: StatementFraming) -> None:
+        values = (
+            framing.key,
+            framing.framer_version,
+            framing.framed_at.isoformat(),
+            framing.framing.value,
+            framing.model_dump_json(),
+        )
+        with self._connection:
+            self._connection.execute(
+                "INSERT OR REPLACE INTO statement_framings (key, framer_version, framed_at,"
+                " framing, payload) VALUES (?,?,?,?,?)",
+                values,
+            )
+
+    def list_framings(self) -> list[StatementFraming]:
+        rows = self._connection.execute(
+            "SELECT payload FROM statement_framings ORDER BY key, framed_at"
+        )
+        return [StatementFraming.model_validate_json(row["payload"]) for row in rows]
 
     def record_usage(self, record: UsageRecord) -> None:
         values = (

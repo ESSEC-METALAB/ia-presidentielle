@@ -140,6 +140,22 @@ Un axe nomme un sujet, jamais une direction : pas de pôles, pas d'orientation c
 C'est le choix du prototype de site (« Ni commentaire, ni score »), qui tranche la
 première question ouverte ci-dessous pour ce qui est publié.
 
+**Opportunité ou menace (10 novembre 2026).** À la demande du CTO, chaque déclaration
+publiée reçoit en plus un cadrage : `opportunity` (l'IA présentée comme une chance),
+`threat` (comme un danger), `both`, ou `none` (une mesure, un fait, une critique, sans
+dire si l'IA est une chance ou un danger : le cas le plus fréquent). Ce n'est pas un
+axe : une déclaration sur l'emploi peut être l'un ou l'autre. Étape à part, après le
+classement (`observatoire frame`, consigne versionnée `frame_statement.v1.md`, quatre
+appels en parallèle), pour ne pas reclasser les axes. Garde-fou : un cadrage autre que
+`none` doit citer les mots de la citation qui le portent (`evidence`), que le code
+retrouve, apostrophes et casse mises à part ; sinon il est enregistré `none`, avec la
+raison. Le résumé et le contexte aident à lire la citation, jamais à trouver un cadrage
+qu'elle ne dit pas. Publication : une étiquette sur chaque déclaration, un filtre dans
+le fil, et une colonne du baromètre aux comptes bruts (une déclaration `both` compte des
+deux côtés), jamais un pourcentage. C'est une entorse au principe « ni tonalité ni
+sentiment » de la version précédente (question ouverte 1 ci-dessous), décidée en
+connaissance de cause ; le site la signale dans sa méthodologie.
+
 ## Repérage et classement (`observatoire annotate`)
 
 1. **Filtre déterministe.** Seuls les passages qui mentionnent l'IA sont examinés : un

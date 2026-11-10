@@ -92,6 +92,8 @@ def _claim(entry: RegisterEntry) -> dict[str, object]:
         "id": statement.id,
         "cand": document.candidate_id,
         "source": source.id,
+        # opportunity | threat | both | none, from the framing step; null: not framed yet
+        "framing": entry.framing.value if entry.framing else None,
         "axis": statement.dimension,
         "date": _iso(document.published_on),
         "tier": int(document.trust_level),

@@ -16,6 +16,7 @@ import httpx
 from observatoire.adapters.extraction.trafilatura_extractor import TrafilaturaExtractor
 from observatoire.adapters.llm.fake_llm_client import FakeLLMClient
 from observatoire.adapters.llm.llm_annotator import LLMAnnotator
+from observatoire.adapters.llm.llm_framer import LLMFramer
 from observatoire.adapters.llm.mistral_client import MistralClient
 from observatoire.adapters.llm.prompt_template import PromptTemplate
 from observatoire.adapters.llm.recorded_llm_client import (
@@ -45,6 +46,7 @@ from observatoire.adapters.web.server import serve
 from observatoire.application.annotate_documents import AnnotateDocuments
 from observatoire.application.build_register import BuildRegister
 from observatoire.application.collect_daily import CollectDaily
+from observatoire.application.frame_statements import FrameStatements, FramingReport
 from observatoire.application.inspect_corpus import InspectCorpus
 from observatoire.application.segment_documents import SegmentDocuments
 from observatoire.application.watch_changes import WatchChanges
@@ -56,7 +58,7 @@ from observatoire.domain.models import CollectionReport, RawDocument, Segmentati
 from observatoire.domain.ports import Clock, LLMClient, SourceReader
 from observatoire.domain.watch import needs_review
 from observatoire.observability.logging import configure_logging
-from observatoire.observability.usage_tracker import UsageRecordingClient
+from observatoire.observability.usage_tracker import BufferedUsage, UsageRecordingClient
 from observatoire.services.ai_relevance import TermRelevanceFilter
 from observatoire.services.annotation_gates import AnnotationGates
 from observatoire.services.candidate_matcher import AliasMatcher
@@ -121,6 +123,12 @@ def _parser() -> argparse.ArgumentParser:
     )
     corpus.set_defaults(handler=_corpus)
     _add_annotate(commands)
+    frame = commands.add_parser(
+        "frame", help="opportunité ou menace : le cadrage de chaque déclaration publiée"
+    )
+    frame.add_argument("--limit", type=int, help="nombre maximal de déclarations envoyées")
+    frame.add_argument("--workers", type=int, default=4, help="appels au modèle en parallèle")
+    frame.set_defaults(handler=_frame)
     register = commands.add_parser("register", help="construit le site du registre public")
     register.add_argument("--out", type=Path, default=Path("data/site"))
     register.add_argument("--template", type=Path, default=Path("web/registre"))
@@ -316,6 +324,62 @@ def _annotate(args: argparse.Namespace, settings: Settings, registry: Registry) 
     return 0
 
 
+def _frame(args: argparse.Namespace, settings: Settings, registry: Registry) -> int:
+    if settings.llm_provider != "mistral" or not settings.mistral_model:
+        print("Cadrage : LLM_PROVIDER=mistral et MISTRAL_MODEL requis (.env)", file=sys.stderr)
+        return 2
+    if settings.mistral_api_key is None:
+        print("MISTRAL_API_KEY n'est pas défini (.env)", file=sys.stderr)
+        return 2
+    clock = SystemClock()
+    usage = BufferedUsage()
+    with (
+        httpx.Client(timeout=settings.llm_timeout_seconds) as http,
+        closing(SqliteRepository(settings.database_path)) as repository,
+    ):
+        register = BuildRegister(
+            corpus=repository,
+            segments=repository,
+            annotations=repository,
+            relevance=TermRelevanceFilter(registry.taxonomy.relevance),
+            clock=clock,
+        ).build(
+            registry.candidates,
+            registry.sources,
+            registry.taxonomy.dimensions,
+            since=registry.collection.since,
+            verified=registry.publication.verified_annotators,
+        )
+        client = MistralClient(
+            http, api_key=settings.mistral_api_key.get_secret_value(), model=settings.mistral_model
+        )
+        framer = LLMFramer(UsageRecordingClient(client, usage, clock, "frame"))
+        report = FrameStatements(framer, repository, clock, workers=args.workers).run(
+            register.entries,
+            {c.id: c.name for c in registry.candidates},
+            {d.id: d.label_en for d in registry.taxonomy.dimensions},
+            limit=args.limit,
+        )
+        usage.flush(repository)
+    _print_framing(report)
+    return 0
+
+
+def _print_framing(report: FramingReport) -> None:
+    print(f"Cadrage {report.framer_version}")
+    print(
+        f"  {report.statements} déclaration(s), {report.already_framed} déjà cadrée(s),"
+        f" {sum(report.framed.values())} cadrée(s) maintenant, {report.failed} sans réponse,"
+        f" {report.pending} en attente"
+    )
+    for framing, count in sorted(report.framed.items()):
+        print(f"    {framing.value:12} {count}")
+    if report.rejected:
+        print(
+            f"  {report.rejected} indice(s) introuvable(s) dans la citation : gardée(s) en « none »"
+        )
+
+
 def _llm_client(
     args: argparse.Namespace, settings: Settings, http: httpx.Client
 ) -> LLMClient | None:
@@ -357,6 +421,7 @@ def _register(args: argparse.Namespace, settings: Settings, registry: Registry) 
             registry.taxonomy.dimensions,
             since=registry.collection.since,
             verified=registry.publication.verified_annotators,
+            framings=repository.list_framings(),
         )
     page = write_site(args.template, args.out, RegisterDataScript().render(register))
     tracked = sum(1 for c in register.candidates if c.monitored)
