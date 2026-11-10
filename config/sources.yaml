@@ -503,6 +503,10 @@ sources:
   # Hollande (no post); Fabien Roussel's YouTube channel (the PCF's, a party channel).
   # Level 1 by default, to confirm: a campaign team often writes a candidate's posts.
   # max_items bounds `collect --full-window`; a daily run reads fewer (`social` above).
+  # Priorities set on 2026-11-10 (the CTO's: X, LinkedIn, Instagram, then Facebook) and
+  # the Apify budget: X, LinkedIn and Instagram are read back to the start of the window
+  # (estimated 4 US dollars); Facebook only from now on (max_items 5: the whole window
+  # would cost about 12 dollars); TikTok and YouTube are stopped, their statements kept.
 
   - id: marine-le-pen/x/mlp-officiel
     candidate_id: marine-le-pen
@@ -510,7 +514,7 @@ sources:
     url: "https://x.com/MLP_officiel"
     trust_level: 1
     label: "Marine Le Pen sur X (@MLP_officiel)"
-    max_items: 100
+    max_items: 800
     options: {platform: x, account: "MLP_officiel"}
 
   - id: marine-le-pen/facebook/marinelepen
@@ -519,7 +523,7 @@ sources:
     url: "https://www.facebook.com/MarineLePen"
     trust_level: 1
     label: "Marine Le Pen sur Facebook"
-    max_items: 15
+    max_items: 5
     options: {platform: facebook, account: "MarineLePen"}
 
   - id: marine-le-pen/instagram/marine-lepen
@@ -528,7 +532,7 @@ sources:
     url: "https://www.instagram.com/marine_lepen/"
     trust_level: 1
     label: "Marine Le Pen sur Instagram (@marine_lepen)"
-    max_items: 20
+    max_items: 120
     options: {platform: instagram, account: "marine_lepen"}
 
   - id: marine-le-pen/youtube/chaine
@@ -539,6 +543,7 @@ sources:
     label: "Marine Le Pen sur YouTube (discours ; entretiens exclus)"
     max_items: 8
     options: {platform: youtube, account: "chaine"}
+    enabled: false   # collection stopped on 2026-11-10; what it gave stays shown
 
   - id: jean-luc-melenchon/x/jlmelenchon
     candidate_id: jean-luc-melenchon
@@ -546,7 +551,7 @@ sources:
     url: "https://x.com/JLMelenchon"
     trust_level: 1
     label: "Jean-Luc Mélenchon sur X (@JLMelenchon)"
-    max_items: 100
+    max_items: 800
     options: {platform: x, account: "JLMelenchon"}
 
   - id: jean-luc-melenchon/facebook/jlmelenchon
@@ -555,7 +560,7 @@ sources:
     url: "https://www.facebook.com/JLMelenchon"
     trust_level: 1
     label: "Jean-Luc Mélenchon sur Facebook"
-    max_items: 15
+    max_items: 5
     options: {platform: facebook, account: "JLMelenchon"}
 
   - id: jean-luc-melenchon/instagram/jlmelenchon
@@ -564,7 +569,7 @@ sources:
     url: "https://www.instagram.com/jlmelenchon/"
     trust_level: 1
     label: "Jean-Luc Mélenchon sur Instagram (@jlmelenchon)"
-    max_items: 20
+    max_items: 120
     options: {platform: instagram, account: "jlmelenchon"}
 
   - id: jean-luc-melenchon/tiktok/jlmelenchon
@@ -575,6 +580,7 @@ sources:
     label: "Jean-Luc Mélenchon sur TikTok (@jlmelenchon)"
     max_items: 20
     options: {platform: tiktok, account: "jlmelenchon"}
+    enabled: false   # collection stopped on 2026-11-10; what it gave stays shown
 
   - id: jean-luc-melenchon/youtube/chaine
     candidate_id: jean-luc-melenchon
@@ -584,6 +590,7 @@ sources:
     label: "Jean-Luc Mélenchon sur YouTube (discours ; entretiens exclus)"
     max_items: 8
     options: {platform: youtube, account: "chaine"}
+    enabled: false   # collection stopped on 2026-11-10; what it gave stays shown
 
   - id: edouard-philippe/x/ephilippe-lh
     candidate_id: edouard-philippe
@@ -591,7 +598,7 @@ sources:
     url: "https://x.com/EPhilippe_LH"
     trust_level: 1
     label: "Édouard Philippe sur X (@EPhilippe_LH)"
-    max_items: 100
+    max_items: 800
     options: {platform: x, account: "EPhilippe_LH"}
 
   - id: edouard-philippe/linkedin/edouardphilippe
@@ -600,7 +607,7 @@ sources:
     url: "https://www.linkedin.com/in/edouardphilippe/"
     trust_level: 1
     label: "Édouard Philippe sur LinkedIn"
-    max_items: 20
+    max_items: 150
     options: {platform: linkedin, account: "edouardphilippe"}
 
   - id: raphael-glucksmann/facebook/raphaelglucksmann
@@ -609,7 +616,7 @@ sources:
     url: "https://www.facebook.com/RaphaelGlucksmann"
     trust_level: 1
     label: "Raphaël Glucksmann sur Facebook"
-    max_items: 15
+    max_items: 5
     options: {platform: facebook, account: "raphaelglucksmann"}
 
   - id: raphael-glucksmann/instagram/raphaelglucksmann
@@ -618,7 +625,7 @@ sources:
     url: "https://www.instagram.com/raphaelglucksmann/"
     trust_level: 1
     label: "Raphaël Glucksmann sur Instagram (@raphaelglucksmann)"
-    max_items: 20
+    max_items: 120
     options: {platform: instagram, account: "raphaelglucksmann"}
 
   - id: gabriel-attal/x/gabrielattal
@@ -627,7 +634,7 @@ sources:
     url: "https://x.com/GabrielAttal"
     trust_level: 1
     label: "Gabriel Attal sur X (@GabrielAttal)"
-    max_items: 100
+    max_items: 800
     options: {platform: x, account: "GabrielAttal"}
 
   - id: gabriel-attal/facebook/gabrielattal
@@ -636,7 +643,7 @@ sources:
     url: "https://www.facebook.com/GabrielAttal"
     trust_level: 1
     label: "Gabriel Attal sur Facebook"
-    max_items: 15
+    max_items: 5
     options: {platform: facebook, account: "GabrielAttal"}
 
   - id: gabriel-attal/instagram/gabrielattal
@@ -645,7 +652,7 @@ sources:
     url: "https://www.instagram.com/gabrielattal/"
     trust_level: 1
     label: "Gabriel Attal sur Instagram (@gabrielattal)"
-    max_items: 20
+    max_items: 120
     options: {platform: instagram, account: "gabrielattal"}
 
   - id: gabriel-attal/linkedin/gabrielattal
@@ -654,7 +661,7 @@ sources:
     url: "https://www.linkedin.com/in/gabrielattal/"
     trust_level: 1
     label: "Gabriel Attal sur LinkedIn"
-    max_items: 20
+    max_items: 150
     options: {platform: linkedin, account: "gabrielattal"}
 
   - id: bruno-retailleau/x/brunoretailleau
@@ -663,7 +670,7 @@ sources:
     url: "https://x.com/BrunoRetailleau"
     trust_level: 1
     label: "Bruno Retailleau sur X (@BrunoRetailleau)"
-    max_items: 100
+    max_items: 800
     options: {platform: x, account: "BrunoRetailleau"}
 
   - id: bruno-retailleau/facebook/brunoretailleau
@@ -672,7 +679,7 @@ sources:
     url: "https://www.facebook.com/BrunoRetailleau"
     trust_level: 1
     label: "Bruno Retailleau sur Facebook"
-    max_items: 15
+    max_items: 5
     options: {platform: facebook, account: "BrunoRetailleau"}
 
   - id: bruno-retailleau/instagram/bruno-retailleau
@@ -681,7 +688,7 @@ sources:
     url: "https://www.instagram.com/bruno.retailleau/"
     trust_level: 1
     label: "Bruno Retailleau sur Instagram (@bruno.retailleau)"
-    max_items: 20
+    max_items: 120
     options: {platform: instagram, account: "bruno.retailleau"}
 
   - id: bruno-retailleau/linkedin/brunoretailleau
@@ -690,7 +697,7 @@ sources:
     url: "https://www.linkedin.com/in/brunoretailleau/"
     trust_level: 1
     label: "Bruno Retailleau sur LinkedIn"
-    max_items: 20
+    max_items: 150
     options: {platform: linkedin, account: "brunoretailleau"}
 
   - id: bruno-retailleau/youtube/chaine
@@ -701,6 +708,7 @@ sources:
     label: "Bruno Retailleau sur YouTube (discours ; entretiens exclus)"
     max_items: 8
     options: {platform: youtube, account: "chaine"}
+    enabled: false   # collection stopped on 2026-11-10; what it gave stays shown
 
   - id: francois-hollande/x/fhollande
     candidate_id: francois-hollande
@@ -708,7 +716,7 @@ sources:
     url: "https://x.com/fhollande"
     trust_level: 1
     label: "François Hollande sur X (@fhollande)"
-    max_items: 100
+    max_items: 800
     options: {platform: x, account: "fhollande"}
 
   - id: david-lisnard/x/davidlisnard
@@ -717,7 +725,7 @@ sources:
     url: "https://x.com/davidlisnard"
     trust_level: 1
     label: "David Lisnard sur X (@davidlisnard)"
-    max_items: 100
+    max_items: 800
     options: {platform: x, account: "davidlisnard"}
 
   - id: david-lisnard/instagram/davidlisnard
@@ -726,7 +734,7 @@ sources:
     url: "https://www.instagram.com/davidlisnard/"
     trust_level: 1
     label: "David Lisnard sur Instagram (@davidlisnard)"
-    max_items: 20
+    max_items: 120
     options: {platform: instagram, account: "davidlisnard"}
 
   - id: david-lisnard/linkedin/david-lisnard-9b064917
@@ -735,7 +743,7 @@ sources:
     url: "https://www.linkedin.com/in/david-lisnard-9b064917/"
     trust_level: 1
     label: "David Lisnard sur LinkedIn"
-    max_items: 20
+    max_items: 150
     options: {platform: linkedin, account: "david-lisnard-9b064917"}
 
   - id: david-lisnard/tiktok/davidlisnard
@@ -746,6 +754,7 @@ sources:
     label: "David Lisnard sur TikTok (@davidlisnard)"
     max_items: 20
     options: {platform: tiktok, account: "davidlisnard"}
+    enabled: false   # collection stopped on 2026-11-10; what it gave stays shown
 
   - id: olivier-faure/x/faureolivier
     candidate_id: olivier-faure
@@ -753,7 +762,7 @@ sources:
     url: "https://x.com/faureolivier"
     trust_level: 1
     label: "Olivier Faure sur X (@faureolivier)"
-    max_items: 100
+    max_items: 800
     options: {platform: x, account: "faureolivier"}
 
   - id: olivier-faure/instagram/olivierfaure
@@ -762,7 +771,7 @@ sources:
     url: "https://www.instagram.com/olivierfaure/"
     trust_level: 1
     label: "Olivier Faure sur Instagram (@olivierfaure)"
-    max_items: 20
+    max_items: 120
     options: {platform: instagram, account: "olivierfaure"}
 
   - id: olivier-faure/linkedin/olivier-faure-b905b8328
@@ -771,7 +780,7 @@ sources:
     url: "https://www.linkedin.com/in/olivier-faure-b905b8328/"
     trust_level: 1
     label: "Olivier Faure sur LinkedIn"
-    max_items: 20
+    max_items: 150
     options: {platform: linkedin, account: "olivier-faure-b905b8328"}
 
   - id: eric-zemmour/x/zemmoureric
@@ -780,7 +789,7 @@ sources:
     url: "https://x.com/ZemmourEric"
     trust_level: 1
     label: "Éric Zemmour sur X (@ZemmourEric)"
-    max_items: 100
+    max_items: 800
     options: {platform: x, account: "ZemmourEric"}
 
   - id: eric-zemmour/instagram/ericzemmour
@@ -789,7 +798,7 @@ sources:
     url: "https://www.instagram.com/ericzemmour_/"
     trust_level: 1
     label: "Éric Zemmour sur Instagram (@ericzemmour_)"
-    max_items: 20
+    max_items: 120
     options: {platform: instagram, account: "ericzemmour_"}
 
   - id: eric-zemmour/youtube/chaine
@@ -800,6 +809,7 @@ sources:
     label: "Éric Zemmour sur YouTube (discours ; entretiens exclus)"
     max_items: 8
     options: {platform: youtube, account: "chaine"}
+    enabled: false   # collection stopped on 2026-11-10; what it gave stays shown
 
   - id: marine-tondelier/x/marinetondelier
     candidate_id: marine-tondelier
@@ -807,7 +817,7 @@ sources:
     url: "https://x.com/marinetondelier"
     trust_level: 1
     label: "Marine Tondelier sur X (@marinetondelier)"
-    max_items: 100
+    max_items: 800
     options: {platform: x, account: "marinetondelier"}
 
   - id: marine-tondelier/facebook/marine-tondelier
@@ -816,7 +826,7 @@ sources:
     url: "https://www.facebook.com/MarineTondelier"
     trust_level: 1
     label: "Marine Tondelier sur Facebook"
-    max_items: 15
+    max_items: 5
     options: {platform: facebook, account: "marine.tondelier"}
 
   - id: marine-tondelier/instagram/marinetondelier
@@ -825,7 +835,7 @@ sources:
     url: "https://www.instagram.com/marinetondelier/"
     trust_level: 1
     label: "Marine Tondelier sur Instagram (@marinetondelier)"
-    max_items: 20
+    max_items: 120
     options: {platform: instagram, account: "marinetondelier"}
 
   - id: marine-tondelier/linkedin/marine-tondelier
@@ -834,7 +844,7 @@ sources:
     url: "https://www.linkedin.com/in/marine-tondelier/"
     trust_level: 1
     label: "Marine Tondelier sur LinkedIn"
-    max_items: 20
+    max_items: 150
     options: {platform: linkedin, account: "marine-tondelier"}
 
   - id: francois-ruffin/x/francois-ruffin
@@ -843,7 +853,7 @@ sources:
     url: "https://x.com/Francois_Ruffin"
     trust_level: 1
     label: "François Ruffin sur X (@Francois_Ruffin)"
-    max_items: 100
+    max_items: 800
     options: {platform: x, account: "Francois_Ruffin"}
 
   - id: francois-ruffin/facebook/francoisruffin80
@@ -852,7 +862,7 @@ sources:
     url: "https://www.facebook.com/FrancoisRuffin80"
     trust_level: 1
     label: "François Ruffin sur Facebook"
-    max_items: 15
+    max_items: 5
     options: {platform: facebook, account: "FrancoisRuffin80"}
 
   - id: francois-ruffin/linkedin/francois-ruffin
@@ -861,7 +871,7 @@ sources:
     url: "https://www.linkedin.com/in/francois-ruffin/"
     trust_level: 1
     label: "François Ruffin sur LinkedIn"
-    max_items: 20
+    max_items: 150
     options: {platform: linkedin, account: "francois-ruffin"}
 
   - id: francois-ruffin/youtube/chaine
@@ -872,6 +882,7 @@ sources:
     label: "François Ruffin sur YouTube (discours ; entretiens exclus)"
     max_items: 8
     options: {platform: youtube, account: "chaine"}
+    enabled: false   # collection stopped on 2026-11-10; what it gave stays shown
 
   - id: fabien-roussel/x/fabien-roussel
     candidate_id: fabien-roussel
@@ -879,7 +890,7 @@ sources:
     url: "https://x.com/Fabien_Roussel"
     trust_level: 1
     label: "Fabien Roussel sur X (@Fabien_Roussel)"
-    max_items: 100
+    max_items: 800
     options: {platform: x, account: "Fabien_Roussel"}
 
   - id: fabien-roussel/instagram/fabien-roussel
@@ -888,7 +899,7 @@ sources:
     url: "https://www.instagram.com/fabien_roussel/"
     trust_level: 1
     label: "Fabien Roussel sur Instagram (@fabien_roussel)"
-    max_items: 20
+    max_items: 120
     options: {platform: instagram, account: "fabien_roussel"}
 
   - id: fabien-roussel/linkedin/fabien-roussel-6151bb21b
@@ -897,5 +908,5 @@ sources:
     url: "https://www.linkedin.com/in/fabien-roussel-6151bb21b/"
     trust_level: 1
     label: "Fabien Roussel sur LinkedIn"
-    max_items: 20
+    max_items: 150
     options: {platform: linkedin, account: "fabien-roussel-6151bb21b"}

@@ -264,7 +264,10 @@ fournit, ou la transcription automatique pour YouTube, où seuls les discours so
 (les vidéos dont le titre ou la description annoncent un entretien, un débat ou des
 questions sont écartées, mais le filtre peut en laisser passer). La première lecture d'un
 compte remonte au début de la fenêtre, dans la limite de son `max_items` ; la mise à jour
-quotidienne ne lit que les deux derniers jours.
+quotidienne ne lit que les deux derniers jours. Priorités fixées le 10 novembre 2026 : X, LinkedIn et
+Instagram sont lus depuis le début de la fenêtre ; Facebook ne l'est que pour les posts
+récents (remonter à juillet coûterait environ 12 dollars) ; la collecte TikTok et YouTube
+est arrêtée, et ce qu'elle a donné reste publié, sa source marquée « collecte arrêtée ».
 
 **Discours en vidéo (depuis le 5 novembre 2026).** Un discours prononcé par le candidat
 est de niveau 1, même quand la vidéo est diffusée par une chaîne de télévision : ce sont

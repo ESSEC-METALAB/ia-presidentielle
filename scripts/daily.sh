@@ -94,7 +94,15 @@ annotate() {
 
 echo "##### Mise à jour du $(date '+%F %T')"
 [[ "$(env_value DAILY_GIT_PULL 0)" == "1" ]] && step git-pull git pull --ff-only
-step collect obs collect
+# COLLECT_FULL_WINDOW_ONCE=<label>: the first run with that label reads the social media
+# accounts over the whole collection window (`collect --full-window`), then leaves a
+# marker so that the next runs read only the last days again.
+full_window_marker="data/.full-window-$(env_value COLLECT_FULL_WINDOW_ONCE '')"
+if [[ "$full_window_marker" != "data/.full-window-" && ! -e "$full_window_marker" ]]; then
+    step collect obs collect --full-window && touch "$full_window_marker"
+else
+    step collect obs collect
+fi
 [[ "$(env_value DAILY_IMPORT_LEGACY 1)" == "1" ]] && step import-legacy import_legacy
 step segment obs segment
 step annotate annotate

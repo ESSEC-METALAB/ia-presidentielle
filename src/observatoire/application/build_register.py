@@ -72,6 +72,7 @@ class BuildRegister:
         """`verified`: annotator versions of cross-verified editions, in precedence order."""
         shown = [c for c in candidates if c.on_register]
         documents = self._documents({c.id for c in shown}, sources, since)
+        read = {d.source_id for d in documents.values()}
         passages = self._current_passages(documents, sources)
         hashes = {pid: content_hash(p.segment.text) for pid, p in passages.items()}
         # An annotation naming an axis that no longer exists (the taxonomy changed) is not
@@ -87,7 +88,7 @@ class BuildRegister:
             generated_at=self._clock.now(),
             window_start=since,
             dimensions=tuple(dimensions),
-            candidates=tuple(_listed(candidate, sources) for candidate in shown),
+            candidates=tuple(_listed(candidate, sources, read) for candidate in shown),
             entries=_entries(passages, chosen, verified),
             annotators=_annotators(chosen, verified),
             pending=self._pending(passages, chosen),
@@ -175,6 +176,10 @@ def _preferred(entry: RegisterEntry) -> tuple[bool, str]:
     return entry.document.archive_url is not None, entry.document.fetched_at.isoformat()
 
 
-def _listed(candidate: Candidate, sources: Sequence[Source]) -> RegisterCandidate:
-    own = tuple(s for s in sources if s.candidate_id == candidate.id and s.enabled)
-    return RegisterCandidate(candidate=candidate, sources=own)
+def _listed(candidate: Candidate, sources: Sequence[Source], read: set[str]) -> RegisterCandidate:
+    own = [s for s in sources if s.candidate_id == candidate.id]
+    return RegisterCandidate(
+        candidate=candidate,
+        sources=tuple(s for s in own if s.enabled),
+        stopped=tuple(s for s in own if not s.enabled and s.id in read),
+    )

@@ -423,6 +423,7 @@ button{font:inherit}
                         <span style="display:inline-flex;align-items:center;gap:6px;color:#3A3E46"><i class="msi" aria-hidden="true" style="font-size:15px">{{ s.kindIcon }}</i>{{ s.kindLabel }}</span>
                         <span style="display:inline-flex;align-items:center;gap:6px;border:1px {{ s.tierBorderStyle }} {{ s.tierBorderColor }};border-radius:3px;padding:3px 9px;color:#3A3E46"><i class="msi" aria-hidden="true" style="font-size:14px">{{ s.tierIcon }}</i>{{ s.tierShort }} · {{ s.tierState }}</span>
                         <span>{{ s.host }}</span>
+                        <sc-if value="{{ s.stopped }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:6px;border:1px dashed #8A8F99;border-radius:3px;padding:3px 9px;color:#5F646E"><i class="msi" aria-hidden="true" style="font-size:14px">pause_circle</i>{{ t.sourceStopped }}</span></sc-if>
                       </div>
                     </div>
                     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-family:'JetBrains Mono',monospace;font-size:12px;white-space:nowrap">
@@ -571,7 +572,7 @@ const I18N = {
   fr: {
     skip: "Aller au contenu", siteSub: "Registre des positions sur l'IA", navLabel: "Navigation principale", langLabel: "Langue",
     standing: { withdrawn: "ne se présente plus", prospective: "pressenti, non déclaré" },
-    sources: "Les sources", sourcesLead: "Ce que nous lisons pour chaque candidat : son type, son niveau (qui parle), combien de textes il a fournis depuis le début de la fenêtre de collecte, et combien de déclarations sur l'IA en sont issues. Une source n'est ajoutée qu'après vérification de son robots.txt et de l'extraction de son texte.", sourcesCaption: "Sources suivies, par candidat", sourceDoc1: "texte lu", sourceDocN: "textes lus", sourceN1: "source", sourceNN: "sources",
+    sources: "Les sources", sourcesLead: "Ce que nous lisons pour chaque candidat : son type, son niveau (qui parle), combien de textes il a fournis depuis le début de la fenêtre de collecte, et combien de déclarations sur l'IA en sont issues. Une source n'est ajoutée qu'après vérification de son robots.txt et de l'extraction de son texte.", sourcesCaption: "Sources suivies, par candidat", sourceDoc1: "texte lu", sourceDocN: "textes lus", sourceStopped: "collecte arrêtée", sourceN1: "source", sourceNN: "sources",
     sourceKinds: { rss: "Flux RSS", page: "Page du site", pdf: "Document PDF", assemblee_nationale: "Comptes rendus de l'Assemblée nationale", sitemap: "Archives du site", transcript: "Transcription de vidéo", social: "Réseau social" },
     fil: "Le fil", grille: "Le baromètre", methodo: "Méthodologie", corrections: "Corrections", legal: "Mentions légales", viewLabel: "Vue", open: "Ouvrir",
     heroKicker: "Registre public · Présidentielle 2027", heroVersion: "Édition du", heroTitle: "Ce que les candidats disent de l'IA.",
@@ -616,7 +617,7 @@ const I18N = {
   en: {
     skip: "Skip to content", siteSub: "Register of AI positions", navLabel: "Main navigation", langLabel: "Language",
     standing: { withdrawn: "no longer running", prospective: "possible candidate, not declared" },
-    sources: "The sources", sourcesLead: "What we read for each candidate: its kind, its level (who is speaking), how many texts it has given since the collection window opened, and how many statements on AI came from them. A source is added only once its robots.txt and the extraction of its text have been checked.", sourcesCaption: "Tracked sources, by candidate", sourceDoc1: "text read", sourceDocN: "texts read", sourceN1: "source", sourceNN: "sources",
+    sources: "The sources", sourcesLead: "What we read for each candidate: its kind, its level (who is speaking), how many texts it has given since the collection window opened, and how many statements on AI came from them. A source is added only once its robots.txt and the extraction of its text have been checked.", sourcesCaption: "Tracked sources, by candidate", sourceDoc1: "text read", sourceDocN: "texts read", sourceStopped: "no longer collected", sourceN1: "source", sourceNN: "sources",
     sourceKinds: { rss: "RSS feed", page: "Website page", pdf: "PDF document", assemblee_nationale: "National Assembly verbatim records", sitemap: "Website archive", transcript: "Video transcript", social: "Social media" },
     fil: "The feed", grille: "The barometer", methodo: "Methodology", corrections: "Corrections", legal: "Legal notices", viewLabel: "View", open: "Open",
     heroKicker: "Public register · Presidential election 2027", heroVersion: "Edition of", heroTitle: "What the candidates say about AI.",
@@ -992,7 +993,7 @@ class Component extends DCLogic {
             kindLabel: (t.sourceKinds || {})[src.kind] || src.kind || "", kindIcon: SRC_ICON[src.kind] || "web",
             tierShort: src.tier === 1 ? t.tierShort1 : t.tierShort2, tierIcon: ICON.tier[src.tier] || "group",
             tierState: src.tierConfirmed ? t.confirmed : t.defaulted, tierBorderStyle: src.tierConfirmed ? "solid" : "dashed", tierBorderColor: src.tierConfirmed ? "#0B0C0F" : "#8A8F99",
-            docsLabel: docs + " " + (docs === 1 ? t.sourceDoc1 : t.sourceDocN), statsLabel: stated + " " + nWord(stated), hasStatements: stated > 0, noStatements: stated === 0
+            stopped: !!src.stopped, docsLabel: docs + " " + (docs === 1 ? t.sourceDoc1 : t.sourceDocN), statsLabel: stated + " " + nWord(stated), hasStatements: stated > 0, noStatements: stated === 0
           };
         });
         return {

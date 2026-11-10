@@ -215,3 +215,15 @@ def test_webvtt_keeps_the_words_only() -> None:
     )
 
     assert webvtt_text(vtt) == "Bonjour à tous"
+
+
+@pytest.mark.parametrize(
+    ("platform", "field"), [("instagram", "onlyPostsNewerThan"), ("linkedin", "postedLimitDate")]
+)
+def test_the_scraper_is_told_where_the_window_starts(platform: str, field: str) -> None:
+    asked: list[dict[str, Any]] = []
+    reader = _reader([], lookback_days=None, asked=asked)
+
+    reader.fetch(_source(platform), since=date(2026, 7, 1))
+
+    assert asked[0]["input"][field] == "2026-07-01"

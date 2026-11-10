@@ -15,6 +15,9 @@ class _Frozen(BaseModel):
 class RegisterCandidate(_Frozen):
     candidate: Candidate
     sources: tuple[Source, ...]  # enabled sources: what we are listening to
+    # Disabled sources whose stored texts are still on the register: no longer read,
+    # but what they gave is shown, so they are listed too.
+    stopped: tuple[Source, ...] = ()
 
     @property
     def monitored(self) -> bool:

@@ -218,7 +218,11 @@ def _facebook_posts(
 def _instagram_input(
     source: Source, account: str, start: date | None, limit: int
 ) -> dict[str, Any]:
-    return {"username": [account], "resultsLimit": limit, "skipPinnedPosts": True}
+    run_input: dict[str, Any] = {"username": [account], "resultsLimit": limit}
+    run_input["skipPinnedPosts"] = True
+    if start:  # the actor stops there: older posts are neither read nor paid for
+        run_input["onlyPostsNewerThan"] = start.isoformat()
+    return run_input
 
 
 def _instagram_posts(
@@ -305,12 +309,15 @@ def _youtube_posts(
 
 
 def _linkedin_input(source: Source, account: str, start: date | None, limit: int) -> dict[str, Any]:
-    return {
+    run_input: dict[str, Any] = {
         "targetUrls": [source.url],
         "maxPosts": limit,
         "includeReposts": False,
         "includeQuotePosts": True,
     }
+    if start:  # the actor stops there: older posts are neither read nor paid for
+        run_input["postedLimitDate"] = start.isoformat()
+    return run_input
 
 
 def _linkedin_posts(

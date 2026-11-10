@@ -338,3 +338,17 @@ def test_an_annotation_on_an_axis_that_no_longer_exists_leaves_its_passage_pendi
 
     assert register.entries == ()
     assert register.pending == {"camille-exemple": 1}
+
+
+def test_a_stopped_source_whose_texts_are_shown_is_still_listed() -> None:
+    store = InMemoryStore()
+    _annotated(store, document(TEXT))
+    stopped = FEED.model_copy(update={"enabled": False})
+    never_read = source("camille-exemple/rss/vide").model_copy(update={"enabled": False})
+
+    register = _build(store, [candidate()], [stopped, never_read])
+
+    (listed,) = register.candidates
+    assert listed.sources == ()
+    assert [s.id for s in listed.stopped] == [FEED.id]
+    assert len(register.entries) == 1

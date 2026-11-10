@@ -55,6 +55,7 @@ def _source(source: Source, documents: int, statements: int) -> dict[str, object
         "kind": source.kind,
         "tier": int(source.trust_level),
         "tierConfirmed": source.trust_confirmed,
+        "stopped": not source.enabled,  # no longer read; what it gave stays shown
         "documents": documents,  # texts read in the window
         "statements": statements,  # statements on the register
     }
@@ -78,7 +79,8 @@ def _candidate(
         # candidate's empty cells instead of "aucune position identifiée".
         "pending": register.pending.get(person.id, 0),
         "sources": [
-            _source(s, register.documents.get(s.id, 0), statements[s.id]) for s in listed.sources
+            _source(s, register.documents.get(s.id, 0), statements[s.id])
+            for s in (*listed.sources, *listed.stopped)
         ],
     }
 
