@@ -6,9 +6,9 @@ TODO: score, report and run-all, if the register ever publishes a score.
 
 import argparse
 import sys
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from contextlib import closing
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import httpx
@@ -52,7 +52,7 @@ from observatoire.config.registry import CrawlerSettings, Registry, SocialSettin
 from observatoire.config.settings import Settings
 from observatoire.domain.annotation import AnnotationReport
 from observatoire.domain.errors import ConfigurationError
-from observatoire.domain.models import CollectionReport, SegmentationReport, Source
+from observatoire.domain.models import CollectionReport, RawDocument, SegmentationReport, Source
 from observatoire.domain.ports import Clock, LLMClient, SourceReader
 from observatoire.domain.watch import needs_review
 from observatoire.observability.logging import configure_logging
@@ -206,7 +206,7 @@ def _collect(args: argparse.Namespace, settings: Settings, registry: Registry) -
             social=registry.social,
             apify_token=token,
             full_window=args.full_window,
-            known=frozenset(d.source_id for d in repository.list_documents()),
+            last_stored=_last_stored(repository.list_documents()),
         )
         use_case = CollectDaily(
             readers,
@@ -441,7 +441,7 @@ def _live_readers(
     social: SocialSettings,
     apify_token: str | None,
     full_window: bool = False,
-    known: frozenset[str] = frozenset(),
+    last_stored: Mapping[str, datetime] | None = None,
 ) -> dict[str, SourceReader]:
     policy = RobotsPolicy(crawler.user_agent, crawler.min_delay_seconds, robots_fetcher(client))
     http = PoliteHttpClient(client, policy, crawler.max_redirects)
@@ -464,9 +464,19 @@ def _live_readers(
             daily_max_items=social.daily_max_items,
             lookback_days=None if full_window else social.lookback_days,
             skip_titles=social.youtube_skip_titles,
-            known=known,
+            last_stored=last_stored,
+            min_hours_between_reads=social.min_hours_between_reads,
         ),
     }
+
+
+def _last_stored(documents: Sequence[RawDocument]) -> dict[str, datetime]:
+    """Source id -> when its latest stored document was fetched."""
+    latest: dict[str, datetime] = {}
+    for document in documents:
+        if document.source_id not in latest or document.fetched_at > latest[document.source_id]:
+            latest[document.source_id] = document.fetched_at
+    return latest
 
 
 def _selected(sources: Sequence[Source], ids: list[str] | None) -> list[Source] | None:

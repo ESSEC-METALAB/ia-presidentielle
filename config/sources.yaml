@@ -29,6 +29,7 @@ social:
   daily_max_items: 5
   max_charge_usd: 0.5   # Apify's minimum cap for some actors
   timeout_seconds: 280
+  min_hours_between_reads: 20
   # Matched against the title and the start of the description.
   youtube_skip_titles:
     - "\\binterview"

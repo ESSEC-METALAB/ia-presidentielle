@@ -13,7 +13,7 @@ belongs to its actor, and is written here, next to it.
 """
 
 import re
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
@@ -59,12 +59,15 @@ class SocialReader:
         daily_max_items: int,
         lookback_days: int | None,
         skip_titles: Sequence[str] = (),
-        known: frozenset[str] = frozenset(),
+        last_stored: Mapping[str, datetime] | None = None,
+        min_hours_between_reads: float = 0,
     ) -> None:
         """`lookback_days`: a daily run reads only the last days' posts, at most
         `daily_max_items`; None reads the whole window, up to each source's max_items.
-        A source not in `known` (nothing stored from it yet) is read over the whole
-        window once, whatever `lookback_days` says: its first run fills it in."""
+        A source not in `last_stored` (nothing stored from it yet) is read over the whole
+        window once, whatever `lookback_days` says: its first run fills it in. A source
+        that stored a post less than `min_hours_between_reads` ago is not read again:
+        a second refresh in the day costs nothing."""
         self._apify = apify
         self._http = http
         self._clock = clock
@@ -73,18 +76,18 @@ class SocialReader:
         self._skip_titles = (
             re.compile("|".join(skip_titles), re.IGNORECASE) if skip_titles else None
         )
-        self._known = known
+        self._last_stored = dict(last_stored or {})
+        self._min_gap = timedelta(hours=min_hours_between_reads)
 
     def fetch(self, source: Source, since: date | None) -> list[RawDocument]:
         platform = _PLATFORMS.get(source.options.get("platform", ""))
         account = source.options.get("account", "")
         if platform is None or not account:
             raise SourceUnavailableError(source.url, "options.platform and options.account")
-        start, limit = since, source.max_items
-        if self._lookback_days is not None and source.id in self._known:
-            recent = self._clock.now().date() - timedelta(days=self._lookback_days)
-            start = max(since, recent) if since else recent
-            limit = min(limit, self._daily_max_items)
+        window = self._window(source, since)
+        if window is None:
+            return []
+        start, limit = window
         items = self._apify.run(
             platform.actor, platform.run_input(source, account, start, limit), label=source.url
         )
@@ -93,26 +96,41 @@ class SocialReader:
             raise SourceUnavailableError(
                 source.url, str(failures[0].get("errorDescription") or failures[0]["error"])
             )
-        documents = []
-        for post in platform.posts(source, account, items):
-            if not in_window(post.published_on, start):
-                continue
-            if self._skip_titles and self._skip_titles.search(f"{post.title or ''}\n{post.about}"):
-                continue
-            text = self._with_subtitles(post)
-            if not text.strip():
-                continue
-            documents.append(
-                make_document(
-                    source,
-                    url=post.url,
-                    title=post.title or _first_line(text),
-                    text=text,
-                    published_on=post.published_on,
-                    fetched_at=self._clock.now(),
-                )
-            )
-        return documents
+        return [
+            document
+            for post in platform.posts(source, account, items)
+            if (document := self._document(source, post, start)) is not None
+        ]
+
+    def _window(self, source: Source, since: date | None) -> tuple[date | None, int] | None:
+        """Where to start and how many posts to ask for; None: read too recently."""
+        stored = self._last_stored.get(source.id)
+        if self._lookback_days is None or stored is None:
+            return since, source.max_items
+        if self._clock.now() - stored < self._min_gap:
+            _log.info("social_source_read_recently", source_id=source.id, at=stored.isoformat())
+            return None
+        recent = self._clock.now().date() - timedelta(days=self._lookback_days)
+        return (max(since, recent) if since else recent), min(
+            source.max_items, self._daily_max_items
+        )
+
+    def _document(self, source: Source, post: _Post, start: date | None) -> RawDocument | None:
+        if not in_window(post.published_on, start):
+            return None
+        if self._skip_titles and self._skip_titles.search(f"{post.title or ''}\n{post.about}"):
+            return None
+        text = self._with_subtitles(post)
+        if not text.strip():
+            return None
+        return make_document(
+            source,
+            url=post.url,
+            title=post.title or _first_line(text),
+            text=text,
+            published_on=post.published_on,
+            fetched_at=self._clock.now(),
+        )
 
     def _with_subtitles(self, post: _Post) -> str:
         if not post.subtitles_url:

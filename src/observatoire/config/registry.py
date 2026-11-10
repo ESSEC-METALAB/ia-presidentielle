@@ -59,6 +59,9 @@ class SocialSettings(BaseModel):
     # Spending cap of one Apify run (one account), in US dollars.
     max_charge_usd: float = Field(default=0.5, gt=0)
     timeout_seconds: int = Field(default=280, ge=30, le=3600)
+    # An account that stored a post less than this many hours ago is not read again: the
+    # site's refresh button, pressed several times a day, does not pay Apify twice.
+    min_hours_between_reads: float = Field(default=20, ge=0)
     # YouTube videos whose title matches one of these are skipped: interviews and
     # debates, whose transcript does not say who is speaking.
     youtube_skip_titles: tuple[str, ...] = ()

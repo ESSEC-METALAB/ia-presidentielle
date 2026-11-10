@@ -1,7 +1,7 @@
 """The social media reader, on fictional Apify answers served by a mock transport."""
 
 import json
-from datetime import date
+from datetime import date, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -11,7 +11,7 @@ from observatoire.adapters.sources.apify_client import ApifyClient
 from observatoire.adapters.sources.social_reader import SocialReader, webvtt_text
 from observatoire.domain.errors import SourceUnavailableError
 from observatoire.domain.models import Source, TrustLevel
-from support import FrozenClock
+from support import T0, FrozenClock
 
 SUBTITLES = "https://cdn.test/subtitles.vtt"
 
@@ -36,7 +36,7 @@ def _reader(
     token: str | None = "secret",
     asked: list[dict[str, Any]] | None = None,
     skip_titles: tuple[str, ...] = (),
-    known: frozenset[str] = frozenset({"camille-exemple/x/camille_exemple"}),
+    last_stored: dict[str, datetime] | None = None,
 ) -> SocialReader:
     def handle(request: httpx.Request) -> httpx.Response:
         if str(request.url) == SUBTITLES:
@@ -54,7 +54,10 @@ def _reader(
         daily_max_items=10,
         lookback_days=lookback_days,
         skip_titles=skip_titles,
-        known=known,
+        last_stored={"camille-exemple/x/camille_exemple": T0 - timedelta(days=2)}
+        if last_stored is None
+        else last_stored,
+        min_hours_between_reads=20,
     )
 
 
@@ -117,7 +120,7 @@ def test_a_daily_run_asks_only_for_the_last_days_and_a_few_posts() -> None:
 
 def test_a_new_account_is_read_over_the_whole_window_on_its_first_run() -> None:
     asked: list[dict[str, Any]] = []
-    reader = _reader([], lookback_days=3, asked=asked, known=frozenset())
+    reader = _reader([], lookback_days=3, asked=asked, last_stored={})
 
     reader.fetch(_source("x", max_items=40), since=date(2026, 7, 1))
 
@@ -227,3 +230,12 @@ def test_the_scraper_is_told_where_the_window_starts(platform: str, field: str) 
     reader.fetch(_source(platform), since=date(2026, 7, 1))
 
     assert asked[0]["input"][field] == "2026-07-01"
+
+
+def test_an_account_read_a_few_hours_ago_is_not_read_again() -> None:
+    asked: list[dict[str, Any]] = []
+    recent = {"camille-exemple/x/camille_exemple": T0 - timedelta(hours=5)}
+    reader = _reader([_tweet("Déjà lu")], lookback_days=3, asked=asked, last_stored=recent)
+
+    assert reader.fetch(_source("x"), since=date(2026, 7, 1)) == []
+    assert asked == []
