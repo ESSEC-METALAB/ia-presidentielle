@@ -129,7 +129,6 @@ button{font:inherit}
         <div style="max-width:1400px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))">
           <a data-reveal href="{{ hrefFil }}" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:28px;padding:44px 40px;border-right:1px solid rgba(243,241,236,.14);text-decoration:none;color:#F3F1EC;transition:background .25s" style-hover="background:rgba(243,241,236,.04)" style-focus="outline:2px solid #F3F1EC;outline-offset:-4px">
             <span style="display:flex;flex-direction:column;gap:14px;min-width:0">
-              <span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#C9C7C0">01 · {{ t.viewLabel }}</span>
               <span style="display:flex;align-items:center;gap:14px;font-size:clamp(32px,3vw,46px);line-height:1;font-weight:500;letter-spacing:-.03em"><i class="msi" aria-hidden="true" style="font-size:.8em;color:#C9C7C0">view_stream</i>{{ t.fil }}</span>
               <span style="font-size:15px;color:#C9C7C0;max-width:28ch">{{ t.doorFil }}</span>
               <span style="margin-top:auto;display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.06em">{{ t.open }}<i class="msi" aria-hidden="true" style="font-size:15px">arrow_forward</i></span>
@@ -150,7 +149,6 @@ button{font:inherit}
           </a>
           <a data-reveal href="{{ hrefGrille }}" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:28px;padding:44px 40px;text-decoration:none;color:#F3F1EC;transition:background .25s" style-hover="background:rgba(243,241,236,.04)" style-focus="outline:2px solid #F3F1EC;outline-offset:-4px">
             <span style="display:flex;flex-direction:column;gap:14px;min-width:0">
-              <span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#C9C7C0">02 · {{ t.viewLabel }}</span>
               <span style="display:flex;align-items:center;gap:14px;font-size:clamp(32px,3vw,46px);line-height:1;font-weight:500;letter-spacing:-.03em"><i class="msi" aria-hidden="true" style="font-size:.8em;color:#C9C7C0">bar_chart</i>{{ t.grille }}</span>
               <span style="font-size:15px;color:#C9C7C0;max-width:28ch">{{ t.doorGrille }}</span>
               <span style="margin-top:auto;display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.06em">{{ t.open }}<i class="msi" aria-hidden="true" style="font-size:15px">arrow_forward</i></span>
@@ -211,8 +209,7 @@ button{font:inherit}
 
     <sc-if value="{{ isFil }}" hint-placeholder-val="{{ false }}">
       <section data-screen-label="Le fil" style="max-width:1400px;margin:0 auto;padding:56px 40px 104px">
-        <p data-reveal style="margin:0 0 18px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#5F646E">01 · {{ t.viewLabel }}</p>
-        <h1 data-reveal style="display:flex;align-items:center;gap:22px;margin:0 0 14px;font-weight:500;font-size:clamp(48px,6vw,96px);line-height:.95;letter-spacing:-.035em"><i class="msi" aria-hidden="true" style="font-size:.55em;color:#5F646E">view_stream</i>{{ t.fil }}</h1>
+        <h1 data-reveal style="display:flex;align-items:center;gap:14px;margin:0 0 14px;font-weight:500;font-size:clamp(32px,3.4vw,52px);line-height:1;letter-spacing:-.03em"><i class="msi" aria-hidden="true" style="font-size:1em;color:#5F646E">view_stream</i>{{ t.fil }}</h1>
         <p data-reveal style="margin:0 0 36px;max-width:64ch;font-size:18px;color:#3A3E46">{{ t.filLead }}</p>
         <sc-if value="{{ hasPending }}" hint-placeholder-val="{{ false }}"><p data-reveal style="margin:-20px 0 32px;max-width:64ch;display:flex;gap:10px;align-items:flex-start;padding:10px 14px;border:1px dashed #0B0C0F;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.5;color:#0B0C0F"><i class="msi" aria-hidden="true" style="font-size:16px">hourglass_top</i><span>{{ pendingNote }}</span></p></sc-if>
 
@@ -327,8 +324,7 @@ button{font:inherit}
 
     <sc-if value="{{ isGrille }}" hint-placeholder-val="{{ false }}">
       <section data-screen-label="Le baromètre" style="max-width:1400px;margin:0 auto;padding:56px 40px 104px">
-        <p data-reveal style="margin:0 0 18px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#5F646E">02 · {{ t.viewLabel }}</p>
-        <h1 data-reveal style="display:flex;align-items:center;gap:22px;margin:0 0 14px;font-weight:500;font-size:clamp(48px,6vw,96px);line-height:.95;letter-spacing:-.035em"><i class="msi" aria-hidden="true" style="font-size:.55em;color:#5F646E">bar_chart</i>{{ t.grille }}</h1>
+        <h1 data-reveal style="display:flex;align-items:center;gap:14px;margin:0 0 14px;font-weight:500;font-size:clamp(32px,3.4vw,52px);line-height:1;letter-spacing:-.03em"><i class="msi" aria-hidden="true" style="font-size:1em;color:#5F646E">bar_chart</i>{{ t.grille }}</h1>
         <p data-reveal style="margin:0 0 40px;max-width:64ch;font-size:18px;color:#3A3E46">{{ t.gridLead }}</p>
         <sc-if value="{{ hasPending }}" hint-placeholder-val="{{ false }}"><p data-reveal style="margin:-20px 0 32px;max-width:64ch;display:flex;gap:10px;align-items:flex-start;padding:10px 14px;border:1px dashed #0B0C0F;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.5;color:#0B0C0F"><i class="msi" aria-hidden="true" style="font-size:16px">hourglass_top</i><span>{{ pendingNote }}</span></p></sc-if>
         <div data-reveal style="position:relative">
@@ -418,8 +414,7 @@ button{font:inherit}
 
     <sc-if value="{{ isSources }}" hint-placeholder-val="{{ false }}">
       <section data-screen-label="Les sources" style="max-width:1400px;margin:0 auto;padding:56px 40px 104px">
-        <p data-reveal style="margin:0 0 18px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#5F646E">03 · {{ t.viewLabel }}</p>
-        <h1 data-reveal style="display:flex;align-items:center;gap:22px;margin:0 0 14px;font-weight:500;font-size:clamp(48px,6vw,96px);line-height:.95;letter-spacing:-.035em"><i class="msi" aria-hidden="true" style="font-size:.55em;color:#5F646E">rss_feed</i>{{ t.sources }}</h1>
+        <h1 data-reveal style="display:flex;align-items:center;gap:14px;margin:0 0 14px;font-weight:500;font-size:clamp(32px,3.4vw,52px);line-height:1;letter-spacing:-.03em"><i class="msi" aria-hidden="true" style="font-size:1em;color:#5F646E">rss_feed</i>{{ t.sources }}</h1>
         <p data-reveal style="margin:0 0 40px;max-width:68ch;font-size:18px;color:#3A3E46">{{ t.sourcesLead }}</p>
         <div role="list" aria-label="{{ t.sourcesCaption }}" style="display:flex;flex-direction:column;border-top:2px solid #0B0C0F">
           <sc-for list="{{ sourceRows }}" as="r" hint-placeholder-count="13">
@@ -543,7 +538,7 @@ button{font:inherit}
           <a href="{{ hrefLegal }}" aria-current="{{ curLegal }}" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;color:#0B0C0F;text-decoration:none;background:{{ bgDocLegal }}" style-hover="background:#E9E6DE" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:18px">gavel</i>{{ t.legal }}</a>
         </nav>
         <div style="max-width:72ch">
-          <h1 data-reveal style="margin:0 0 32px;font-weight:500;font-size:clamp(40px,5vw,72px);line-height:.95;letter-spacing:-.035em">{{ docTitle }}</h1>
+          <h1 data-reveal style="margin:0 0 32px;font-weight:500;font-size:clamp(32px,3.4vw,52px);line-height:1;letter-spacing:-.03em">{{ docTitle }}</h1>
           <sc-for list="{{ docSections }}" as="s" hint-placeholder-count="4">
             <section data-reveal style="padding:28px 0;border-top:1px solid #D8D5CE">
               <h2 style="margin:0 0 12px;font-weight:500;font-size:24px;letter-spacing:-.02em;line-height:1.15">{{ s.h }}</h2>
@@ -593,7 +588,7 @@ const I18N = {
     framingHead: "Opportunité / Menace", framingTitle: "Déclarations qui présentent l'IA comme une opportunité (en haut à gauche) ou comme une menace (en bas à droite), tous axes confondus. Une déclaration qui dit les deux compte des deux côtés ; la plupart ne disent ni l'un ni l'autre et ne sont pas comptées.", framingOpp: "opportunité(s)", framingThreat: "menace(s)",
     sources: "Les sources", sourcesLead: "Ce que nous lisons pour chaque candidat : son type, son niveau (qui parle), combien de textes il a fournis depuis le début de la fenêtre de collecte, et combien de déclarations sur l'IA en sont issues. Une source n'est ajoutée qu'après vérification de son robots.txt et de l'extraction de son texte.", sourcesCaption: "Sources suivies, par candidat", sourceDoc1: "texte lu", sourceDocN: "textes lus", sourceStopped: "collecte arrêtée", sourceN1: "source", sourceNN: "sources",
     sourceKinds: { rss: "Flux RSS", page: "Page du site", pdf: "Document PDF", assemblee_nationale: "Comptes rendus de l'Assemblée nationale", sitemap: "Archives du site", transcript: "Transcription de vidéo", social: "Réseau social" },
-    fil: "Le fil", grille: "Le baromètre", methodo: "Méthodologie", corrections: "Corrections", legal: "Mentions légales", viewLabel: "Vue", open: "Ouvrir",
+    fil: "Le fil", grille: "Le baromètre", methodo: "Méthodologie", corrections: "Corrections", legal: "Mentions légales", open: "Ouvrir",
     heroKicker: "Registre public · Présidentielle 2027", heroVersion: "Édition du", heroTitle: "Ce que les candidats disent de l'IA.",
     principles: [["format_quote", "Mot pour mot"], ["archive", "Source et archive datées"], ["block", "Ni commentaire, ni score"]],
     liveLabel: "Extrait du registre", equalPlace: "même place pour chacun",
@@ -641,7 +636,7 @@ const I18N = {
     framingHead: "Opportunity / Threat", framingTitle: "Statements presenting AI as an opportunity (top left) or as a threat (bottom right), across all axes. A statement saying both counts on both sides; most say neither and are not counted.", framingOpp: "opportunity", framingThreat: "threat",
     sources: "The sources", sourcesLead: "What we read for each candidate: its kind, its level (who is speaking), how many texts it has given since the collection window opened, and how many statements on AI came from them. A source is added only once its robots.txt and the extraction of its text have been checked.", sourcesCaption: "Tracked sources, by candidate", sourceDoc1: "text read", sourceDocN: "texts read", sourceStopped: "no longer collected", sourceN1: "source", sourceNN: "sources",
     sourceKinds: { rss: "RSS feed", page: "Website page", pdf: "PDF document", assemblee_nationale: "National Assembly verbatim records", sitemap: "Website archive", transcript: "Video transcript", social: "Social media" },
-    fil: "The feed", grille: "The barometer", methodo: "Methodology", corrections: "Corrections", legal: "Legal notices", viewLabel: "View", open: "Open",
+    fil: "The feed", grille: "The barometer", methodo: "Methodology", corrections: "Corrections", legal: "Legal notices", open: "Open",
     heroKicker: "Public register · Presidential election 2027", heroVersion: "Edition of", heroTitle: "What the candidates say about AI.",
     principles: [["format_quote", "Word for word"], ["archive", "Dated source and archive"], ["block", "No commentary, no score"]],
     liveLabel: "From the register", equalPlace: "equal space for each",
