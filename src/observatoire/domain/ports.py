@@ -32,6 +32,7 @@ from observatoire.domain.models import (
     SourceOutcome,
 )
 from observatoire.domain.register import Register, RegisterEntry
+from observatoire.domain.scoring import ScoreDraft, StatementScore
 from observatoire.domain.watch import RosterEntry, WatchReport
 
 
@@ -175,6 +176,23 @@ class FramingStore(Protocol):
 
 class FramingReader(Protocol):
     def list_framings(self) -> list[StatementFraming]: ...
+
+
+class Scorer(Protocol):
+    @property
+    def version(self) -> str:
+        """Model, prompt and scales: changes whenever any of them changes."""
+        ...
+
+    def score(self, entry: RegisterEntry, speaker: str, axis: str) -> ScoreDraft:
+        """A proposal. Raises AnnotationUnavailableError or MalformedAnnotationError."""
+        ...
+
+
+class ScoreStore(Protocol):
+    def scored_keys(self, scorer_version: str) -> set[str]: ...
+
+    def save_score(self, score: StatementScore) -> None: ...
 
 
 class UsageTracker(Protocol):

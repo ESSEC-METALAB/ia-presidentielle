@@ -7,12 +7,14 @@ dimension, the quote it located and the descriptive notes that passed the gates.
 
 import json
 from collections import Counter
+from collections.abc import Sequence
 from datetime import date
 from urllib.parse import urlsplit
 
 from observatoire.domain.annotation import Dimension
 from observatoire.domain.models import Source
 from observatoire.domain.register import Register, RegisterCandidate, RegisterEntry
+from observatoire.domain.scoring import ScoreScale
 
 # Source kind -> the site's statement kind. Describes the medium, which is a fact; the
 # genre (speech, interview, release) would be an editorial call, made at review.
@@ -111,10 +113,37 @@ def _claim(entry: RegisterEntry) -> dict[str, object]:
         "archiveDate": _iso(document.archived_on),
         # From a cross-verified edition (config/register.yaml), or automatic gates only.
         "verified": entry.verified,
+        # Scale id -> score, reason (fr, en) and the words of the quote it rests on.
+        "scores": {
+            s.scale: {
+                "value": s.score,
+                "fr": s.reason_fr,
+                "en": s.reason_en,
+                "evidence": s.evidence,
+            }
+            for s in entry.scores
+        },
+    }
+
+
+def _scale(scale: ScoreScale) -> dict[str, object]:
+    return {
+        "id": scale.id,
+        "fr": scale.label_fr,
+        "en": scale.label_en,
+        "lowFr": scale.low_fr,
+        "lowEn": scale.low_en,
+        "highFr": scale.high_fr,
+        "highEn": scale.high_en,
     }
 
 
 class RegisterDataScript:
+    def __init__(self, scales: Sequence[ScoreScale] = (), min_statements: int = 3) -> None:
+        """`scales`: config/scoring.yaml; below `min_statements`, an average is marked thin."""
+        self._scales = tuple(scales)
+        self._min_statements = min_statements
+
     def render(self, register: Register) -> str:
         statements = Counter(entry.source.id for entry in register.entries)
         data = {
@@ -124,6 +153,8 @@ class RegisterDataScript:
             "reviewed": False,  # no statement has been through editorial review yet
             "pending": sum(register.pending.values()),
             "axes": [_axis(d) for d in register.dimensions],
+            "scales": [_scale(s) for s in self._scales],
+            "minStatements": self._min_statements,
             "candidates": [_candidate(c, register, statements) for c in register.candidates],
             "claims": [_claim(e) for e in register.entries],
             "corrections": [],

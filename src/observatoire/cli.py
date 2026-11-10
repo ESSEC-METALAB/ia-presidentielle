@@ -17,6 +17,7 @@ from observatoire.adapters.extraction.trafilatura_extractor import TrafilaturaEx
 from observatoire.adapters.llm.fake_llm_client import FakeLLMClient
 from observatoire.adapters.llm.llm_annotator import LLMAnnotator
 from observatoire.adapters.llm.llm_framer import LLMFramer
+from observatoire.adapters.llm.llm_scorer import LLMScorer
 from observatoire.adapters.llm.mistral_client import MistralClient
 from observatoire.adapters.llm.prompt_template import PromptTemplate
 from observatoire.adapters.llm.recorded_llm_client import (
@@ -48,6 +49,7 @@ from observatoire.application.build_register import BuildRegister
 from observatoire.application.collect_daily import CollectDaily
 from observatoire.application.frame_statements import FrameStatements, FramingReport
 from observatoire.application.inspect_corpus import InspectCorpus
+from observatoire.application.score_statements import ScoreStatements
 from observatoire.application.segment_documents import SegmentDocuments
 from observatoire.application.watch_changes import WatchChanges
 from observatoire.config.registry import CrawlerSettings, Registry, SocialSettings, load_registry
@@ -129,6 +131,12 @@ def _parser() -> argparse.ArgumentParser:
     frame.add_argument("--limit", type=int, help="nombre maximal de déclarations envoyées")
     frame.add_argument("--workers", type=int, default=4, help="appels au modèle en parallèle")
     frame.set_defaults(handler=_frame)
+    score = commands.add_parser(
+        "score", help="note chaque déclaration publiée sur les échelles de config/scoring.yaml"
+    )
+    score.add_argument("--limit", type=int, help="nombre maximal de déclarations envoyées")
+    score.add_argument("--workers", type=int, default=24, help="appels au modèle en parallèle")
+    score.set_defaults(handler=_score)
     register = commands.add_parser("register", help="construit le site du registre public")
     register.add_argument("--out", type=Path, default=Path("data/site"))
     register.add_argument("--template", type=Path, default=Path("web/registre"))
@@ -365,6 +373,60 @@ def _frame(args: argparse.Namespace, settings: Settings, registry: Registry) -> 
     return 0
 
 
+def _score(args: argparse.Namespace, settings: Settings, registry: Registry) -> int:
+    if settings.llm_provider != "mistral" or not settings.mistral_model:
+        print("Notation : LLM_PROVIDER=mistral et MISTRAL_MODEL requis (.env)", file=sys.stderr)
+        return 2
+    if settings.mistral_api_key is None:
+        print("MISTRAL_API_KEY n'est pas défini (.env)", file=sys.stderr)
+        return 2
+    if not registry.scoring.scales:
+        print("Aucune échelle dans config/scoring.yaml : rien à noter.")
+        return 0
+    clock = SystemClock()
+    usage = BufferedUsage()
+    with (
+        httpx.Client(timeout=settings.llm_timeout_seconds) as http,
+        closing(SqliteRepository(settings.database_path)) as repository,
+    ):
+        register = BuildRegister(
+            corpus=repository,
+            segments=repository,
+            annotations=repository,
+            relevance=TermRelevanceFilter(registry.taxonomy.relevance),
+            clock=clock,
+        ).build(
+            registry.candidates,
+            registry.sources,
+            registry.taxonomy.dimensions,
+            since=registry.collection.since,
+            verified=registry.publication.verified_annotators,
+        )
+        client = MistralClient(
+            http, api_key=settings.mistral_api_key.get_secret_value(), model=settings.mistral_model
+        )
+        scales = registry.scoring.scales
+        scorer = LLMScorer(UsageRecordingClient(client, usage, clock, "score"), scales)
+        report = ScoreStatements(
+            scorer, repository, clock, scales=[s.id for s in scales], workers=args.workers
+        ).run(
+            register.entries,
+            {c.id: c.name for c in registry.candidates},
+            {d.id: d.label_en for d in registry.taxonomy.dimensions},
+            limit=args.limit,
+        )
+        usage.flush(repository)
+    print(f"Notation {report.scorer_version}")
+    print(
+        f"  {report.statements} déclaration(s), {report.already_scored} déjà notée(s),"
+        f" {report.scored} notée(s) maintenant, {report.failed} sans réponse,"
+        f" {report.pending} en attente"
+    )
+    for scale, count in sorted(report.kept.items()):
+        print(f"    {scale:14} {count} score(s) gardé(s), {report.dropped.get(scale, 0)} écarté(s)")
+    return 0
+
+
 def _print_framing(report: FramingReport) -> None:
     print(f"Cadrage {report.framer_version}")
     print(
@@ -422,8 +484,10 @@ def _register(args: argparse.Namespace, settings: Settings, registry: Registry) 
             since=registry.collection.since,
             verified=registry.publication.verified_annotators,
             framings=repository.list_framings(),
+            scores=repository.list_scores(),
         )
-    page = write_site(args.template, args.out, RegisterDataScript().render(register))
+    script = RegisterDataScript(registry.scoring.scales, registry.scoring.min_statements)
+    page = write_site(args.template, args.out, script.render(register))
     tracked = sum(1 for c in register.candidates if c.monitored)
     verified = sum(1 for e in register.entries if e.verified)
     print(

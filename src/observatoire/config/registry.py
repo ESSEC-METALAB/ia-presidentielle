@@ -5,7 +5,7 @@ from collections import Counter
 from collections.abc import Sequence
 from datetime import date
 from pathlib import Path
-from typing import TypeVar
+from typing import Literal, TypeVar
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 from observatoire.domain.annotation import Dimension
 from observatoire.domain.errors import ConfigurationError
 from observatoire.domain.models import Candidate, Source
+from observatoire.domain.scoring import ScoreScale
 from observatoire.domain.watch import WatchedTopic
 from observatoire.services.ai_relevance import RelevanceSettings
 from observatoire.services.annotation_gates import GateSettings
@@ -75,6 +76,16 @@ class SocialSettings(BaseModel):
             except re.error as error:
                 raise ValueError(f"{pattern!r}: {error}") from error
         return patterns
+
+
+class ScoringSettings(BaseModel):
+    """config/scoring.yaml: the scales statements are scored on, and how the site averages."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    aggregation: Literal["mean"] = "mean"
+    min_statements: int = Field(default=3, ge=1)
+    scales: tuple[ScoreScale, ...] = ()
 
 
 class TaxonomySettings(BaseModel):
@@ -153,6 +164,7 @@ class Registry(BaseModel):
     taxonomy: TaxonomySettings
     watch: WatchSettings
     publication: RegisterSettings  # config/register.yaml
+    scoring: ScoringSettings = ScoringSettings()  # config/scoring.yaml
 
 
 class _CandidatesFile(BaseModel):
@@ -188,6 +200,9 @@ def load_registry(config_dir: Path) -> Registry:
         taxonomy=taxonomy,
         watch=_load(config_dir / "watch.yaml", WatchSettings),
         publication=_load(config_dir / "register.yaml", RegisterSettings),
+        scoring=_load(config_dir / "scoring.yaml", ScoringSettings)
+        if (config_dir / "scoring.yaml").is_file()
+        else ScoringSettings(),
     )
 
 

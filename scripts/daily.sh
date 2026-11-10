@@ -107,6 +107,7 @@ fi
 step segment obs segment
 step annotate annotate
 [[ "$(env_value LLM_PROVIDER fake)" == "mistral" ]] && step frame obs frame
+[[ "$(env_value LLM_PROVIDER fake)" == "mistral" ]] && step score obs score
 step watch obs watch --out data/reports/veille.md
 step register obs register --out data/site
 SITE=$?

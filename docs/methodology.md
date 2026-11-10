@@ -140,6 +140,23 @@ Un axe nomme un sujet, jamais une direction : pas de pôles, pas d'orientation c
 C'est le choix du prototype de site (« Ni commentaire, ni score »), qui tranche la
 première question ouverte ci-dessous pour ce qui est publié.
 
+**Notes de 1 à 5 (10 novembre 2026, grille provisoire).** À la demande du CTO, chaque
+déclaration publiée est notée sur les échelles de `config/scoring.yaml` (étape
+`observatoire score`, consigne `score_statement.v1.md`, 24 appels en parallèle) :
+`orientation` (« Encadrer ↔ Accélérer » : encadrer, protéger, freiner l'IA = 1 ;
+développer, financer, libérer = 5 ; 3 = développer avec des garde-fous ; vide quand la
+déclaration ne prend pas parti) et `concreteness` (1 = idée générale, 5 = mesure chiffrée
+et datée). Pour chaque axe, la grille écrit ce que valent 1, 3 et 5 : c'est elle qui dit
+pourquoi une déclaration a reçu sa note, avec la raison en une phrase que le modèle doit
+donner. Garde-fou : le modèle cite les mots de la citation sur lesquels la note repose,
+le code les retrouve, sinon la note est écartée (`dropped`). Le site montre la note et
+sa raison sur chaque déclaration, et la moyenne par candidat et par axe dans le
+baromètre (`aggregation: mean`), hachurée sous trois déclarations (`min_statements`).
+Une note décrit une position, jamais la qualité d'un candidat. Grille écrite la veille de
+la revue du CTO, à valider ; changer la grille change la consigne, donc la version du
+noteur : tout est noté de nouveau. C'est le score qu'excluait la question ouverte 1
+ci-dessous, décidé en connaissance de cause.
+
 **Opportunité ou menace (10 novembre 2026).** À la demande du CTO, chaque déclaration
 publiée reçoit en plus un cadrage : `opportunity` (l'IA présentée comme une chance),
 `threat` (comme un danger), `both`, ou `none` (une mesure, un fait, une critique, sans

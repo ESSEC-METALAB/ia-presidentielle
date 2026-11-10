@@ -38,6 +38,7 @@ from observatoire.domain.ports import (
     SegmentReader,
 )
 from observatoire.domain.register import Register, RegisterCandidate, RegisterEntry
+from observatoire.domain.scoring import StatementScore
 from observatoire.services.dedup import content_hash
 
 _PUBLISHABLE = frozenset({TrustLevel.OWN_WORDS, TrustLevel.PARTY})
@@ -75,6 +76,7 @@ class BuildRegister:
         since: date | None = None,
         verified: Sequence[str] = (),
         framings: Sequence[StatementFraming] = (),
+        scores: Sequence[StatementScore] = (),
     ) -> Register:
         """`verified`: annotator versions of cross-verified editions, in precedence order."""
         shown = [c for c in candidates if c.on_register]
@@ -96,7 +98,7 @@ class BuildRegister:
             window_start=since,
             dimensions=tuple(dimensions),
             candidates=tuple(_listed(candidate, sources, read) for candidate in shown),
-            entries=_framed(_entries(passages, chosen, verified), framings),
+            entries=_scored(_framed(_entries(passages, chosen, verified), framings), scores),
             annotators=_annotators(chosen, verified),
             pending=self._pending(passages, chosen),
             left_out=tuple(c for c in candidates if not c.on_register),
@@ -167,6 +169,21 @@ def _framed(
         latest[framing.key] = framing
     return tuple(
         entry.model_copy(update={"framing": found.framing})
+        if (found := latest.get(framing_key(entry.annotation.segment_id, entry.annotation.quote)))
+        else entry
+        for entry in entries
+    )
+
+
+def _scored(
+    entries: tuple[RegisterEntry, ...], scores: Sequence[StatementScore]
+) -> tuple[RegisterEntry, ...]:
+    """Each statement with its most recent scores, if it has any."""
+    latest: dict[str, StatementScore] = {}
+    for score in sorted(scores, key=lambda s: s.scored_at):
+        latest[score.key] = score
+    return tuple(
+        entry.model_copy(update={"scores": found.scores})
         if (found := latest.get(framing_key(entry.annotation.segment_id, entry.annotation.quote)))
         else entry
         for entry in entries

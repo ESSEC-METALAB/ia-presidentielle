@@ -87,3 +87,13 @@ CREATE TABLE IF NOT EXISTS statement_framings (
     payload        TEXT NOT NULL,     -- StatementFraming as JSON
     PRIMARY KEY (key, framer_version)
 );
+
+-- Scores of a statement on the scales of config/scoring.yaml, with the reason and the
+-- words of the quote each one rests on. Key as for framings.
+CREATE TABLE IF NOT EXISTS statement_scores (
+    key            TEXT NOT NULL,
+    scorer_version TEXT NOT NULL,
+    scored_at      TEXT NOT NULL,
+    payload        TEXT NOT NULL,     -- StatementScore as JSON
+    PRIMARY KEY (key, scorer_version)
+);

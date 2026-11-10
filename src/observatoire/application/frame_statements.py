@@ -93,7 +93,7 @@ class FrameStatements:
 
     def _reviewed(self, key: str, draft: FramingDraft, quote: str) -> StatementFraming:
         kept, reason = draft.framing, None
-        if draft.framing != Framing.NONE and not _found(draft.evidence, quote):
+        if draft.framing != Framing.NONE and not evidence_in_quote(draft.evidence, quote):
             kept, reason = Framing.NONE, EVIDENCE_NOT_IN_QUOTE
         return StatementFraming(
             key=key,
@@ -110,6 +110,7 @@ def _normal(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip().casefold()
 
 
-def _found(evidence: str, quote: str) -> bool:
+def evidence_in_quote(evidence: str, quote: str) -> bool:
+    """The evidence is words of the quote, apostrophes, spaces and case aside."""
     words = _normal(evidence)
     return bool(words) and words in _normal(quote)

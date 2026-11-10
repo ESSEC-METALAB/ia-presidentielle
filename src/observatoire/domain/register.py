@@ -6,6 +6,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 from observatoire.domain.annotation import Dimension, DimensionAnnotation, Framing
 from observatoire.domain.models import Candidate, RawDocument, Source
+from observatoire.domain.scoring import ScaleScore
 
 
 class _Frozen(BaseModel):
@@ -36,6 +37,8 @@ class RegisterEntry(_Frozen):
     verified: bool = False
     # Opportunity, threat, both or none, from the framing step; None: not framed yet.
     framing: Framing | None = None
+    # Scores on the scales of config/scoring.yaml, with why; empty: not scored yet.
+    scores: tuple[ScaleScore, ...] = ()
 
 
 class Register(_Frozen):

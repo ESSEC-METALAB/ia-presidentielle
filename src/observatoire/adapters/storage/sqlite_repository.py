@@ -21,6 +21,7 @@ from observatoire.domain.models import (
     SourceOutcome,
     TrustLevel,
 )
+from observatoire.domain.scoring import StatementScore
 
 _SCHEMA = resources.files(__package__).joinpath("schema.sql").read_text(encoding="utf-8")
 _DOCUMENT_COLUMNS = (
@@ -228,6 +229,32 @@ class SqliteRepository:
             "SELECT payload FROM statement_framings ORDER BY key, framed_at"
         )
         return [StatementFraming.model_validate_json(row["payload"]) for row in rows]
+
+    def scored_keys(self, scorer_version: str) -> set[str]:
+        rows = self._connection.execute(
+            "SELECT key FROM statement_scores WHERE scorer_version = ?", (scorer_version,)
+        )
+        return {row["key"] for row in rows}
+
+    def save_score(self, score: StatementScore) -> None:
+        values = (
+            score.key,
+            score.scorer_version,
+            score.scored_at.isoformat(),
+            score.model_dump_json(),
+        )
+        with self._connection:
+            self._connection.execute(
+                "INSERT OR REPLACE INTO statement_scores (key, scorer_version, scored_at, payload)"
+                " VALUES (?,?,?,?)",
+                values,
+            )
+
+    def list_scores(self) -> list[StatementScore]:
+        rows = self._connection.execute(
+            "SELECT payload FROM statement_scores ORDER BY key, scored_at"
+        )
+        return [StatementScore.model_validate_json(row["payload"]) for row in rows]
 
     def record_usage(self, record: UsageRecord) -> None:
         values = (
