@@ -559,7 +559,7 @@ body.cmp-dragging,body.cmp-dragging *{cursor:grabbing!important;user-select:none
     </sc-if>
 
     <sc-if value="{{ isCompare }}" hint-placeholder-val="{{ false }}">
-      <section data-screen-label="Comparer" style="max-width:1400px;margin:0 auto;padding:56px 40px 104px">
+      <section data-screen-label="Comparateur" style="max-width:1400px;margin:0 auto;padding:56px 40px 104px">
         <h1 data-reveal style="display:flex;align-items:center;gap:14px;margin:0 0 14px;font-weight:500;font-size:clamp(32px,3.4vw,52px);line-height:1;letter-spacing:-.03em"><i class="msi" aria-hidden="true" style="font-size:1em;color:#5F646E">compare_arrows</i>{{ t.compare }}</h1>
         <p data-reveal style="margin:0 0 32px;max-width:72ch;font-size:18px;line-height:1.5;color:#3A3E46">{{ t.cmpLead }}</p>
 
@@ -784,7 +784,7 @@ const I18N = {
     scYHigh: "Mesures précises", scYLow: "Discours généraux",
     scTooFew: "Trop peu de déclarations notées sur ce thème pour comparer les candidats.", scSee: "Voir ses déclarations", scHelp: "Notes attribuées automatiquement par une IA, non relues. Pointillés : moins de 3 déclarations.", scAbsent: "Ne s'expriment pas sur ce thème dans nos sources :",
     scX: ["Encadrer", "Plutôt encadrer", "Équilibré", "Plutôt accélérer", "Accélérer"], scY: ["Très général", "Plutôt général", "Assez précis", "Précis", "Très précis"], scCount1: "déclaration notée", scCountN: "déclarations notées", scTopics: "Parle surtout de", scOpp: "opportunité(s)", scThreat: "menace(s)",
-    compare: "Comparer", cmpLead: "Choisissez deux candidats : glissez-les dans les cases, ou cliquez sur eux (sur téléphone : touchez-les). On compare leurs positions sur l'IA, thème par thème, de « Encadrer » à « Accélérer », avec leurs déclarations côte à côte.", cmpA: "Candidat A", cmpB: "Candidat B", cmpHintA: "Glissez un candidat ici", cmpHintB: "Puis un second", cmpClear: "Retirer", cmpDropHere: "Lâchez ici", cmpPickA: "Choisissez le candidat A", cmpPickB: "Choisissez le candidat B", cmpPickDone: "Cliquez sur un autre candidat pour changer le candidat B",
+    compare: "Comparateur", cmpLead: "Choisissez deux candidats : glissez-les dans les cases, ou cliquez sur eux (sur téléphone : touchez-les). On compare leurs positions sur l'IA, thème par thème, de « Encadrer » à « Accélérer », avec leurs déclarations côte à côte.", cmpA: "Candidat A", cmpB: "Candidat B", cmpHintA: "Glissez un candidat ici", cmpHintB: "Puis un second", cmpClear: "Retirer", cmpDropHere: "Lâchez ici", cmpPickA: "Choisissez le candidat A", cmpPickB: "Choisissez le candidat B", cmpPickDone: "Cliquez sur un autre candidat pour changer le candidat B",
     cmpProximity: "Proximité sur l'IA", cmpByTheme: "Par thème", cmpQuotes: "Ce qu'ils disent", cmpNoQuote: "aucune déclaration notée", cmpNoScore: "pas de déclaration", cmpBothEnc: "Tous deux pour encadrer", cmpBothAcc: "Tous deux pour accélérer", cmpBothMid: "Tous deux au milieu", cmpLeanEnc: "pour encadrer", cmpLeanAcc: "pour accélérer", cmpLeanMid: "au milieu",
     cmpExplain: "« Proches » : leurs notes moyennes diffèrent de moins de 0,75 point sur 5, qu'ils penchent tous deux vers encadrer ou vers accélérer. Cela ne veut pas dire qu'ils proposent les mêmes mesures.", cmpMore: "Voir ses {n} déclarations",
     cmpClose: "Positions proches", cmpSome: "Assez différentes", cmpFar: "Opposées", cmpOnlyOne: "{name} seul·e s'exprime", cmpNone: "Aucun des deux",
