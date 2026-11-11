@@ -33,8 +33,10 @@ button{font:inherit}
 @keyframes drift-a{0%{transform:translate(0,0) scale(1)}100%{transform:translate(10vw,-9vh) scale(1.18)}}
 @keyframes drift-b{0%{transform:translate(0,0) scale(1.1)}100%{transform:translate(-9vw,7vh) scale(.92)}}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.6)}}
-.sc-dot{cursor:pointer;outline:none;transition:left .55s cubic-bezier(.2,.7,.2,1),top .55s cubic-bezier(.2,.7,.2,1),opacity .2s}
-.sc-dot>span:first-child{transition:filter .2s,box-shadow .2s}
+.sc-dot{cursor:pointer;outline:none;transition:left .55s cubic-bezier(.2,.7,.2,1),top .55s cubic-bezier(.2,.7,.2,1),width .4s,height .4s,transform .4s cubic-bezier(.2,.7,.2,1),opacity .2s}
+.sc-dot>span{transition:opacity .35s,filter .2s,box-shadow .2s}
+.ln-dot{transition:left .55s cubic-bezier(.2,.7,.2,1),top .55s cubic-bezier(.2,.7,.2,1),width .35s,height .35s,transform .4s cubic-bezier(.2,.7,.2,1),opacity .35s,filter .3s}
+.ln-word{transition:opacity .35s}
 .sc-dot:focus-visible>span:first-child{box-shadow:0 0 0 3px #1B33B4}
 .sc-card{display:none}
 .sc-dot:hover,.sc-dot:focus-within{z-index:50!important}
@@ -439,12 +441,12 @@ button{font:inherit}
             <sc-if value="{{ scTooFew }}" hint-placeholder-val="{{ false }}"><p style="margin:0 0 18px;padding:12px 16px;border:1px dashed #0B0C0F;font-size:14px;color:#3A3E46">{{ t.scTooFew }}</p></sc-if>
             <div style="display:grid;grid-template-columns:28px minmax(0,1fr);grid-template-rows:auto 28px;gap:0 8px">
               <div aria-hidden="true" style="display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:8px 0;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#5F646E"><span style="display:flex;flex-direction:column;align-items:center;gap:6px"><span>▲</span><span style="writing-mode:vertical-rl;transform:rotate(180deg)">{{ t.scYHigh }}</span></span><span style="display:flex;flex-direction:column;align-items:center;gap:6px"><span style="writing-mode:vertical-rl;transform:rotate(180deg)">{{ t.scYLow }}</span><span>▼</span></span></div>
-              <div class="sc-plot" role="group" aria-label="{{ t.scTitle }}" style="position:relative;height:clamp(380px,52vw,560px);border:1px solid #0B0C0F;background:linear-gradient(#0B0C0F,#0B0C0F) 50% 0/1px 100% no-repeat,linear-gradient(#0B0C0F,#0B0C0F) 0 50%/100% 1px no-repeat,#FAF9F6">
+              <div class="sc-plot" role="group" aria-label="{{ t.scTitle }}" style="position:relative;height:clamp(380px,52vw,560px);border:1px solid #0B0C0F;background:linear-gradient(#0B0C0F,#0B0C0F) 50% 0/1px 100% no-repeat,linear-gradient(#0B0C0F,#0B0C0F) 0 50%/100% 1px no-repeat,{{ scPlotBg }};transition:background .4s">
                 <div style="position:absolute;inset:36px 44px">
                   <sc-for list="{{ scDots }}" as="d" hint-placeholder-count="10">
-                    <div class="sc-dot" tabindex="0" aria-label="{{ d.aria }}" style="position:absolute;left:{{ d.left }};top:{{ d.top }};width:{{ d.size }};height:{{ d.size }};transform:translate(-50%,-50%);z-index:{{ d.z }}">
+                    <div class="sc-dot" tabindex="{{ d.tab }}" aria-label="{{ d.aria }}" style="position:absolute;left:{{ d.left }};top:{{ d.top }};width:{{ d.size }};height:{{ d.size }};transform:translate(-50%,-50%) scale({{ d.scale }});pointer-events:{{ d.events }};z-index:{{ d.z }}">
                       <span aria-hidden="true" style="display:grid;place-items:center;width:100%;height:100%;box-sizing:border-box;border-radius:50%;overflow:hidden;border:2px {{ d.ringStyle }} #0B0C0F;background:#0B0C0F {{ d.photoCss }} center/cover;filter:grayscale(1);opacity:{{ d.opacity }};color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:11px"><sc-if value="{{ d.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ d.initials }}</span></sc-if></span>
-                      <span aria-hidden="true" style="position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:3px;white-space:nowrap;font-size:11px;font-weight:500;color:#0B0C0F;background:rgba(250,249,246,.85);padding:0 3px">{{ d.last }}</span>
+                      <span aria-hidden="true" style="position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:3px;opacity:{{ d.opacity }};white-space:nowrap;font-size:11px;font-weight:500;color:#0B0C0F;background:rgba(250,249,246,.85);padding:0 3px">{{ d.last }}</span>
                       <div class="sc-card" role="tooltip" style="position:absolute;{{ d.cardX }};{{ d.cardY }};width:280px;padding:14px 16px;background:#0B0C0F;color:#F3F1EC;font-size:13px;line-height:1.45;box-shadow:0 8px 28px rgba(0,0,0,.25)">
                         <strong style="display:block;font-size:16px;font-weight:500">{{ d.name }}</strong>
                         <span style="display:block;margin:0 0 8px;font-size:12px;color:#C9C7C0">{{ d.party }}</span>
@@ -478,13 +480,13 @@ button{font:inherit}
               <span></span>
               <div aria-hidden="true" style="display:flex;justify-content:space-between;padding:8px 22px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#3A3E46"><span>◀ {{ scXLow }}</span><span>{{ scXHigh }} ▶</span></div>
               <sc-for list="{{ lnRows }}" as="lr" hint-placeholder-count="10">
-                <div style="display:flex;align-items:center;gap:8px;padding:0 10px 0 0;border-top:1px solid #D8D5CE;min-height:72px"><i class="msi" aria-hidden="true" style="font-size:18px;color:{{ lr.ink }}">{{ lr.icon }}</i><span lang="{{ lang }}" style="font-size:14px;font-weight:500;line-height:1.2;hyphens:auto">{{ lr.label }}</span></div>
+                <div style="display:flex;align-items:center;gap:8px;padding:0 10px 0 8px;border-top:1px solid #D8D5CE;border-left:4px solid {{ lr.ink }};min-height:72px;background:{{ lr.tint }}"><i class="msi" aria-hidden="true" style="font-size:18px;color:{{ lr.ink }}">{{ lr.icon }}</i><span lang="{{ lang }}" style="font-size:14px;font-weight:500;line-height:1.2;hyphens:auto">{{ lr.label }}</span></div>
                 <div style="position:relative;border-top:1px solid #D8D5CE;min-height:72px;background:linear-gradient(#C9C7C0,#C9C7C0) 50% 0/1px 100% no-repeat">
                   <sc-if value="{{ lr.isEmpty }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;left:22px;top:50%;transform:translateY(-50%);font-size:13px;font-style:italic;font-family:Spectral,Georgia,serif;color:#8A8F99">{{ t.lnEmpty }}</span></sc-if>
                   <div style="position:absolute;inset:0 22px">
                     <sc-for list="{{ lr.dots }}" as="ld" hint-placeholder-count="6">
-                      <a href="{{ ld.href }}" title="{{ ld.title }}" aria-label="{{ ld.title }}" style="position:absolute;left:{{ ld.left }};top:{{ ld.top }};z-index:{{ ld.z }};width:{{ ld.size }};height:{{ ld.size }};transform:translate(-50%,-50%);border-radius:50%;overflow:hidden;box-sizing:border-box;border:2px {{ ld.ring }} {{ ld.ringColor }};background:#0B0C0F {{ ld.photoCss }} center/cover;filter:{{ ld.filter }};opacity:{{ ld.opacity }};display:grid;place-items:center;color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:10px;text-decoration:none;transition:opacity .2s,filter .2s" style-hover="opacity:1;filter:grayscale(0);z-index:40" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><sc-if value="{{ ld.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ ld.initials }}</span></sc-if></a>
-                      <sc-if value="{{ ld.isFocus }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position:absolute;left:{{ ld.left }};top:calc({{ ld.top }} + 22px);transform:translateX(-50%);white-space:nowrap;font-size:11px;font-weight:500;color:#0B0C0F">{{ ld.word }}</span></sc-if>
+                      <a class="ln-dot" href="{{ ld.href }}" tabindex="{{ ld.tab }}" title="{{ ld.title }}" aria-label="{{ ld.title }}" style="position:absolute;left:{{ ld.left }};top:{{ ld.top }};z-index:{{ ld.z }};width:{{ ld.size }};height:{{ ld.size }};transform:translate(-50%,-50%) scale({{ ld.scale }});pointer-events:{{ ld.events }};border-radius:50%;overflow:hidden;box-sizing:border-box;border:2px {{ ld.ring }} {{ ld.ringColor }};background:#0B0C0F {{ ld.photoCss }} center/cover;filter:{{ ld.filter }};opacity:{{ ld.opacity }};display:grid;place-items:center;color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:10px;text-decoration:none" style-hover="filter:grayscale(0);z-index:40" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><sc-if value="{{ ld.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ ld.initials }}</span></sc-if></a>
+                      <sc-if value="{{ ld.isFocus }}" hint-placeholder-val="{{ false }}"><span class="ln-word" aria-hidden="true" style="position:absolute;left:{{ ld.left }};top:calc({{ ld.top }} + 22px);transform:translateX(-50%);opacity:{{ ld.wordOpacity }};white-space:nowrap;font-size:11px;font-weight:500;color:#0B0C0F">{{ ld.word }}</span></sc-if>
                     </sc-for>
                   </div>
                 </div>
@@ -668,11 +670,11 @@ const I18N = {
   fr: {
     skip: "Aller au contenu", siteSub: "Registre des positions sur l'IA", navLabel: "Navigation principale", langLabel: "Langue",
     standing: { withdrawn: "ne se présente plus", prospective: "pressenti, non déclaré" },
-    scTitle: "Où se situent les candidats sur l'IA", scLead: "À droite : le candidat veut développer l'IA. En haut : il propose des mesures précises. Survolez une photo pour en savoir plus.", scThemes: "Thèmes", scAll: "Tous les thèmes",
+    scTitle: "Où se situent les candidats sur l'IA", scLead: "À droite : le candidat veut développer l'IA. En haut : il propose des mesures précises. Choisissez un ou plusieurs thèmes ; survolez une photo pour en savoir plus.", scThemes: "Thèmes", scAll: "Tous les thèmes",
     scYHigh: "Mesures précises", scYLow: "Discours généraux",
     scTooFew: "Trop peu de déclarations notées sur ce thème pour comparer les candidats.", scSee: "Voir ses déclarations", scHelp: "Notes attribuées automatiquement par une IA, non relues. Pointillés : moins de 3 déclarations.", scAbsent: "Ne s'expriment pas sur ce thème dans nos sources :",
     scX: ["Encadrer", "Plutôt encadrer", "Équilibré", "Plutôt accélérer", "Accélérer"], scY: ["Très général", "Plutôt général", "Assez précis", "Précis", "Très précis"], scCount1: "déclaration notée", scCountN: "déclarations notées", scTopics: "Parle surtout de", scOpp: "opportunité(s)", scThreat: "menace(s)",
-    lnTitle: "Thème par thème : encadrer ou accélérer l'IA ?", lnLead: "Chaque ligne est un thème. Plus une photo est à droite, plus le candidat veut développer l'IA sur ce thème ; plus elle est à gauche, plus il veut l'encadrer. Cliquez sur un candidat pour le suivre sur tous les thèmes.", lnFollow: "Suivre un candidat", lnAll: "Tous", lnEmpty: "aucune déclaration notée sur ce thème", lnHelp: "Notes attribuées automatiquement par une IA, non relues. Pointillés : moins de 3 déclarations.",
+    lnTitle: "Thème par thème : encadrer ou accélérer l'IA ?", lnLead: "Chaque ligne est un thème. Plus une photo est à droite, plus le candidat veut développer l'IA sur ce thème ; plus elle est à gauche, plus il veut l'encadrer. Choisissez un ou plusieurs candidats pour ne garder qu'eux.", lnFollow: "Suivre un candidat", lnAll: "Tous", lnEmpty: "aucune déclaration notée sur ce thème", lnHelp: "Notes attribuées automatiquement par une IA, non relues. Pointillés : moins de 3 déclarations.",
     heatCountsTitle: "Combien de déclarations", heatCountsLead: "Le nombre de déclarations sur l'IA relevées pour chaque candidat, thème par thème : on voit qui parle de quoi, et combien. La dernière colonne compte celles qui présentent l'IA comme une opportunité (en haut à gauche) ou comme une menace (en bas à droite). Cliquez sur un chiffre pour lire les déclarations.",
     framings: { opportunity: "Opportunité", threat: "Menace", both: "Opportunité et menace" }, filterFraming: "Cadrage", allFramings: "Tous",
     framingHead: "Opportunité / Menace", framingTitle: "Déclarations qui présentent l'IA comme une opportunité (en haut à gauche) ou comme une menace (en bas à droite), tous axes confondus. Une déclaration qui dit les deux compte des deux côtés ; la plupart ne disent ni l'un ni l'autre et ne sont pas comptées.", framingOpp: "opportunité(s)", framingThreat: "menace(s)",
@@ -723,11 +725,11 @@ const I18N = {
   en: {
     skip: "Skip to content", siteSub: "Register of AI positions", navLabel: "Main navigation", langLabel: "Language",
     standing: { withdrawn: "no longer running", prospective: "possible candidate, not declared" },
-    scTitle: "Where the candidates stand on AI", scLead: "Right: the candidate wants to develop AI. Top: they put forward precise measures. Hover a photo to learn more.", scThemes: "Topics", scAll: "All topics",
+    scTitle: "Where the candidates stand on AI", scLead: "Right: the candidate wants to develop AI. Top: they put forward precise measures. Pick one or more topics; hover a photo to learn more.", scThemes: "Topics", scAll: "All topics",
     scYHigh: "Precise measures", scYLow: "General talk",
     scTooFew: "Too few scored statements on this topic to compare the candidates.", scSee: "See their statements", scHelp: "Scores given automatically by an AI, not reviewed. Dashed: fewer than 3 statements.", scAbsent: "Not speaking on this topic in our sources:",
     scX: ["Restrain", "Lean restrain", "Balanced", "Lean accelerate", "Accelerate"], scY: ["Very general", "Rather general", "Fairly precise", "Precise", "Very precise"], scCount1: "scored statement", scCountN: "scored statements", scTopics: "Mostly about", scOpp: "opportunity", scThreat: "threat",
-    lnTitle: "Topic by topic: restrain or accelerate AI?", lnLead: "Each line is a topic. The further right a photo, the more the candidate wants to develop AI on that topic; the further left, the more they want to restrain it. Click a candidate to follow them across all topics.", lnFollow: "Follow a candidate", lnAll: "All", lnEmpty: "no scored statement on this topic", lnHelp: "Scores given automatically by an AI, not reviewed. Dashed: fewer than 3 statements.",
+    lnTitle: "Topic by topic: restrain or accelerate AI?", lnLead: "Each line is a topic. The further right a photo, the more the candidate wants to develop AI on that topic; the further left, the more they want to restrain it. Pick one or more candidates to show only them.", lnFollow: "Follow a candidate", lnAll: "All", lnEmpty: "no scored statement on this topic", lnHelp: "Scores given automatically by an AI, not reviewed. Dashed: fewer than 3 statements.",
     heatCountsTitle: "How many statements", heatCountsLead: "The number of statements on AI recorded for each candidate, topic by topic: who talks about what, and how much. The last column counts those presenting AI as an opportunity (top left) or as a threat (bottom right). Click a number to read the statements.",
     framings: { opportunity: "Opportunity", threat: "Threat", both: "Opportunity and threat" }, filterFraming: "Framing", allFramings: "All",
     framingHead: "Opportunity / Threat", framingTitle: "Statements presenting AI as an opportunity (top left) or as a threat (bottom right), across all axes. A statement saying both counts on both sides; most say neither and are not counted.", framingOpp: "opportunity", framingThreat: "threat",
@@ -1049,11 +1051,17 @@ class Component extends DCLogic {
     const axMax = Math.max(1, ...D.axes.map(a => axTotals[a.id]));
     let maxCell = 1; cands.forEach(c => D.axes.forEach(a => { const k = claimsOf(c.id, a.id).length; if (k > maxCell) maxCell = k; }));
     // Lines per theme: orientation average per candidate and axis; ?focus= follows one candidate.
-    const lnFocus = cands.some(c => c.id === q.focus) ? q.focus : "";
+    // Multiple choice in the URL: ?theme=a,b and ?focus=x,y; a click toggles one id.
+    const listOf = (v, ok) => (v || "").split(",").filter(id => ok(id));
+    const toggled = (list, id) => (list.includes(id) ? list.filter(x => x !== id) : list.concat(id)).join(",");
+    const fThemes = listOf(q.theme, id => D.axes.some(a => a.id === id));
+    const lnFocus = listOf(q.focus, id => cands.some(c => c.id === id));
+    const themeQ = fThemes.join(","), focusQ = lnFocus.join(",");
+    const tint = id => "oklch(.97 .014 " + hueOf(id) + ")";
     const oriented = D.claims.filter(x => x.scores && x.scores.orientation);
     const lnChips = [{ id: "", label: t.lnAll, photoCss: "none", noPhoto: false, initials: "", hasFace: false, padLeft: "11px" }].concat(cands.filter(c => oriented.some(x => x.cand === c.id)).map(c => ({ id: c.id, label: c.last, ...face(c), hasFace: true, padLeft: "4px" }))).map(x => {
-      const on = x.id === lnFocus;
-      return { ...x, href: H("grille", null, { focus: x.id, theme: q.theme || "" }), current: on ? "true" : undefined, border: on ? "#0B0C0F" : "#D8D5CE", bg: on ? "#0B0C0F" : "transparent", color: on ? "#F3F1EC" : "#0B0C0F" };
+      const on = x.id ? lnFocus.includes(x.id) : !lnFocus.length;
+      return { ...x, href: H("grille", null, { focus: x.id ? toggled(lnFocus, x.id) : "", theme: themeQ }), current: on ? "true" : undefined, border: on ? "#0B0C0F" : "#D8D5CE", bg: on ? "#0B0C0F" : "transparent", color: on ? "#F3F1EC" : "#0B0C0F" };
     });
     const lnRows = D.axes.map(a => {
       const placed = [];
@@ -1062,23 +1070,24 @@ class Component extends DCLogic {
         if (v.length) placed.push({ c, n: v.length, m: v.reduce((u, w) => u + w, 0) / v.length });
       });
       const dots = placed.map((p, i) => {
-        const c = p.c, isFocus = c.id === lnFocus, thin = p.n < minN, left = (p.m - 1) / 4 * 100;
-        const close = placed.filter((o, j) => j < i && Math.abs(o.m - p.m) < .22).length;
+        const c = p.c, isFocus = lnFocus.includes(c.id), thin = p.n < minN, left = (p.m - 1) / 4 * 100;
+        const shown = q => !lnFocus.length || lnFocus.includes(q.c.id), hidden = !shown(p);
+        const close = hidden ? 0 : placed.filter((o, j) => j < i && shown(o) && Math.abs(o.m - p.m) < .22).length;
         const shift = close === 0 ? 0 : (close % 2 ? -1 : 1) * Math.ceil(close / 2) * 15;
         const word = wordOf(t.scX, p.m);
         return {
-          ...face(c), left: left.toFixed(2) + "%", top: "calc(50% + " + shift + "px)", isFocus, word,
-          size: isFocus ? "44px" : "32px", z: isFocus ? "30" : String(10 + i), ring: thin ? "dashed" : "solid", ringColor: isFocus ? "#1B33B4" : "#0B0C0F",
-          filter: isFocus ? "grayscale(0)" : "grayscale(1)", opacity: lnFocus && !isFocus ? ".2" : thin ? ".6" : "1",
-          href: H("grille", null, { focus: isFocus ? "" : c.id, theme: q.theme || "" }),
+          ...face(c), left: left.toFixed(2) + "%", top: "calc(50% + " + shift + "px)", isFocus, word: lnFocus.length > 1 ? c.last : word,
+          size: isFocus ? "40px" : "32px", z: String(10 + i), ring: thin ? "dashed" : "solid", ringColor: "#0B0C0F",
+          filter: isFocus ? "grayscale(0)" : "grayscale(1)", opacity: hidden ? "0" : thin ? ".6" : "1",
+          scale: hidden ? ".3" : "1", events: hidden ? "none" : "auto", tab: hidden ? "-1" : "0", wordOpacity: hidden ? "0" : "1",
+          href: H("grille", null, { focus: toggled(lnFocus, c.id), theme: themeQ }),
           title: fullName(c) + " — " + axLabel(a) + " : " + word + " (" + fmtAvg(p.m) + " / 5, " + p.n + " " + (p.n === 1 ? t.scCount1 : t.scCountN) + ")"
         };
       });
-      return { label: axLabel(a), icon: ICON.axis[a.id], ink: axInk(a.id), dots, isEmpty: !dots.length };
+      return { label: axLabel(a), icon: ICON.axis[a.id], ink: axInk(a.id), tint: tint(a.id), dots, isEmpty: !placed.some(p => !lnFocus.length || lnFocus.includes(p.c.id)) };
     });
     // Scatter: x = orientation average, y = concreteness average, per candidate, on one theme.
-    const fTheme = D.axes.some(a => a.id === q.theme) ? q.theme : "";
-    const onTheme = x => !fTheme || x.axis === fTheme;
+    const onTheme = x => !fThemes.length || fThemes.includes(x.axis);
     const avgOf = (list, id) => { const v = list.filter(x => x.scores && x.scores[id]).map(x => x.scores[id].value); return v.length ? v.reduce((u, w) => u + w, 0) / v.length : null; };
     const scored = D.claims.filter(x => x.scores && x.scores.orientation && x.scores.concreteness);
     const scPlaced = [], scAbsent = [];
@@ -1088,12 +1097,16 @@ class Component extends DCLogic {
       scPlaced.push({ c, mine, x: avgOf(mine, "orientation"), y: avgOf(mine, "concreteness") });
     });
     const scMaxN = Math.max(1, ...scPlaced.map(p => p.mine.length));
-    const scDots = scPlaced.map((p, i) => {
+    // Every candidate who has scores keeps the same slot in the list, so that a dot moves,
+    // appears or fades out instead of being swapped for another candidate's.
+    const scEver = cands.filter(c => scored.some(x => x.cand === c.id));
+    const scHiddenDot = c => ({ name: fullName(c), last: c.last, party: partyLine(c), ...face(c), left: "50%", top: "50%", size: "36px", z: "1", ringStyle: "solid", opacity: "0", scale: ".3", events: "none", tab: "-1", cardX: "left:0", cardY: "top:0", xWord: "", yWord: "", xValue: "", yValue: "", countLine: "", hasTopics: false, topicsLine: "", framingLine: "", hasQuote: false, quote: "", href: "#", aria: "" });
+    const scVisible = scPlaced.map((p, i) => {
       const c = p.c, n = p.mine.length, thin = n < minN;
       const same = scPlaced.filter((o, j) => j < i && Math.abs(o.x - p.x) < .12 && Math.abs(o.y - p.y) < .12).length;
       const left = Math.min(100, Math.max(0, (p.x - 1) / 4 * 100 + same * 3.2)), top = Math.min(100, Math.max(0, (5 - p.y) / 4 * 100 + same * 2.4));
       const all = D.claims.filter(x => x.cand === c.id && onTheme(x));
-      const topics = fTheme ? [] : D.axes.map(a => [a, all.filter(x => x.axis === a.id).length]).filter(e => e[1]).sort((u, w) => w[1] - u[1]).slice(0, 2).map(e => axLabel(e[0]));
+      const topics = fThemes.length === 1 ? [] : D.axes.map(a => [a, all.filter(x => x.axis === a.id).length]).filter(e => e[1]).sort((u, w) => w[1] - u[1]).slice(0, 2).map(e => axLabel(e[0]));
       const opp = all.filter(x => hasFraming(x, "opportunity")).length, threat = all.filter(x => hasFraming(x, "threat")).length;
       const ex = p.mine.slice().sort((u, w) => Math.abs(w.scores.orientation.value - 3) - Math.abs(u.scores.orientation.value - 3) || (w.date || "").localeCompare(u.date || ""))[0];
       const size = Math.round(36 + 34 * Math.sqrt(n / scMaxN)) + "px";
@@ -1105,14 +1118,16 @@ class Component extends DCLogic {
         cardX: left > 55 ? "right:calc(100% + 12px)" : "left:calc(100% + 12px)", cardY: top > 55 ? "bottom:-10px" : "top:-10px",
         xWord, yWord, xValue, yValue, countLine, hasTopics: topics.length > 0, topicsLine: topics.length ? t.scTopics + " : " + topics.join(", ") : "",
         framingLine: opp + " " + t.scOpp + " · " + threat + " " + t.scThreat, hasQuote: !!ex, quote: ex ? ex.quote : "",
-        href: H("fil", null, { candidat: c.id, axe: fTheme }),
+        scale: "1", events: "auto", tab: "0",
+        href: H("fil", null, { candidat: c.id, axe: fThemes.length === 1 ? fThemes[0] : "" }),
         aria: fullName(c) + " : " + xWord + " (" + xValue + "), " + yWord + " (" + yValue + "), " + countLine
       };
     });
+    const scDots = scEver.map(c => scVisible.find(d => d.name === fullName(c)) || scHiddenDot(c));
     const scChipCount = id => scored.filter(x => !id || x.axis === id).length;
     const scThemeChips = [{ id: "", label: t.scAll, icon: "select_all", ink: "#0B0C0F" }].concat(D.axes.map(a => ({ id: a.id, label: axLabel(a), icon: ICON.axis[a.id], ink: axInk(a.id) }))).map(x => {
-      const on = x.id === fTheme, k = scChipCount(x.id), placeable = new Set(scored.filter(y => !x.id || y.axis === x.id).map(y => y.cand)).size;
-      return { ...x, count: String(k), href: H("grille", null, { theme: x.id, focus: lnFocus }), current: on ? "true" : undefined, border: on ? "#0B0C0F" : "#D8D5CE", bg: on ? "#0B0C0F" : "transparent", color: on ? "#F3F1EC" : "#0B0C0F", iconColor: on ? "#F3F1EC" : x.ink, opacity: placeable < 2 ? ".45" : "1", title: k + " " + (k === 1 ? t.scCount1 : t.scCountN) };
+      const on = x.id ? fThemes.includes(x.id) : !fThemes.length, k = scChipCount(x.id), placeable = new Set(scored.filter(y => !x.id || y.axis === x.id).map(y => y.cand)).size;
+      return { ...x, count: String(k), href: H("grille", null, { theme: x.id ? toggled(fThemes, x.id) : "", focus: focusQ }), current: on ? "true" : undefined, border: on ? "#0B0C0F" : "#D8D5CE", bg: on ? "#0B0C0F" : "transparent", color: on ? "#F3F1EC" : "#0B0C0F", iconColor: on ? "#F3F1EC" : x.ink, opacity: placeable < 2 ? ".45" : "1", title: k + " " + (k === 1 ? t.scCount1 : t.scCountN) };
     });
     const gridRows = cands.map(c => ({
       ...(() => {
@@ -1234,7 +1249,7 @@ class Component extends DCLogic {
         else if (this._dd) document.removeEventListener("click", this._dd);
       },
       cardPad: dense ? "18px" : "26px", quoteSize: dense ? "19px" : "clamp(19px,1.7vw,25px)",
-      scThemeChips, scDots, scTooFew: scPlaced.length < 2, scHasAbsent: scAbsent.length > 0, scAbsentLine: t.scAbsent + " " + scAbsent.join(", ") + ".",
+      scThemeChips, scDots, scPlotBg: !fThemes.length ? "#FAF9F6" : fThemes.length === 1 ? tint(fThemes[0]) : "linear-gradient(135deg," + fThemes.map(tint).join(",") + ")", scTooFew: scPlaced.length < 2, scHasAbsent: scAbsent.length > 0, scAbsentLine: t.scAbsent + " " + scAbsent.join(", ") + ".",
       scXLow: (scales.find(x => x.id === "orientation") || {})[lang === "fr" ? "lowFr" : "lowEn"] || "", scXHigh: (scales.find(x => x.id === "orientation") || {})[lang === "fr" ? "highFr" : "highEn"] || "",
       hasScales: scales.length > 0, lnChips, lnRows,
       gridCaption: t.gridCaption, axisHeads: D.axes.map(a => ({ label: axLabel(a), icon: ICON.axis[a.id], desc: lang === "fr" ? a.descFr : a.descEn, ink: axInk(a.id), wash: axWash(a.id), line: axLine(a.id), totalLabel: String(axTotals[a.id]), barW: Math.round(100 * axTotals[a.id] / axMax) + "%", href: H("fil", null, { axe: a.id }) })), gridRows,
