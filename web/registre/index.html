@@ -323,8 +323,8 @@ button{font:inherit}
                       <p style="margin:0;font-size:13px;line-height:1.45;color:#5F646E"><span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#8A8F99;margin-right:8px">{{ t.context }}</span>{{ it.context }}</p>
                     </div>
                     <div style="display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;padding-top:10px;border-top:1px solid {{ it.line }};font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.03em">
-                      <a href="{{ it.sourceUrl }}" rel="external noopener" style="display:inline-flex;align-items:center;gap:5px;color:#1B33B4;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:14px">open_in_new</i>{{ t.source }}<span style="color:#8A8F99;text-transform:none">{{ it.sourceLabel }}</span></a>
-                      <sc-if value="{{ it.hasArchive }}" hint-placeholder-val="{{ true }}"><a href="{{ it.archiveUrl }}" rel="external noopener" style="display:inline-flex;align-items:center;gap:5px;color:#1B33B4;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:14px">archive</i>{{ it.archiveLabel }}</a></sc-if><sc-if value="{{ it.noArchive }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;color:#8A8F99"><i class="msi" aria-hidden="true" style="font-size:14px">archive</i>{{ it.archiveLabel }}</span></sc-if>
+                      <a href="{{ it.sourceUrl }}" target="_blank" rel="external noopener noreferrer" style="display:inline-flex;align-items:center;gap:5px;color:#1B33B4;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:14px">open_in_new</i>{{ t.source }}<span style="color:#8A8F99;text-transform:none">{{ it.sourceLabel }}</span></a>
+                      <sc-if value="{{ it.hasArchive }}" hint-placeholder-val="{{ true }}"><a href="{{ it.archiveUrl }}" target="_blank" rel="external noopener noreferrer" style="display:inline-flex;align-items:center;gap:5px;color:#1B33B4;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:14px">archive</i>{{ it.archiveLabel }}</a></sc-if><sc-if value="{{ it.noArchive }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;color:#8A8F99"><i class="msi" aria-hidden="true" style="font-size:14px">archive</i>{{ it.archiveLabel }}</span></sc-if>
                       <sc-if value="{{ it.hasTimestamp }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;color:#3A3E46"><i class="msi" aria-hidden="true" style="font-size:13px">play_arrow</i>{{ it.timestampLabel }}</span></sc-if>
                       <a href="{{ it.href }}" aria-label="{{ t.permalink }}" title="{{ t.permalink }}" style="margin-left:auto;display:inline-flex;align-items:center;gap:5px;color:#8A8F99;text-decoration:none;font-size:10px" style-hover="color:#0B0C0F" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:13px">link</i>{{ it.id }}</a>
                     </div>
@@ -342,74 +342,8 @@ button{font:inherit}
         <h1 data-reveal style="display:flex;align-items:center;gap:14px;margin:0 0 14px;font-weight:500;font-size:clamp(32px,3.4vw,52px);line-height:1;letter-spacing:-.03em"><i class="msi" aria-hidden="true" style="font-size:1em;color:#5F646E">bar_chart</i>{{ t.grille }}</h1>
         <p data-reveal style="margin:0 0 40px;max-width:64ch;font-size:18px;color:#3A3E46">{{ t.gridLead }}</p>
         <sc-if value="{{ hasPending }}" hint-placeholder-val="{{ false }}"><p data-reveal role="note" style="margin:-16px 0 36px;display:flex;gap:12px;align-items:center;padding:12px 16px;border-left:4px solid oklch(.68 .14 70);border-radius:2px;background:oklch(.93 .06 85);font-size:14px;line-height:1.5;color:oklch(.32 .06 60)"><i class="msi" aria-hidden="true" style="font-size:22px;color:oklch(.55 .13 65)">hourglass_top</i><span>{{ pendingNote }}</span></p></sc-if>
-        <sc-if value="{{ hasScales }}" hint-placeholder-val="{{ false }}">
-          <section data-reveal aria-labelledby="sc-title" style="margin:0 0 72px">
-            <h2 id="sc-title" style="margin:0 0 10px;font-weight:500;font-size:clamp(24px,2.2vw,32px);letter-spacing:-.02em">{{ t.scTitle }}</h2>
-            <p style="margin:0 0 18px;max-width:72ch;font-size:16px;line-height:1.5;color:#3A3E46">{{ t.scLead }}</p>
-            <nav aria-label="{{ t.scThemes }}" style="display:flex;flex-wrap:wrap;gap:7px;margin:0 0 18px">
-              <sc-for list="{{ scThemeChips }}" as="th" hint-placeholder-count="11">
-                <a href="{{ th.href }}" aria-current="{{ th.current }}" title="{{ th.title }}" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;padding:6px 11px 6px 9px;border-radius:3px;border:1px solid {{ th.border }};background:{{ th.bg }};color:{{ th.color }};opacity:{{ th.opacity }};text-decoration:none" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:16px;color:{{ th.iconColor }}">{{ th.icon }}</i>{{ th.label }}<span style="font-family:'JetBrains Mono',monospace;font-size:10px;opacity:.75">{{ th.count }}</span></a>
-              </sc-for>
-            </nav>
-            <sc-if value="{{ scTooFew }}" hint-placeholder-val="{{ false }}"><p style="margin:0 0 18px;padding:12px 16px;border:1px dashed #0B0C0F;font-size:14px;color:#3A3E46">{{ t.scTooFew }}</p></sc-if>
-            <div style="display:grid;grid-template-columns:28px minmax(0,1fr);grid-template-rows:auto 28px;gap:0 8px">
-              <div aria-hidden="true" style="display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:8px 0;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#5F646E"><span style="display:flex;flex-direction:column;align-items:center;gap:6px"><span>▲</span><span style="writing-mode:vertical-rl;transform:rotate(180deg)">{{ t.scYHigh }}</span></span><span style="display:flex;flex-direction:column;align-items:center;gap:6px"><span style="writing-mode:vertical-rl;transform:rotate(180deg)">{{ t.scYLow }}</span><span>▼</span></span></div>
-              <div class="sc-plot" role="group" aria-label="{{ t.scTitle }}" style="position:relative;height:clamp(380px,52vw,560px);border:1px solid #0B0C0F;background:linear-gradient(#0B0C0F,#0B0C0F) 50% 0/1px 100% no-repeat,linear-gradient(#0B0C0F,#0B0C0F) 0 50%/100% 1px no-repeat,#FAF9F6">
-                <div style="position:absolute;inset:36px 44px">
-                  <sc-for list="{{ scDots }}" as="d" hint-placeholder-count="10">
-                    <div class="sc-dot" tabindex="0" aria-label="{{ d.aria }}" style="position:absolute;left:{{ d.left }};top:{{ d.top }};width:{{ d.size }};height:{{ d.size }};transform:translate(-50%,-50%);z-index:{{ d.z }}">
-                      <span aria-hidden="true" style="display:grid;place-items:center;width:100%;height:100%;box-sizing:border-box;border-radius:50%;overflow:hidden;border:2px {{ d.ringStyle }} #0B0C0F;background:#0B0C0F {{ d.photoCss }} center/cover;filter:grayscale(1);opacity:{{ d.opacity }};color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:11px"><sc-if value="{{ d.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ d.initials }}</span></sc-if></span>
-                      <span aria-hidden="true" style="position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:3px;white-space:nowrap;font-size:11px;font-weight:500;color:#0B0C0F;background:rgba(250,249,246,.85);padding:0 3px">{{ d.last }}</span>
-                      <div class="sc-card" role="tooltip" style="position:absolute;{{ d.cardX }};{{ d.cardY }};width:280px;padding:14px 16px;background:#0B0C0F;color:#F3F1EC;font-size:13px;line-height:1.45;box-shadow:0 8px 28px rgba(0,0,0,.25)">
-                        <strong style="display:block;font-size:16px;font-weight:500">{{ d.name }}</strong>
-                        <span style="display:block;margin:0 0 8px;font-size:12px;color:#C9C7C0">{{ d.party }}</span>
-                        <span style="display:block"><b style="font-weight:500">{{ d.xWord }}</b> · {{ d.xValue }}</span>
-                        <span style="display:block"><b style="font-weight:500">{{ d.yWord }}</b> · {{ d.yValue }}</span>
-                        <span style="display:block;margin:8px 0 0;color:#C9C7C0">{{ d.countLine }}</span>
-                        <sc-if value="{{ d.hasTopics }}" hint-placeholder-val="{{ false }}"><span style="display:block;color:#C9C7C0">{{ d.topicsLine }}</span></sc-if>
-                        <span style="display:block;color:#C9C7C0">{{ d.framingLine }}</span>
-                        <sc-if value="{{ d.hasQuote }}" hint-placeholder-val="{{ false }}"><q style="display:block;margin:10px 0 0;padding-left:10px;border-left:2px solid #5F646E;font-family:Spectral,Georgia,serif;font-style:italic;font-size:14px;line-height:1.4">{{ d.quote }}</q></sc-if>
-                        <a href="{{ d.href }}" style="display:inline-flex;align-items:center;gap:6px;margin:12px 0 0;color:#F3F1EC;font-weight:500" style-focus="outline:2px solid #F3F1EC;outline-offset:2px">{{ t.scSee }}<i class="msi" aria-hidden="true" style="font-size:15px">arrow_forward</i></a>
-                      </div>
-                    </div>
-                  </sc-for>
-                </div>
-              </div>
-              <span></span>
-              <div aria-hidden="true" style="display:flex;justify-content:center;gap:0;align-items:center;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#5F646E"><span style="flex:1;text-align:right;padding-right:14px">◀ {{ scXLow }}</span><span style="flex:1;padding-left:14px">{{ scXHigh }} ▶</span></div>
-            </div>
-            <p style="margin:12px 0 0;font-size:12px;line-height:1.5;color:#5F646E">{{ t.scHelp }}</p>
-            <sc-if value="{{ scHasAbsent }}" hint-placeholder-val="{{ false }}"><p style="margin:6px 0 0;font-size:13px;color:#3A3E46">{{ scAbsentLine }}</p></sc-if>
-          </section>
-          <section data-reveal aria-labelledby="ln-title" style="margin:0 0 72px">
-            <h2 id="ln-title" style="margin:0 0 10px;font-weight:500;font-size:clamp(24px,2.2vw,32px);letter-spacing:-.02em">{{ t.lnTitle }}</h2>
-            <p style="margin:0 0 18px;max-width:72ch;font-size:16px;line-height:1.5;color:#3A3E46">{{ t.lnLead }}</p>
-            <nav aria-label="{{ t.lnFollow }}" style="display:flex;flex-wrap:wrap;gap:7px;margin:0 0 22px">
-              <sc-for list="{{ lnChips }}" as="lc" hint-placeholder-count="12">
-                <a href="{{ lc.href }}" aria-current="{{ lc.current }}" style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;padding:4px 11px 4px {{ lc.padLeft }};border-radius:3px;border:1px solid {{ lc.border }};background:{{ lc.bg }};color:{{ lc.color }};text-decoration:none" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><sc-if value="{{ lc.hasFace }}" hint-placeholder-val="{{ true }}"><span aria-hidden="true" style="display:grid;place-items:center;width:22px;height:22px;border-radius:50%;overflow:hidden;background:#0B0C0F {{ lc.photoCss }} center/cover;filter:grayscale(1);color:#F3F1EC;font-size:9px"><sc-if value="{{ lc.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ lc.initials }}</span></sc-if></span></sc-if>{{ lc.label }}</a>
-              </sc-for>
-            </nav>
-            <div style="display:grid;grid-template-columns:minmax(150px,210px) minmax(0,1fr);border-top:2px solid #0B0C0F">
-              <span></span>
-              <div aria-hidden="true" style="display:flex;justify-content:space-between;padding:8px 22px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#3A3E46"><span>◀ {{ scXLow }}</span><span>{{ scXHigh }} ▶</span></div>
-              <sc-for list="{{ lnRows }}" as="lr" hint-placeholder-count="10">
-                <div style="display:flex;align-items:center;gap:8px;padding:0 10px 0 0;border-top:1px solid #D8D5CE;min-height:72px"><i class="msi" aria-hidden="true" style="font-size:18px;color:{{ lr.ink }}">{{ lr.icon }}</i><span lang="{{ lang }}" style="font-size:14px;font-weight:500;line-height:1.2;hyphens:auto">{{ lr.label }}</span></div>
-                <div style="position:relative;border-top:1px solid #D8D5CE;min-height:72px;background:linear-gradient(#C9C7C0,#C9C7C0) 50% 0/1px 100% no-repeat">
-                  <sc-if value="{{ lr.isEmpty }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;left:22px;top:50%;transform:translateY(-50%);font-size:13px;font-style:italic;font-family:Spectral,Georgia,serif;color:#8A8F99">{{ t.lnEmpty }}</span></sc-if>
-                  <div style="position:absolute;inset:0 22px">
-                    <sc-for list="{{ lr.dots }}" as="ld" hint-placeholder-count="6">
-                      <a href="{{ ld.href }}" title="{{ ld.title }}" aria-label="{{ ld.title }}" style="position:absolute;left:{{ ld.left }};top:{{ ld.top }};z-index:{{ ld.z }};width:{{ ld.size }};height:{{ ld.size }};transform:translate(-50%,-50%);border-radius:50%;overflow:hidden;box-sizing:border-box;border:2px {{ ld.ring }} {{ ld.ringColor }};background:#0B0C0F {{ ld.photoCss }} center/cover;filter:{{ ld.filter }};opacity:{{ ld.opacity }};display:grid;place-items:center;color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:10px;text-decoration:none;transition:opacity .2s,filter .2s" style-hover="opacity:1;filter:grayscale(0);z-index:40" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><sc-if value="{{ ld.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ ld.initials }}</span></sc-if></a>
-                      <sc-if value="{{ ld.isFocus }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position:absolute;left:{{ ld.left }};top:calc({{ ld.top }} + 22px);transform:translateX(-50%);white-space:nowrap;font-size:11px;font-weight:500;color:#0B0C0F">{{ ld.word }}</span></sc-if>
-                    </sc-for>
-                  </div>
-                </div>
-              </sc-for>
-            </div>
-            <p style="margin:12px 0 0;font-size:12px;line-height:1.5;color:#5F646E">{{ t.lnHelp }}</p>
-          </section>
-          <h2 style="margin:0 0 14px;font-weight:500;font-size:clamp(24px,2.2vw,32px);letter-spacing:-.02em">{{ t.heatCountsTitle }}</h2>
-          <p style="margin:0 0 18px;max-width:72ch;font-size:16px;line-height:1.5;color:#3A3E46">{{ t.heatCountsLead }}</p>
-        </sc-if>
+          <h2 data-reveal style="margin:0 0 10px;font-weight:500;font-size:clamp(24px,2.2vw,32px);letter-spacing:-.02em">{{ t.heatCountsTitle }}</h2>
+          <p data-reveal style="margin:0 0 18px;max-width:72ch;font-size:16px;line-height:1.5;color:#3A3E46">{{ t.heatCountsLead }}</p>
         <div data-reveal style="position:relative">
           <table style="width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;border-top:2px solid #0B0C0F">
             <caption style="position:absolute;left:-9999px">{{ gridCaption }}</caption>
@@ -492,6 +426,73 @@ button{font:inherit}
             <dd style="margin:0;display:flex;flex-direction:column;gap:2px;min-width:0"><strong style="font-weight:500;color:#0B0C0F;font-size:14px">{{ t.legendUntrackedH }}</strong><span style="color:#5F646E;font-size:13px;line-height:1.4">{{ t.legendUntracked }}</span></dd>
           </div>
         </dl>
+        <div style="height:72px"></div>
+        <sc-if value="{{ hasScales }}" hint-placeholder-val="{{ false }}">
+          <section data-reveal aria-labelledby="sc-title" style="margin:0 0 72px">
+            <h2 id="sc-title" style="margin:0 0 10px;font-weight:500;font-size:clamp(24px,2.2vw,32px);letter-spacing:-.02em">{{ t.scTitle }}</h2>
+            <p style="margin:0 0 18px;max-width:72ch;font-size:16px;line-height:1.5;color:#3A3E46">{{ t.scLead }}</p>
+            <nav aria-label="{{ t.scThemes }}" style="display:flex;flex-wrap:wrap;gap:7px;margin:0 0 18px">
+              <sc-for list="{{ scThemeChips }}" as="th" hint-placeholder-count="11">
+                <a href="{{ th.href }}" aria-current="{{ th.current }}" title="{{ th.title }}" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;padding:6px 11px 6px 9px;border-radius:3px;border:1px solid {{ th.border }};background:{{ th.bg }};color:{{ th.color }};opacity:{{ th.opacity }};text-decoration:none" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:16px;color:{{ th.iconColor }}">{{ th.icon }}</i>{{ th.label }}<span style="font-family:'JetBrains Mono',monospace;font-size:10px;opacity:.75">{{ th.count }}</span></a>
+              </sc-for>
+            </nav>
+            <sc-if value="{{ scTooFew }}" hint-placeholder-val="{{ false }}"><p style="margin:0 0 18px;padding:12px 16px;border:1px dashed #0B0C0F;font-size:14px;color:#3A3E46">{{ t.scTooFew }}</p></sc-if>
+            <div style="display:grid;grid-template-columns:28px minmax(0,1fr);grid-template-rows:auto 28px;gap:0 8px">
+              <div aria-hidden="true" style="display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:8px 0;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#5F646E"><span style="display:flex;flex-direction:column;align-items:center;gap:6px"><span>▲</span><span style="writing-mode:vertical-rl;transform:rotate(180deg)">{{ t.scYHigh }}</span></span><span style="display:flex;flex-direction:column;align-items:center;gap:6px"><span style="writing-mode:vertical-rl;transform:rotate(180deg)">{{ t.scYLow }}</span><span>▼</span></span></div>
+              <div class="sc-plot" role="group" aria-label="{{ t.scTitle }}" style="position:relative;height:clamp(380px,52vw,560px);border:1px solid #0B0C0F;background:linear-gradient(#0B0C0F,#0B0C0F) 50% 0/1px 100% no-repeat,linear-gradient(#0B0C0F,#0B0C0F) 0 50%/100% 1px no-repeat,#FAF9F6">
+                <div style="position:absolute;inset:36px 44px">
+                  <sc-for list="{{ scDots }}" as="d" hint-placeholder-count="10">
+                    <div class="sc-dot" tabindex="0" aria-label="{{ d.aria }}" style="position:absolute;left:{{ d.left }};top:{{ d.top }};width:{{ d.size }};height:{{ d.size }};transform:translate(-50%,-50%);z-index:{{ d.z }}">
+                      <span aria-hidden="true" style="display:grid;place-items:center;width:100%;height:100%;box-sizing:border-box;border-radius:50%;overflow:hidden;border:2px {{ d.ringStyle }} #0B0C0F;background:#0B0C0F {{ d.photoCss }} center/cover;filter:grayscale(1);opacity:{{ d.opacity }};color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:11px"><sc-if value="{{ d.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ d.initials }}</span></sc-if></span>
+                      <span aria-hidden="true" style="position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:3px;white-space:nowrap;font-size:11px;font-weight:500;color:#0B0C0F;background:rgba(250,249,246,.85);padding:0 3px">{{ d.last }}</span>
+                      <div class="sc-card" role="tooltip" style="position:absolute;{{ d.cardX }};{{ d.cardY }};width:280px;padding:14px 16px;background:#0B0C0F;color:#F3F1EC;font-size:13px;line-height:1.45;box-shadow:0 8px 28px rgba(0,0,0,.25)">
+                        <strong style="display:block;font-size:16px;font-weight:500">{{ d.name }}</strong>
+                        <span style="display:block;margin:0 0 8px;font-size:12px;color:#C9C7C0">{{ d.party }}</span>
+                        <span style="display:block"><b style="font-weight:500">{{ d.xWord }}</b> · {{ d.xValue }}</span>
+                        <span style="display:block"><b style="font-weight:500">{{ d.yWord }}</b> · {{ d.yValue }}</span>
+                        <span style="display:block;margin:8px 0 0;color:#C9C7C0">{{ d.countLine }}</span>
+                        <sc-if value="{{ d.hasTopics }}" hint-placeholder-val="{{ false }}"><span style="display:block;color:#C9C7C0">{{ d.topicsLine }}</span></sc-if>
+                        <span style="display:block;color:#C9C7C0">{{ d.framingLine }}</span>
+                        <sc-if value="{{ d.hasQuote }}" hint-placeholder-val="{{ false }}"><q style="display:block;margin:10px 0 0;padding-left:10px;border-left:2px solid #5F646E;font-family:Spectral,Georgia,serif;font-style:italic;font-size:14px;line-height:1.4">{{ d.quote }}</q></sc-if>
+                        <a href="{{ d.href }}" style="display:inline-flex;align-items:center;gap:6px;margin:12px 0 0;color:#F3F1EC;font-weight:500" style-focus="outline:2px solid #F3F1EC;outline-offset:2px">{{ t.scSee }}<i class="msi" aria-hidden="true" style="font-size:15px">arrow_forward</i></a>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              <span></span>
+              <div aria-hidden="true" style="display:flex;justify-content:center;gap:0;align-items:center;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#5F646E"><span style="flex:1;text-align:right;padding-right:14px">◀ {{ scXLow }}</span><span style="flex:1;padding-left:14px">{{ scXHigh }} ▶</span></div>
+            </div>
+            <p style="margin:12px 0 0;font-size:12px;line-height:1.5;color:#5F646E">{{ t.scHelp }}</p>
+            <sc-if value="{{ scHasAbsent }}" hint-placeholder-val="{{ false }}"><p style="margin:6px 0 0;font-size:13px;color:#3A3E46">{{ scAbsentLine }}</p></sc-if>
+          </section>
+          <section data-reveal aria-labelledby="ln-title" style="margin:0 0 72px">
+            <h2 id="ln-title" style="margin:0 0 10px;font-weight:500;font-size:clamp(24px,2.2vw,32px);letter-spacing:-.02em">{{ t.lnTitle }}</h2>
+            <p style="margin:0 0 18px;max-width:72ch;font-size:16px;line-height:1.5;color:#3A3E46">{{ t.lnLead }}</p>
+            <nav aria-label="{{ t.lnFollow }}" style="display:flex;flex-wrap:wrap;gap:7px;margin:0 0 22px">
+              <sc-for list="{{ lnChips }}" as="lc" hint-placeholder-count="12">
+                <a href="{{ lc.href }}" aria-current="{{ lc.current }}" style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;padding:4px 11px 4px {{ lc.padLeft }};border-radius:3px;border:1px solid {{ lc.border }};background:{{ lc.bg }};color:{{ lc.color }};text-decoration:none" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><sc-if value="{{ lc.hasFace }}" hint-placeholder-val="{{ true }}"><span aria-hidden="true" style="display:grid;place-items:center;width:22px;height:22px;border-radius:50%;overflow:hidden;background:#0B0C0F {{ lc.photoCss }} center/cover;filter:grayscale(1);color:#F3F1EC;font-size:9px"><sc-if value="{{ lc.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ lc.initials }}</span></sc-if></span></sc-if>{{ lc.label }}</a>
+              </sc-for>
+            </nav>
+            <div style="display:grid;grid-template-columns:minmax(150px,210px) minmax(0,1fr);border-top:2px solid #0B0C0F">
+              <span></span>
+              <div aria-hidden="true" style="display:flex;justify-content:space-between;padding:8px 22px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#3A3E46"><span>◀ {{ scXLow }}</span><span>{{ scXHigh }} ▶</span></div>
+              <sc-for list="{{ lnRows }}" as="lr" hint-placeholder-count="10">
+                <div style="display:flex;align-items:center;gap:8px;padding:0 10px 0 0;border-top:1px solid #D8D5CE;min-height:72px"><i class="msi" aria-hidden="true" style="font-size:18px;color:{{ lr.ink }}">{{ lr.icon }}</i><span lang="{{ lang }}" style="font-size:14px;font-weight:500;line-height:1.2;hyphens:auto">{{ lr.label }}</span></div>
+                <div style="position:relative;border-top:1px solid #D8D5CE;min-height:72px;background:linear-gradient(#C9C7C0,#C9C7C0) 50% 0/1px 100% no-repeat">
+                  <sc-if value="{{ lr.isEmpty }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;left:22px;top:50%;transform:translateY(-50%);font-size:13px;font-style:italic;font-family:Spectral,Georgia,serif;color:#8A8F99">{{ t.lnEmpty }}</span></sc-if>
+                  <div style="position:absolute;inset:0 22px">
+                    <sc-for list="{{ lr.dots }}" as="ld" hint-placeholder-count="6">
+                      <a href="{{ ld.href }}" title="{{ ld.title }}" aria-label="{{ ld.title }}" style="position:absolute;left:{{ ld.left }};top:{{ ld.top }};z-index:{{ ld.z }};width:{{ ld.size }};height:{{ ld.size }};transform:translate(-50%,-50%);border-radius:50%;overflow:hidden;box-sizing:border-box;border:2px {{ ld.ring }} {{ ld.ringColor }};background:#0B0C0F {{ ld.photoCss }} center/cover;filter:{{ ld.filter }};opacity:{{ ld.opacity }};display:grid;place-items:center;color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:10px;text-decoration:none;transition:opacity .2s,filter .2s" style-hover="opacity:1;filter:grayscale(0);z-index:40" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><sc-if value="{{ ld.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ ld.initials }}</span></sc-if></a>
+                      <sc-if value="{{ ld.isFocus }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position:absolute;left:{{ ld.left }};top:calc({{ ld.top }} + 22px);transform:translateX(-50%);white-space:nowrap;font-size:11px;font-weight:500;color:#0B0C0F">{{ ld.word }}</span></sc-if>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <p style="margin:12px 0 0;font-size:12px;line-height:1.5;color:#5F646E">{{ t.lnHelp }}</p>
+          </section>
+        </sc-if>
         </section>
     </sc-if>
 
@@ -513,7 +514,7 @@ button{font:inherit}
                 <sc-for list="{{ r.sources }}" as="s" hint-placeholder-count="2">
                   <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 24px;align-items:center;padding:14px 18px;border:1px solid #E3E0D8;border-radius:10px;background:#FAF9F6">
                     <div style="display:flex;flex-direction:column;gap:7px;min-width:0">
-                      <a href="{{ s.url }}" rel="external noopener" style="display:inline-flex;align-items:baseline;gap:8px;color:#0B0C0F;font-size:16px;font-weight:500;line-height:1.3;text-decoration:none;overflow-wrap:anywhere" style-hover="text-decoration:underline" style-focus="outline:2px solid #1B33B4;outline-offset:2px">{{ s.label }}<i class="msi" aria-hidden="true" style="font-size:14px;color:#5F646E;position:relative;top:2px">open_in_new</i></a>
+                      <a href="{{ s.url }}" target="_blank" rel="external noopener noreferrer" style="display:inline-flex;align-items:baseline;gap:8px;color:#0B0C0F;font-size:16px;font-weight:500;line-height:1.3;text-decoration:none;overflow-wrap:anywhere" style-hover="text-decoration:underline" style-focus="outline:2px solid #1B33B4;outline-offset:2px">{{ s.label }}<i class="msi" aria-hidden="true" style="font-size:14px;color:#5F646E;position:relative;top:2px">open_in_new</i></a>
                       <div style="display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:#5F646E">
                         <span style="display:inline-flex;align-items:center;gap:6px;color:#3A3E46"><i class="msi" aria-hidden="true" style="font-size:15px">{{ s.kindIcon }}</i>{{ s.kindLabel }}</span>
                         <span style="display:inline-flex;align-items:center;gap:6px;border:1px {{ s.tierBorderStyle }} {{ s.tierBorderColor }};border-radius:3px;padding:3px 9px;color:#3A3E46"><i class="msi" aria-hidden="true" style="font-size:14px">{{ s.tierIcon }}</i>{{ s.tierShort }} · {{ s.tierState }}</span>
@@ -562,7 +563,7 @@ button{font:inherit}
               </p>
               <sc-if value="{{ cand.tracked }}" hint-placeholder-val="{{ true }}">
                 <ul style="margin:6px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:8px;font-size:13px">
-                  <sc-for list="{{ cand.sources }}" as="s" hint-placeholder-count="3"><li><a href="{{ s.url }}" rel="external noopener" style="display:inline-flex;align-items:center;gap:7px;padding:7px 12px 7px 10px;border-radius:3px;border:1px solid rgba(243,241,236,.25);color:#F3F1EC;text-decoration:none;transition:background .15s" style-hover="background:rgba(243,241,236,.1)" style-focus="outline:2px solid #F3F1EC;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:14px">open_in_new</i>{{ s.label }}</a></li></sc-for>
+                  <sc-for list="{{ cand.sources }}" as="s" hint-placeholder-count="3"><li><a href="{{ s.url }}" target="_blank" rel="external noopener noreferrer" style="display:inline-flex;align-items:center;gap:7px;padding:7px 12px 7px 10px;border-radius:3px;border:1px solid rgba(243,241,236,.25);color:#F3F1EC;text-decoration:none;transition:background .15s" style-hover="background:rgba(243,241,236,.1)" style-focus="outline:2px solid #F3F1EC;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:14px">open_in_new</i>{{ s.label }}</a></li></sc-for>
                 </ul>
               </sc-if>
               <sc-if value="{{ cand.untracked }}" hint-placeholder-val="{{ false }}">
@@ -599,8 +600,8 @@ button{font:inherit}
                     <p style="margin:0;font-size:15px">{{ cl.summary }}</p>
                     <p style="margin:0;font-size:13px;color:#5F646E">{{ cl.context }}</p>
                     <div style="display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;font-size:12px;font-family:'JetBrains Mono',monospace">
-                      <a href="{{ cl.sourceUrl }}" rel="external noopener" style="display:inline-flex;align-items:center;gap:6px;color:#1B33B4" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:14px">open_in_new</i>{{ t.source }}</a>
-                      <sc-if value="{{ cl.hasArchive }}" hint-placeholder-val="{{ true }}"><a href="{{ cl.archiveUrl }}" rel="external noopener" style="display:inline-flex;align-items:center;gap:6px;color:#1B33B4" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:14px">archive</i>{{ cl.archiveLabel }}</a></sc-if><sc-if value="{{ cl.noArchive }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:6px;color:#8A8F99"><i class="msi" aria-hidden="true" style="font-size:14px">archive</i>{{ cl.archiveLabel }}</span></sc-if>
+                      <a href="{{ cl.sourceUrl }}" target="_blank" rel="external noopener noreferrer" style="display:inline-flex;align-items:center;gap:6px;color:#1B33B4" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:14px">open_in_new</i>{{ t.source }}</a>
+                      <sc-if value="{{ cl.hasArchive }}" hint-placeholder-val="{{ true }}"><a href="{{ cl.archiveUrl }}" target="_blank" rel="external noopener noreferrer" style="display:inline-flex;align-items:center;gap:6px;color:#1B33B4" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:14px">archive</i>{{ cl.archiveLabel }}</a></sc-if><sc-if value="{{ cl.noArchive }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:6px;color:#8A8F99"><i class="msi" aria-hidden="true" style="font-size:14px">archive</i>{{ cl.archiveLabel }}</span></sc-if>
                       <sc-if value="{{ cl.hasTimestamp }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:6px;border:1px solid #D8D5CE;border-radius:3px;padding:1px 9px;font-size:11px"><i class="msi" aria-hidden="true" style="font-size:12px">play_arrow</i>{{ cl.timestampLabel }}</span></sc-if>
                       <a href="{{ cl.href }}" title="{{ t.permalink }}" style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;color:#5F646E;text-decoration:none;font-size:11px" style-hover="color:#0B0C0F" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:13px">link</i>{{ cl.id }}</a>
                     </div>
