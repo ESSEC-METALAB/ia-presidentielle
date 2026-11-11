@@ -43,6 +43,25 @@ button{font:inherit}
 .sc-dot:hover .sc-card,.sc-dot:focus-within .sc-card{display:block}
 .sc-plot:has(.sc-dot:hover,.sc-dot:focus-within) .sc-dot:not(:hover):not(:focus-within){opacity:.18}
 .sc-dot:hover>span:first-child,.sc-dot:focus-within>span:first-child{filter:grayscale(0)!important}
+@keyframes cmp-pop{0%{opacity:0;transform:scale(.85) translateY(6px)}100%{opacity:1;transform:none}}
+@keyframes cmp-in{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:none}}
+.cmp-pop{animation:cmp-pop .45s cubic-bezier(.2,.7,.2,1) both}
+.cmp-in{animation:cmp-in .5s cubic-bezier(.2,.7,.2,1) both}
+@keyframes cmp-grow{0%{transform:scaleX(0)}100%{transform:scaleX(1)}}
+.cmp-bar{animation:cmp-grow .6s cubic-bezier(.2,.7,.2,1) both;transition:width .5s cubic-bezier(.2,.7,.2,1)}
+.cmp-bar--a{transform-origin:left center}
+.cmp-bar--b{transform-origin:right center}
+.cmp-card{box-shadow:0 1px 0 rgba(11,12,15,.04),0 1px 3px rgba(11,12,15,.07);transition:transform .22s cubic-bezier(.2,.9,.3,1.2),box-shadow .22s,opacity .2s,border-color .2s,background .2s;touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:grab}
+.cmp-card:hover{transform:translateY(-3px);box-shadow:0 12px 24px rgba(11,12,15,.13),0 3px 8px rgba(11,12,15,.08)}
+.cmp-card--placeholder{opacity:.25!important;transform:scale(.95)!important;box-shadow:none!important;border-style:dashed!important}
+body.cmp-dragging,body.cmp-dragging *{cursor:grabbing!important;user-select:none!important;-webkit-user-select:none!important}
+.cmp-slot{transition:transform .28s cubic-bezier(.2,.9,.3,1.25),box-shadow .28s,border-color .2s,background .2s;box-shadow:0 1px 3px rgba(11,12,15,.06)}
+.cmp-slot--ready{border-color:#0B0C0F!important;background:rgba(255,255,255,.4)!important;animation:cmp-breathe 1.5s ease-in-out infinite}
+@keyframes cmp-breathe{0%,100%{box-shadow:0 0 0 0 rgba(27,51,180,0)}50%{box-shadow:0 0 0 7px rgba(27,51,180,.09)}}
+.cmp-slot--over{transform:scale(1.015)!important;border-style:solid!important;border-color:#1B33B4!important;background:oklch(.955 .035 258)!important;box-shadow:0 20px 44px rgba(27,51,180,.22),0 0 0 5px rgba(27,51,180,.13)!important;animation:none!important}
+.cmp-slot .cmp-drop{display:none}
+.cmp-slot--over .cmp-drop{display:flex}
+.cmp-slot--over .cmp-rest{opacity:.35}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </helmet>
@@ -67,6 +86,7 @@ button{font:inherit}
           <a href="{{ hrefFil }}" aria-current="{{ curFil }}" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:3px;color:#F3F1EC;text-decoration:none;background:{{ bgFil }};transition:background .2s" style-hover="background:rgba(243,241,236,.12)" style-focus="outline:2px solid #F3F1EC;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:17px">view_stream</i>{{ t.fil }}</a>
           <a href="{{ hrefGrille }}" aria-current="{{ curGrille }}" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:3px;color:#F3F1EC;text-decoration:none;background:{{ bgGrille }};transition:background .2s" style-hover="background:rgba(243,241,236,.12)" style-focus="outline:2px solid #F3F1EC;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:17px">bar_chart</i>{{ t.grille }}</a>
           <a href="{{ hrefSources }}" aria-current="{{ curSources }}" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:3px;color:#F3F1EC;text-decoration:none;background:{{ bgSources }};transition:background .2s" style-hover="background:rgba(243,241,236,.12)" style-focus="outline:2px solid #F3F1EC;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:17px">rss_feed</i>{{ t.sources }}</a>
+          <a href="{{ hrefCompare }}" aria-current="{{ curCompare }}" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:3px;color:#F3F1EC;text-decoration:none;background:{{ bgCompare }};transition:background .2s" style-hover="background:rgba(243,241,236,.12)" style-focus="outline:2px solid #F3F1EC;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:17px">compare_arrows</i>{{ t.compare }}</a>
           <a href="{{ hrefMethodo }}" aria-current="{{ curMethodo }}" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:3px;color:#F3F1EC;text-decoration:none;background:{{ bgMethodo }};transition:background .2s" style-hover="background:rgba(243,241,236,.12)" style-focus="outline:2px solid #F3F1EC;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:17px">menu_book</i>{{ t.methodo }}</a>
         </nav>
         <div role="group" aria-label="{{ t.langLabel }}" style="display:flex;border:1px solid rgba(243,241,236,.35);border-radius:3px;overflow:hidden;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em">
@@ -538,6 +558,97 @@ button{font:inherit}
       </section>
     </sc-if>
 
+    <sc-if value="{{ isCompare }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="Comparer" style="max-width:1400px;margin:0 auto;padding:56px 40px 104px">
+        <h1 data-reveal style="display:flex;align-items:center;gap:14px;margin:0 0 14px;font-weight:500;font-size:clamp(32px,3.4vw,52px);line-height:1;letter-spacing:-.03em"><i class="msi" aria-hidden="true" style="font-size:1em;color:#5F646E">compare_arrows</i>{{ t.compare }}</h1>
+        <p data-reveal style="margin:0 0 32px;max-width:72ch;font-size:18px;line-height:1.5;color:#3A3E46">{{ t.cmpLead }}</p>
+
+        <div data-reveal style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:18px;align-items:stretch;margin:0 0 22px">
+          <sc-for list="{{ cmpSlots }}" as="sl" hint-placeholder-count="2">
+            <div class="cmp-slot" data-cmp-slot="{{ sl.slot }}" style="order:{{ sl.order }};position:relative;min-height:118px;box-sizing:border-box;display:flex;align-items:center;gap:16px;padding:16px 20px;border:2px {{ sl.borderStyle }} {{ sl.borderColor }};border-radius:8px;background:{{ sl.bg }}">
+              <span class="cmp-drop" aria-hidden="true" style="position:absolute;inset:0;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:500;color:#1B33B4;z-index:2"><i class="msi" style="font-size:22px">download</i>{{ t.cmpDropHere }}</span>
+              <sc-if value="{{ sl.isEmpty }}" hint-placeholder-val="{{ true }}">
+                <span class="cmp-rest" style="display:flex;flex-direction:column;gap:4px;transition:opacity .2s"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#5F646E">{{ sl.title }}</span><span style="font-size:16px;color:#3A3E46">{{ sl.hint }}</span></span>
+              </sc-if>
+              <sc-if value="{{ sl.isFull }}" hint-placeholder-val="{{ false }}">
+                <span class="cmp-pop cmp-rest" style="display:flex;align-items:center;gap:16px;flex:1;min-width:0;transition:opacity .2s">
+                  <span aria-hidden="true" style="display:grid;place-items:center;flex:none;width:72px;height:72px;border-radius:50%;overflow:hidden;background:#0B0C0F {{ sl.photoCss }} center/cover;color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:14px"><sc-if value="{{ sl.noPhoto }}" hint-placeholder-val="{{ false }}"><span>{{ sl.initials }}</span></sc-if></span>
+                  <span style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#5F646E">{{ sl.title }}</span><strong style="font-size:22px;font-weight:500;letter-spacing:-.02em;line-height:1.1">{{ sl.name }}</strong><span style="font-size:13px;color:#5F646E">{{ sl.party }}</span></span>
+                  <a href="{{ sl.clearHref }}" aria-label="{{ t.cmpClear }}" title="{{ t.cmpClear }}" style="margin-left:auto;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;color:#0B0C0F;text-decoration:none" style-hover="background:#E9E6DE" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><i class="msi" aria-hidden="true" style="font-size:20px">close</i></a>
+                </span>
+              </sc-if>
+            </div>
+          </sc-for>
+          <span aria-hidden="true" style="order:1;align-self:center;font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:500;color:#5F646E">VS</span>
+        </div>
+
+        <p data-reveal style="margin:0 0 12px;font-size:14px;color:#3A3E46">{{ cmpPrompt }}</p>
+        <div data-reveal style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin:0 0 56px">
+          <sc-for list="{{ cmpCards }}" as="cc" hint-placeholder-count="13">
+            <button type="button" class="cmp-card" onPointerDown="{{ cc.onGrab }}" onClick="{{ cc.onPick }}" aria-pressed="{{ cc.pressed }}" style="display:flex;align-items:center;gap:12px;padding:10px 12px;text-align:left;border:1px solid {{ cc.border }};border-radius:8px;background:{{ cc.bg }};color:#0B0C0F" style-focus="outline:2px solid #1B33B4;outline-offset:2px">
+              <span aria-hidden="true" style="display:grid;place-items:center;flex:none;width:44px;height:44px;border-radius:50%;overflow:hidden;background:#0B0C0F {{ cc.photoCss }} center/cover;filter:{{ cc.filter }};color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:11px"><sc-if value="{{ cc.noPhoto }}" hint-placeholder-val="{{ false }}"><span>{{ cc.initials }}</span></sc-if></span>
+              <span style="display:flex;flex-direction:column;gap:2px;min-width:0"><strong style="font-size:15px;font-weight:500;line-height:1.15">{{ cc.name }}</strong><span style="font-size:12px;color:#5F646E;line-height:1.3">{{ cc.party }}</span></span>
+              <sc-if value="{{ cc.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="margin-left:auto;flex:none;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#0B0C0F;color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:11px">{{ cc.badge }}</span></sc-if>
+            </button>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{ cmpReady }}" hint-placeholder-val="{{ false }}">
+          <div class="cmp-in" style="padding:26px 28px;margin:0 0 28px;border:1px solid #D8D5CE;border-radius:8px;background:#FAF9F6;text-align:center">
+            <p style="margin:0 0 6px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#5F646E">{{ t.cmpProximity }}</p>
+            <p style="margin:0 0 8px;font-size:clamp(26px,3vw,40px);font-weight:500;letter-spacing:-.03em;line-height:1.1">{{ cmpHeadline }}</p>
+            <p style="margin:0 0 6px;font-size:15px;color:#3A3E46">{{ cmpSummary }}</p>
+            <p style="margin:0;font-size:13px;color:#5F646E">{{ t.cmpExplain }}</p>
+          </div>
+
+          <div class="cmp-in" style="padding:24px 28px;margin:0 0 28px;border:1px solid #D8D5CE;border-radius:8px;background:#FAF9F6">
+            <h2 style="margin:0 0 6px;font-weight:500;font-size:22px;letter-spacing:-.02em">{{ t.cmpByTheme }}</h2>
+            <div aria-hidden="true" style="display:grid;grid-template-columns:minmax(150px,210px) minmax(0,1fr) 190px;gap:0 18px;margin:14px 0 6px;font-size:13px;font-weight:500"><span></span><span style="display:flex;justify-content:space-between"><span style="color:#1B33B4">{{ cmpNameA }} →</span><span style="color:#B4401B">← {{ cmpNameB }}</span></span><span></span></div>
+            <sc-for list="{{ cmpRows }}" as="cr" hint-placeholder-count="10">
+              <div class="cmp-in" style="animation-delay:{{ cr.delay }};display:grid;grid-template-columns:minmax(150px,210px) minmax(0,1fr) 190px;gap:0 18px;align-items:center;min-height:60px;border-top:1px solid #E3E0D8;opacity:{{ cr.rowOpacity }}">
+                <span style="display:flex;align-items:center;gap:8px;align-self:stretch;padding:0 8px;border-left:4px solid {{ cr.ink }};background:{{ cr.tint }}"><i class="msi" aria-hidden="true" style="font-size:18px;color:{{ cr.ink }}">{{ cr.icon }}</i><span style="font-size:14px;font-weight:500;line-height:1.2">{{ cr.label }}</span></span>
+                <div style="position:relative;height:30px;border-radius:4px;background:#EDEAE3;overflow:hidden">
+                  <span aria-hidden="true" style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:#C9C6BE"></span>
+                  <sc-if value="{{ cr.hasA }}" hint-placeholder-val="{{ false }}"><span class="cmp-bar cmp-bar--a" title="{{ cr.titleA }}" style="position:absolute;left:0;top:0;bottom:0;width:{{ cr.wA }};box-sizing:border-box;display:flex;align-items:center;justify-content:flex-end;padding:0 8px;background:rgba(27,51,180,{{ cr.fillA }});border-right:3px solid #1B33B4;color:#1B33B4;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;animation-delay:{{ cr.delay }}">{{ cr.scoreA }}</span></sc-if>
+                  <sc-if value="{{ cr.hasB }}" hint-placeholder-val="{{ false }}"><span class="cmp-bar cmp-bar--b" title="{{ cr.titleB }}" style="position:absolute;right:0;top:0;bottom:0;width:{{ cr.wB }};box-sizing:border-box;display:flex;align-items:center;justify-content:flex-start;padding:0 8px;background:rgba(180,64,27,{{ cr.fillB }});border-left:3px solid #B4401B;color:#B4401B;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;animation-delay:{{ cr.delay }}">{{ cr.scoreB }}</span></sc-if>
+                  <sc-if value="{{ cr.hasA }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position:absolute;left:calc({{ cr.wA }} + 8px);top:50%;transform:translateY(-50%);font-size:12px;color:#8A8F99;white-space:nowrap;transition:left .5s cubic-bezier(.2,.7,.2,1)">{{ cr.countA }}</span></sc-if>
+                  <sc-if value="{{ cr.hasB }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position:absolute;right:calc({{ cr.wB }} + 8px);top:50%;transform:translateY(-50%);font-size:12px;color:#8A8F99;white-space:nowrap;transition:right .5s cubic-bezier(.2,.7,.2,1)">{{ cr.countB }}</span></sc-if>
+                  <sc-if value="{{ cr.noA }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;font-style:italic;color:#8A8F99">{{ t.cmpNoScore }}</span></sc-if>
+                  <sc-if value="{{ cr.noB }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;font-style:italic;color:#8A8F99">{{ t.cmpNoScore }}</span></sc-if>
+                </div>
+                <span style="font-size:13px;line-height:1.3;color:{{ cr.verdictColor }};font-weight:{{ cr.verdictWeight }}">{{ cr.verdict }}</span>
+              </div>
+            </sc-for>
+            <p style="margin:14px 0 0;font-size:12px;color:#5F646E">{{ cmpNote }}</p>
+          </div>
+
+          <div class="cmp-in" style="padding:24px 28px;border:1px solid #D8D5CE;border-radius:8px;background:#FAF9F6">
+            <h2 style="margin:0 0 16px;font-weight:500;font-size:22px;letter-spacing:-.02em">{{ t.cmpQuotes }}</h2>
+            <sc-for list="{{ cmpQuoteRows }}" as="qr" hint-placeholder-count="4">
+              <div style="padding:16px 0;border-top:1px solid #E3E0D8">
+                <p style="margin:0 0 10px;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500"><i class="msi" aria-hidden="true" style="font-size:18px;color:{{ qr.ink }}">{{ qr.icon }}</i>{{ qr.label }}</p>
+                <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px">
+                  <sc-for list="{{ qr.cols }}" as="qc" hint-placeholder-count="2">
+                    <div style="display:flex;flex-direction:column;gap:10px;padding-left:12px;border-left:3px solid {{ qc.color }}">
+                      <span style="font-size:12px;font-weight:500;color:{{ qc.color }}">{{ qc.name }}</span>
+                      <sc-if value="{{ qc.isEmpty }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;font-style:italic;font-family:Spectral,Georgia,serif;color:#8A8F99">{{ t.cmpNoQuote }}</span></sc-if>
+                      <sc-for list="{{ qc.quotes }}" as="qq" hint-placeholder-count="2">
+                        <div style="display:flex;flex-direction:column;gap:4px">
+                          <q style="font-family:Spectral,Georgia,serif;font-size:15px;line-height:1.4;color:#0B0C0F">{{ qq.quote }}</q>
+                          <span style="font-size:12px;color:#5F646E"><strong style="font-weight:500;color:#0B0C0F">{{ qq.score }}</strong> · {{ qq.reason }}</span>
+                        </div>
+                      </sc-for>
+                      <sc-if value="{{ qc.hasMore }}" hint-placeholder-val="{{ false }}"><a href="{{ qc.moreHref }}" style="font-size:12px;color:#1B33B4">{{ qc.moreLabel }}</a></sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </section>
+    </sc-if>
+
     <sc-if value="{{ isCand }}" hint-placeholder-val="{{ false }}">
       <section data-screen-label="Candidat" style="position:relative;isolation:isolate;background:#0B0C0F;color:#F3F1EC;overflow:hidden">
         <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;overflow:hidden">
@@ -657,6 +768,7 @@ button{font:inherit}
         <a href="{{ hrefFil }}" style="color:#F3F1EC;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #F3F1EC;outline-offset:2px">{{ t.fil }}</a>
         <a href="{{ hrefGrille }}" style="color:#F3F1EC;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #F3F1EC;outline-offset:2px">{{ t.grille }}</a>
         <a href="{{ hrefSources }}" style="color:#F3F1EC;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #F3F1EC;outline-offset:2px">{{ t.sources }}</a>
+        <a href="{{ hrefCompare }}" style="color:#F3F1EC;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #F3F1EC;outline-offset:2px">{{ t.compare }}</a>
         <a href="{{ hrefMethodo }}" style="color:#F3F1EC;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #F3F1EC;outline-offset:2px">{{ t.methodo }}</a>
         <a href="{{ hrefCorrections }}" style="color:#F3F1EC;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #F3F1EC;outline-offset:2px">{{ t.corrections }}</a>
         <a href="{{ hrefLegal }}" style="color:#F3F1EC;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #F3F1EC;outline-offset:2px">{{ t.legal }}</a>
@@ -674,6 +786,13 @@ const I18N = {
     scYHigh: "Mesures précises", scYLow: "Discours généraux",
     scTooFew: "Trop peu de déclarations notées sur ce thème pour comparer les candidats.", scSee: "Voir ses déclarations", scHelp: "Notes attribuées automatiquement par une IA, non relues. Pointillés : moins de 3 déclarations.", scAbsent: "Ne s'expriment pas sur ce thème dans nos sources :",
     scX: ["Encadrer", "Plutôt encadrer", "Équilibré", "Plutôt accélérer", "Accélérer"], scY: ["Très général", "Plutôt général", "Assez précis", "Précis", "Très précis"], scCount1: "déclaration notée", scCountN: "déclarations notées", scTopics: "Parle surtout de", scOpp: "opportunité(s)", scThreat: "menace(s)",
+    compare: "Comparer", cmpLead: "Choisissez deux candidats : glissez-les dans les cases, ou cliquez sur eux (sur téléphone : touchez-les). On compare leurs positions sur l'IA, thème par thème, de « Encadrer » à « Accélérer », avec leurs déclarations côte à côte.", cmpA: "Candidat A", cmpB: "Candidat B", cmpHintA: "Glissez un candidat ici", cmpHintB: "Puis un second", cmpClear: "Retirer", cmpDropHere: "Lâchez ici", cmpPickA: "Choisissez le candidat A", cmpPickB: "Choisissez le candidat B", cmpPickDone: "Cliquez sur un autre candidat pour changer le candidat B",
+    cmpProximity: "Proximité sur l'IA", cmpByTheme: "Par thème", cmpQuotes: "Ce qu'ils disent", cmpNoQuote: "aucune déclaration notée", cmpNoScore: "pas de déclaration", cmpBothEnc: "Tous deux pour encadrer", cmpBothAcc: "Tous deux pour accélérer", cmpBothMid: "Tous deux au milieu", cmpLeanEnc: "pour encadrer", cmpLeanAcc: "pour accélérer", cmpLeanMid: "au milieu", cmpCount: "{n} décl.",
+    cmpExplain: "« Proches » : leurs notes moyennes diffèrent de moins de 0,75 point sur 5, qu'ils penchent tous deux vers encadrer ou vers accélérer. Cela ne veut pas dire qu'ils proposent les mêmes mesures.", cmpMore: "Voir ses {n} déclarations",
+    cmpClose: "Positions proches", cmpSome: "Assez différentes", cmpFar: "Opposées", cmpOnlyOne: "{name} seul·e s'exprime", cmpNone: "Aucun des deux",
+    cmpHeadClose: "Plutôt proches", cmpHeadMixed: "Proches sur certains thèmes, opposés sur d'autres", cmpHeadFar: "Plutôt opposés", cmpHeadNone: "Pas de thème en commun",
+    cmpSummary: "Sur les {n} thèmes où {a} et {b} se sont exprimés tous les deux : positions proches sur {close}, assez différentes sur {some}, opposées sur {far}.", cmpSummaryNone: "{a} et {b} ne se sont jamais exprimés sur le même thème dans nos sources.",
+    cmpNote: "Chaque barre donne la note moyenne du candidat sur le thème, de 1 (encadrer) à 5 (accélérer) : plus elle est longue, plus il veut accélérer. À 5 chacun, les deux barres se rejoignent au milieu. Notes attribuées automatiquement par une IA, non relues. À côté de chaque note, le nombre de déclarations sur lequel elle repose ; barre plus pâle : moins de 3 déclarations, note fragile. Écart de moins de 0,75 point : proches ; plus de 1,75 : opposées.",
     lnTitle: "Thème par thème : encadrer ou accélérer l'IA ?", lnLead: "Chaque ligne est un thème. Plus une photo est à droite, plus le candidat veut développer l'IA sur ce thème ; plus elle est à gauche, plus il veut l'encadrer. Choisissez un ou plusieurs candidats pour ne garder qu'eux.", lnFollow: "Suivre un candidat", lnAll: "Tous", lnEmpty: "aucune déclaration notée sur ce thème", lnHelp: "Notes attribuées automatiquement par une IA, non relues. Pointillés : moins de 3 déclarations.",
     heatCountsTitle: "Combien de déclarations", heatCountsLead: "Le nombre de déclarations sur l'IA relevées pour chaque candidat, thème par thème : on voit qui parle de quoi, et combien. La dernière colonne compte celles qui présentent l'IA comme une opportunité (en haut à gauche) ou comme une menace (en bas à droite). Cliquez sur un chiffre pour lire les déclarations.",
     framings: { opportunity: "Opportunité", threat: "Menace", both: "Opportunité et menace" }, filterFraming: "Cadrage", allFramings: "Tous",
@@ -729,6 +848,13 @@ const I18N = {
     scYHigh: "Precise measures", scYLow: "General talk",
     scTooFew: "Too few scored statements on this topic to compare the candidates.", scSee: "See their statements", scHelp: "Scores given automatically by an AI, not reviewed. Dashed: fewer than 3 statements.", scAbsent: "Not speaking on this topic in our sources:",
     scX: ["Restrain", "Lean restrain", "Balanced", "Lean accelerate", "Accelerate"], scY: ["Very general", "Rather general", "Fairly precise", "Precise", "Very precise"], scCount1: "scored statement", scCountN: "scored statements", scTopics: "Mostly about", scOpp: "opportunity", scThreat: "threat",
+    compare: "Compare", cmpLead: "Pick two candidates: drag them into the boxes, or click them (on a phone: tap them). We compare their positions on AI, topic by topic, from \"Restrain\" to \"Accelerate\", with their statements side by side.", cmpA: "Candidate A", cmpB: "Candidate B", cmpHintA: "Drag a candidate here", cmpHintB: "Then a second one", cmpClear: "Remove", cmpDropHere: "Drop here", cmpPickA: "Pick candidate A", cmpPickB: "Pick candidate B", cmpPickDone: "Click another candidate to change candidate B",
+    cmpProximity: "Closeness on AI", cmpByTheme: "By topic", cmpQuotes: "What they say", cmpNoQuote: "no scored statement", cmpNoScore: "no statement", cmpBothEnc: "Both for restraining", cmpBothAcc: "Both for accelerating", cmpBothMid: "Both in the middle", cmpLeanEnc: "for restraining", cmpLeanAcc: "for accelerating", cmpLeanMid: "in the middle", cmpCount: "{n} stmt.",
+    cmpExplain: "\"Close\": their average scores differ by less than 0.75 point out of 5, whether both lean towards restraining or accelerating. It does not mean they propose the same measures.", cmpMore: "See their {n} statements",
+    cmpClose: "Close positions", cmpSome: "Fairly different", cmpFar: "Opposed", cmpOnlyOne: "Only {name} speaks", cmpNone: "Neither",
+    cmpHeadClose: "Rather close", cmpHeadMixed: "Close on some topics, opposed on others", cmpHeadFar: "Rather opposed", cmpHeadNone: "No topic in common",
+    cmpSummary: "On the {n} topics both {a} and {b} spoke about: close on {close}, fairly different on {some}, opposed on {far}.", cmpSummaryNone: "{a} and {b} never spoke about the same topic in our sources.",
+    cmpNote: "Each bar gives the candidate's average score on the topic, from 1 (restrain) to 5 (accelerate): the longer it is, the more they want to accelerate. At 5 each, the two bars meet in the middle. Scores given automatically by an AI, not reviewed. Next to each score, the number of statements it rests on; paler bar: fewer than 3 statements, a fragile score. A gap under 0.75 point: close; over 1.75: opposed.",
     lnTitle: "Topic by topic: restrain or accelerate AI?", lnLead: "Each line is a topic. The further right a photo, the more the candidate wants to develop AI on that topic; the further left, the more they want to restrain it. Pick one or more candidates to show only them.", lnFollow: "Follow a candidate", lnAll: "All", lnEmpty: "no scored statement on this topic", lnHelp: "Scores given automatically by an AI, not reviewed. Dashed: fewer than 3 statements.",
     heatCountsTitle: "How many statements", heatCountsLead: "The number of statements on AI recorded for each candidate, topic by topic: who talks about what, and how much. The last column counts those presenting AI as an opportunity (top left) or as a threat (bottom right). Click a number to read the statements.",
     framings: { opportunity: "Opportunity", threat: "Threat", both: "Opportunity and threat" }, filterFraming: "Framing", allFramings: "All",
@@ -778,8 +904,8 @@ const I18N = {
     legalDoc: [["Publisher", ["Institute for AI & Business, an institute of ESSEC Business School. Address, publication director and contact to be completed before launch."]], ["Hosting", ["Static site generated from a data file and deployed as files. Host to be completed."]], ["Personal data", ["The site collects no personal data: no accounts, no cookies, no trackers, no audience measurement."]], ["Reuse", ["Quotes belong to their authors and are reproduced under the right of quotation. The register's summaries, context notes and structured data may be reused with attribution."]], ["Photo credits", ["Portraits from Wikimedia Commons, under free licences or reusable with attribution; cropped to one format and turned to black and white, which modifies the original.", "Gabriel Attal: Ismail Aissoub, 2025 — CC BY 4.0.", "Olivier Faure: Maxime Clam, 2025 — public domain.", "Raphaël Glucksmann: © European Union 2024, source: European Parliament — reuse permitted with attribution.", "François Hollande: Web Summit, 2017 — CC BY 2.0.", "Marine Le Pen: Vox España, 2025 — CC0.", "David Lisnard: Grégor Sauvagère, 2026 — CC BY-SA 4.0.", "Jean-Luc Mélenchon: jlm2017.fr, 2026 — CC BY 4.0.", "Édouard Philippe: Jacques Paquier, 2019 — CC BY 2.0.", "Bruno Retailleau: © European Union, 2024 — reuse permitted with attribution.", "Fabien Roussel: Zouhaïr Nakara, 2021 — CC BY-SA 4.0.", "François Ruffin: Thinkerview, 2022 — CC BY-SA 4.0.", "Marine Tondelier: Greenbox, 2021 — CC BY-SA 4.0.", "Éric Zemmour: Anh De France, 2022 — CC0."]]]
   }
 };
-const SLUGS = { fr: { home: "", fil: "fil", grille: "grille", sources: "sources", cand: "candidat", methodo: "methodologie", corrections: "corrections", legal: "mentions-legales" }, en: { home: "", fil: "feed", grille: "grid", sources: "sources", cand: "candidate", methodo: "methodology", corrections: "corrections", legal: "legal" } };
-const PAGE_OF = { fil: "fil", feed: "fil", grille: "grille", grid: "grille", sources: "sources", candidat: "cand", candidate: "cand", methodologie: "methodo", methodology: "methodo", corrections: "corrections", "mentions-legales": "legal", legal: "legal" };
+const SLUGS = { fr: { home: "", fil: "fil", grille: "grille", sources: "sources", compare: "comparer", cand: "candidat", methodo: "methodologie", corrections: "corrections", legal: "mentions-legales" }, en: { home: "", fil: "feed", grille: "grid", sources: "sources", compare: "compare", cand: "candidate", methodo: "methodology", corrections: "corrections", legal: "legal" } };
+const PAGE_OF = { fil: "fil", feed: "fil", grille: "grille", grid: "grille", sources: "sources", comparer: "compare", compare: "compare", candidat: "cand", candidate: "cand", methodologie: "methodo", methodology: "methodo", corrections: "corrections", "mentions-legales": "legal", legal: "legal" };
 const ICON = {
   kind: { speech: "mic", programme: "description", interview: "forum", "press-release": "campaign", video: "videocam", post: "alternate_email", vote: "how_to_vote", seance: "account_balance", article: "article", page: "web", pdf: "picture_as_pdf" },
   axis: { regulation: "balance", souverainete: "dns", energie: "bolt", emploi: "work", formation: "school", services: "account_balance", surveillance: "visibility", defense: "shield", "securite-modeles": "shield_lock", financement: "payments" },
@@ -1129,6 +1255,125 @@ class Component extends DCLogic {
       const on = x.id ? fThemes.includes(x.id) : !fThemes.length, k = scChipCount(x.id), placeable = new Set(scored.filter(y => !x.id || y.axis === x.id).map(y => y.cand)).size;
       return { ...x, count: String(k), href: H("grille", null, { theme: x.id ? toggled(fThemes, x.id) : "", focus: focusQ }), current: on ? "true" : undefined, border: on ? "#0B0C0F" : "#D8D5CE", bg: on ? "#0B0C0F" : "transparent", color: on ? "#F3F1EC" : "#0B0C0F", iconColor: on ? "#F3F1EC" : x.ink, opacity: placeable < 2 ? ".45" : "1", title: k + " " + (k === 1 ? t.scCount1 : t.scCountN) };
     });
+    // Compare: two candidates (?a=, ?b=), their orientation averages topic by topic.
+    const cmpOk = id => cands.some(c => c.id === id);
+    const cA = cmpOk(q.a) ? q.a : "", cB = cmpOk(q.b) && q.b !== cA ? q.b : "";
+    const cmpGo = (a, b) => { location.hash = H("compare", null, { a, b }); };
+    const cmpPlace = (id, slot) => { let a = cA, b = cB; if (slot === "a") { a = id; if (b === id) b = ""; } else { b = id; if (a === id) a = ""; } cmpGo(a, b); };
+    const cmpSlots = [["a", cA, t.cmpA, t.cmpHintA, "0"], ["b", cB, t.cmpB, t.cmpHintB, "2"]].map(([slot, id, title, hint, order]) => {
+      const c = candById[id];
+      return {
+        slot, order, title, hint, isEmpty: !c, isFull: !!c, ...(c ? face(c) : { photoCss: "none", noPhoto: false, initials: "" }), name: c ? fullName(c) : "", party: c ? partyLine(c) : "",
+        clearHref: H("compare", null, { a: slot === "a" ? "" : cA, b: slot === "b" ? "" : cB }),
+        borderStyle: c ? "solid" : "dashed", borderColor: c ? (slot === "a" ? "#1B33B4" : "#B4401B") : "#B8B6AF", bg: c ? "#FAF9F6" : "transparent"
+      };
+    });
+    // Drag and drop by pointer: the card lifts, tilts with the motion and flies into the box.
+    const cmpGrab = (c, e) => {
+      if (e.button !== 0 || e.pointerType === "touch") return;
+      const card = e.currentTarget, r = card.getBoundingClientRect(), sx = e.clientX, sy = e.clientY, still = this.noMotion();
+      const slotsEl = () => Array.from(document.querySelectorAll("[data-cmp-slot]"));
+      let ghost = null, over = null;
+      const hitAt = (x, y) => slotsEl().find(el => { const b = el.getBoundingClientRect(); return x >= b.left - 12 && x <= b.right + 12 && y >= b.top - 12 && y <= b.bottom + 12; }) || null;
+      const move = ev => {
+        const dx = ev.clientX - sx, dy = ev.clientY - sy;
+        if (!ghost) {
+          if (Math.hypot(dx, dy) < 6) return;
+          ghost = card.cloneNode(true);
+          Object.assign(ghost.style, { position: "fixed", left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px", margin: "0", zIndex: "1000", pointerEvents: "none", background: "#F3F1EC", boxShadow: "0 14px 30px rgba(11,12,15,.18),0 4px 10px rgba(11,12,15,.1)", transition: "none", willChange: "transform" });
+          ghost.classList.remove("cmp-card");
+          document.body.appendChild(ghost);
+          card.classList.add("cmp-card--placeholder");
+          document.body.classList.add("cmp-dragging");
+          slotsEl().forEach(el => el.classList.add("cmp-slot--ready"));
+          this._cmpDragged = true;
+        }
+        ev.preventDefault();
+        ghost.style.transform = "translate(" + dx + "px," + dy + "px) scale(1.03)";
+        const hit = hitAt(ev.clientX, ev.clientY);
+        if (hit !== over) { if (over) over.classList.remove("cmp-slot--over"); if (hit) hit.classList.add("cmp-slot--over"); over = hit; }
+      };
+      const end = () => {
+        window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", end); window.removeEventListener("pointercancel", end);
+        setTimeout(() => { this._cmpDragged = false; }, 0);
+        if (!ghost) return;
+        slotsEl().forEach(el => el.classList.remove("cmp-slot--ready", "cmp-slot--over"));
+        document.body.classList.remove("cmp-dragging");
+        const finish = () => { ghost.remove(); card.classList.remove("cmp-card--placeholder"); };
+        if (over) {
+          const b = over.getBoundingClientRect(), slot = over.getAttribute("data-cmp-slot"), target = over;
+          const tx = b.left + 24 + 36 - (r.left + r.width / 2), ty = b.top + b.height / 2 - (r.top + r.height / 2);
+          ghost.style.transition = still ? "none" : "transform .3s cubic-bezier(.2,.7,.2,1),opacity .25s .05s";
+          ghost.style.transform = "translate(" + tx + "px," + ty + "px) scale(.85)";
+          ghost.style.opacity = "0";
+          setTimeout(() => {
+            finish(); cmpPlace(c.id, slot);
+            if (!still && target.animate) target.animate([{ transform: "scale(1.02)" }, { transform: "scale(1)" }], { duration: 260, easing: "ease-out" });
+          }, still ? 0 : 280);
+        } else {
+          ghost.style.transition = still ? "none" : "transform .3s cubic-bezier(.2,.7,.2,1)";
+          ghost.style.transform = "translate(0,0) scale(1)";
+          setTimeout(finish, still ? 0 : 300);
+        }
+      };
+      window.addEventListener("pointermove", move, { passive: false }); window.addEventListener("pointerup", end); window.addEventListener("pointercancel", end);
+    };
+    const cmpCards = cands.map(c => {
+      const isA = c.id === cA, isB = c.id === cB;
+      return {
+        name: fullName(c), party: partyLine(c), ...face(c), hasBadge: isA || isB, badge: isA ? "A" : "B", pressed: isA || isB ? "true" : "false",
+        border: isA ? "#1B33B4" : isB ? "#B4401B" : "#D8D5CE", bg: isA || isB ? "#FAF9F6" : "transparent", filter: isA || isB ? "grayscale(0)" : "grayscale(1)", 
+        onGrab: e => cmpGrab(c, e),
+        onPick: () => { if (this._cmpDragged) return; if (isA) cmpGo("", cB); else if (isB) cmpGo(cA, ""); else if (!cA) cmpGo(c.id, cB); else cmpGo(cA, c.id); }
+      };
+    });
+    const cmpReady = !!(cA && cB);
+    const cmpAvg = (id, axis) => { const v = oriented.filter(x => x.cand === id && x.axis === axis).map(x => x.scores.orientation.value); return v.length ? { m: v.reduce((u, w) => u + w, 0) / v.length, n: v.length } : null; };
+    const cmpCounts = { close: 0, some: 0, far: 0 };
+    const cmpRowsRaw = !cmpReady ? [] : D.axes.map(a => {
+      const pa = cmpAvg(cA, a.id), pb = cmpAvg(cB, a.id), gap = pa && pb ? Math.abs(pa.m - pb.m) : null;
+      const kind = gap === null ? null : gap < .75 ? "close" : gap <= 1.75 ? "some" : "far";
+      if (kind) cmpCounts[kind]++;
+      const pos = m => ((m - 1) / 4 * 100).toFixed(2) + "%";
+      const only = pa && !pb ? candById[cA] : pb && !pa ? candById[cB] : null;
+      // Where each one leans: under 2.5 restrain, over 3.5 accelerate, in between the middle.
+      const lean = m => m < 2.5 ? "enc" : m > 3.5 ? "acc" : "mid";
+      const leanWord = { enc: t.cmpLeanEnc, acc: t.cmpLeanAcc, mid: t.cmpLeanMid };
+      const verdict = pa && pb
+        ? (lean(pa.m) === lean(pb.m) ? { enc: t.cmpBothEnc, acc: t.cmpBothAcc, mid: t.cmpBothMid }[lean(pa.m)] : candById[cA].last + " " + leanWord[lean(pa.m)] + ", " + candById[cB].last + " " + leanWord[lean(pb.m)])
+        : only ? t.cmpOnlyOne.replace("{name}", only.last) : t.cmpNone;
+      const lo = pa && pb ? Math.min(pa.m, pb.m) : 0, hi = pa && pb ? Math.max(pa.m, pb.m) : 0;
+      return {
+        sortKey: kind ? 0 : only ? 1 : 2, label: axLabel(a), icon: ICON.axis[a.id], ink: axInk(a.id), tint: tint(a.id),
+        hasA: !!pa, hasB: !!pb, noA: !pa, noB: !pb, wA: pa ? (pa.m / 5 * 50).toFixed(2) + "%" : "0", wB: pb ? (pb.m / 5 * 50).toFixed(2) + "%" : "0",
+        scoreA: pa ? fmtAvg(pa.m) : "", scoreB: pb ? fmtAvg(pb.m) : "", fillA: pa && pa.n < minN ? ".07" : ".16", fillB: pb && pb.n < minN ? ".07" : ".16",
+        countA: pa ? t.cmpCount.replace("{n}", pa.n) : "", countB: pb ? t.cmpCount.replace("{n}", pb.n) : "",
+        photoA: face(candById[cA]).photoCss, photoB: face(candById[cB]).photoCss, ringA: pa && pa.n < minN ? "dashed" : "solid", ringB: pb && pb.n < minN ? "dashed" : "solid",
+        titleA: pa ? fullName(candById[cA]) + " : " + wordOf(t.scX, pa.m) + " (" + fmtAvg(pa.m) + " / 5, " + pa.n + " " + (pa.n === 1 ? t.scCount1 : t.scCountN) + ")" : "",
+        titleB: pb ? fullName(candById[cB]) + " : " + wordOf(t.scX, pb.m) + " (" + fmtAvg(pb.m) + " / 5, " + pb.n + " " + (pb.n === 1 ? t.scCount1 : t.scCountN) + ")" : "",
+        spanLeft: ((lo - 1) / 4 * 100).toFixed(2) + "%", spanWidth: ((hi - lo) / 4 * 100).toFixed(2) + "%",
+        spanColor: kind === "close" ? "oklch(.62 .12 150)" : kind === "some" ? "oklch(.72 .13 75)" : "oklch(.6 .16 30)",
+        verdict, verdictColor: kind ? "#0B0C0F" : "#8A8F99", verdictWeight: kind ? "500" : "400", rowOpacity: kind || only ? "1" : ".55"
+      };
+    });
+    const cmpRows = cmpRowsRaw.slice().sort((u, w) => u.sortKey - w.sortKey).map((r, i) => ({ ...r, delay: (i * 40) + "ms" }));
+    const cmpShared = cmpCounts.close + cmpCounts.some + cmpCounts.far;
+    const nA = cmpReady ? candById[cA].last : "", nB = cmpReady ? candById[cB].last : "";
+    const cmpHeadline = !cmpShared ? t.cmpHeadNone : cmpCounts.close >= cmpShared * .6 ? t.cmpHeadClose : cmpCounts.far >= cmpShared * .6 ? t.cmpHeadFar : t.cmpHeadMixed;
+    const cmpSummary = !cmpShared ? t.cmpSummaryNone.replace("{a}", nA).replace("{b}", nB) : t.cmpSummary.replace("{n}", cmpShared).replace("{a}", nA).replace("{b}", nB).replace("{close}", cmpCounts.close).replace("{some}", cmpCounts.some).replace("{far}", cmpCounts.far);
+    const cmpQuotesOf = (id, axis) => oriented.filter(x => x.cand === id && x.axis === axis).sort((u, w) => Math.abs(w.scores.orientation.value - 3) - Math.abs(u.scores.orientation.value - 3) || (w.date || "").localeCompare(u.date || ""));
+    const cmpQuoteRows = !cmpReady ? [] : D.axes.filter(a => cmpQuotesOf(cA, a.id).length || cmpQuotesOf(cB, a.id).length).map(a => ({
+      label: axLabel(a), icon: ICON.axis[a.id], ink: axInk(a.id),
+      cols: [[cA, "#1B33B4"], [cB, "#B4401B"]].map(([id, color]) => {
+        const all = cmpQuotesOf(id, a.id);
+        return {
+          name: fullName(candById[id]), color, isEmpty: !all.length, hasMore: all.length > 2,
+          moreHref: H("fil", null, { candidat: id, axe: a.id }), moreLabel: t.cmpMore.replace("{n}", all.length),
+          quotes: all.slice(0, 2).map(x => ({ quote: x.quote, score: x.scores.orientation.value + "/5 · " + wordOf(t.scX, x.scores.orientation.value), reason: x.scores.orientation[lang] || x.scores.orientation.fr }))
+        };
+      })
+    }));
+    const cmpPrompt = !cA ? t.cmpPickA : !cB ? t.cmpPickB : t.cmpPickDone;
     const gridRows = cands.map(c => ({
       ...(() => {
         const mine = D.claims.filter(x => x.cand === c.id);
@@ -1174,11 +1419,11 @@ class Component extends DCLogic {
 
     return {
       hasPending: (D.pending || 0) > 0, pendingNote: (D.pending || 0) + " " + t.pendingNote,
-      lang, t, isHome: page === "home", isFil: page === "fil", isGrille: page === "grille", isSources: page === "sources", isCand: page === "cand", isDoc, isCorrections: page === "corrections",
-      hrefHome: H("home"), hrefFil: H("fil"), hrefGrille: H("grille"), hrefSources: H("sources"), hrefMethodo: H("methodo"), hrefCorrections: H("corrections"), hrefLegal: H("legal"),
+      lang, t, isHome: page === "home", isFil: page === "fil", isGrille: page === "grille", isSources: page === "sources", isCompare: page === "compare", isCand: page === "cand", isDoc, isCorrections: page === "corrections",
+      hrefHome: H("home"), hrefFil: H("fil"), hrefGrille: H("grille"), hrefSources: H("sources"), hrefCompare: H("compare"), hrefMethodo: H("methodo"), hrefCorrections: H("corrections"), hrefLegal: H("legal"),
       hrefFr: lang === "fr" ? location.hash || H("home") : otherHref, hrefEn: lang === "en" ? location.hash || H("home") : otherHref,
-      curFil: cur("fil"), curGrille: cur("grille"), curSources: cur("sources"), curMethodo: cur("methodo"), curCorrections: cur("corrections"), curLegal: cur("legal"),
-      bgFil: bgNav("fil"), bgGrille: bgNav("grille"), bgSources: bgNav("sources"), bgMethodo: bgNav("methodo"), bgDocMethodo: bgDoc("methodo"), bgDocCorrections: bgDoc("corrections"), bgDocLegal: bgDoc("legal"),
+      curFil: cur("fil"), curGrille: cur("grille"), curSources: cur("sources"), curCompare: cur("compare"), curMethodo: cur("methodo"), curCorrections: cur("corrections"), curLegal: cur("legal"),
+      bgFil: bgNav("fil"), bgGrille: bgNav("grille"), bgSources: bgNav("sources"), bgCompare: bgNav("compare"), bgMethodo: bgNav("methodo"), bgDocMethodo: bgDoc("methodo"), bgDocCorrections: bgDoc("corrections"), bgDocLegal: bgDoc("legal"),
       curFr: lang === "fr" ? "true" : undefined, curEn: lang === "en" ? "true" : undefined,
       frColor: lang === "fr" ? "#0B0C0F" : "#F3F1EC", frBg: lang === "fr" ? "#F3F1EC" : "transparent", enColor: lang === "en" ? "#0B0C0F" : "#F3F1EC", enBg: lang === "en" ? "#F3F1EC" : "transparent",
       nClaims: D.claims.length, nCands: D.candidates.length, nTracked, lastUpdate: this.fmtDate(lastIso, lang) || "", generatedLabel: this.fmtDate(D.generated, lang) || "", generatedIso: D.generated,
@@ -1249,6 +1494,8 @@ class Component extends DCLogic {
         else if (this._dd) document.removeEventListener("click", this._dd);
       },
       cardPad: dense ? "18px" : "26px", quoteSize: dense ? "19px" : "clamp(19px,1.7vw,25px)",
+      cmpNameA: cmpReady ? fullName(candById[cA]) : "", cmpNameB: cmpReady ? fullName(candById[cB]) : "",
+      cmpSlots, cmpCards, cmpReady, cmpRows, cmpHeadline, cmpSummary, cmpQuoteRows, cmpPrompt, cmpNote: t.cmpNote,
       scThemeChips, scDots, scPlotBg: !fThemes.length ? "#FAF9F6" : fThemes.length === 1 ? tint(fThemes[0]) : "linear-gradient(135deg," + fThemes.map(tint).join(",") + ")", scTooFew: scPlaced.length < 2, scHasAbsent: scAbsent.length > 0, scAbsentLine: t.scAbsent + " " + scAbsent.join(", ") + ".",
       scXLow: (scales.find(x => x.id === "orientation") || {})[lang === "fr" ? "lowFr" : "lowEn"] || "", scXHigh: (scales.find(x => x.id === "orientation") || {})[lang === "fr" ? "highFr" : "highEn"] || "",
       hasScales: scales.length > 0, lnChips, lnRows,
