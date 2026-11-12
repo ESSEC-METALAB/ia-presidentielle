@@ -42,7 +42,6 @@ button{font:inherit}
 .sc-dot:hover,.sc-dot:focus-within{z-index:50!important}
 .sc-dot:hover .sc-card,.sc-dot:focus-within .sc-card{display:block}
 .sc-plot:has(.sc-dot:hover,.sc-dot:focus-within) .sc-dot:not(:hover):not(:focus-within){opacity:.18}
-.sc-dot:hover>span:first-child,.sc-dot:focus-within>span:first-child{filter:grayscale(0)!important}
 @keyframes cmp-pop{0%{opacity:0;transform:scale(.85) translateY(6px)}100%{opacity:1;transform:none}}
 @keyframes cmp-in{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:none}}
 .cmp-pop{animation:cmp-pop .45s cubic-bezier(.2,.7,.2,1) both}
@@ -120,7 +119,7 @@ body.cmp-dragging,body.cmp-dragging *{cursor:grabbing!important;user-select:none
               <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
                 <div style="display:flex;padding-left:10px">
                   <sc-for list="{{ candTiles }}" as="c" hint-placeholder-count="7">
-                    <a href="{{ c.href }}" title="{{ c.name }}" aria-label="{{ c.name }}" style="position:relative;display:grid;place-items:center;width:46px;height:46px;border-radius:50%;margin-left:-10px;border:2px solid #000;background:#1A1B1F {{ c.photoCss }} center/cover;filter:grayscale(1);color:#F3F1EC;overflow:hidden;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.04em;transition:transform .2s" style-hover="transform:translateY(-4px) scale(1.1);z-index:2" style-focus="outline:2px solid #F3F1EC;outline-offset:2px">
+                    <a href="{{ c.href }}" title="{{ c.name }}" aria-label="{{ c.name }}" style="position:relative;display:grid;place-items:center;width:46px;height:46px;border-radius:50%;margin-left:-10px;border:2px solid #000;background:#1A1B1F {{ c.photoCss }} center/cover;color:#F3F1EC;overflow:hidden;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.04em;transition:transform .2s" style-hover="transform:translateY(-4px) scale(1.1);z-index:2" style-focus="outline:2px solid #F3F1EC;outline-offset:2px">
                       <sc-if value="{{ c.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ c.initials }}</span></sc-if>
                     </a>
                   </sc-for>
@@ -136,7 +135,7 @@ body.cmp-dragging,body.cmp-dragging *{cursor:grabbing!important;user-select:none
               </div>
               <blockquote data-live lang="fr" style="margin:0;font-family:Spectral,Georgia,serif;font-size:clamp(18px,1.45vw,22px);line-height:1.35;letter-spacing:-.01em;text-indent:{{ live.indent }};min-height:4.1em">{{ live.previewText }}</blockquote>
               <div data-live style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-                <span aria-hidden="true" style="display:grid;place-items:center;width:38px;height:38px;border-radius:3px;overflow:hidden;background:#1A1B1F {{ live.photoCss }} center/cover;filter:grayscale(1);border:1px solid rgba(243,241,236,.2);font-family:'JetBrains Mono',monospace;font-size:11px">
+                <span aria-hidden="true" style="display:grid;place-items:center;width:38px;height:38px;border-radius:3px;overflow:hidden;background:#1A1B1F {{ live.photoCss }} center/cover;border:1px solid rgba(243,241,236,.2);font-family:'JetBrains Mono',monospace;font-size:11px">
                   <sc-if value="{{ live.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ live.initials }}</span></sc-if>
                 </span>
                 <span style="display:flex;flex-direction:column;line-height:1.25"><strong style="font-weight:500;font-size:15px">{{ live.candName }}</strong><span style="font-size:13px;color:#C9C7C0">{{ live.party }} · {{ live.dateLabel }}</span></span>
@@ -166,7 +165,7 @@ body.cmp-dragging,body.cmp-dragging *{cursor:grabbing!important;user-select:none
             <span aria-hidden="true" style="display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid rgba(243,241,236,.14);border-radius:10px;background:rgba(243,241,236,.04);min-width:0;mask-image:linear-gradient(180deg,#000 55%,transparent 100%)">
               <sc-for list="{{ previewClaims }}" as="p" hint-placeholder-count="3">
                 <span style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;padding:10px 12px;border-radius:7px;background:rgba(243,241,236,.06)">
-                  <span style="display:grid;place-items:center;width:28px;height:28px;border-radius:3px;overflow:hidden;background:#1A1B1F {{ p.photoCss }} center/cover;filter:grayscale(1);border:1px solid rgba(243,241,236,.18);font-family:'JetBrains Mono',monospace;font-size:9px">
+                  <span style="display:grid;place-items:center;width:28px;height:28px;border-radius:3px;overflow:hidden;background:#1A1B1F {{ p.photoCss }} center/cover;border:1px solid rgba(243,241,236,.18);font-family:'JetBrains Mono',monospace;font-size:9px">
                     <sc-if value="{{ p.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ p.initials }}</span></sc-if>
                   </span>
                   <span style="min-width:0;display:flex;flex-direction:column;gap:3px">
@@ -211,7 +210,7 @@ body.cmp-dragging,body.cmp-dragging *{cursor:grabbing!important;user-select:none
               <a href="{{ c.href }}" style="display:flex;flex-direction:column;height:100%;box-sizing:border-box;background:#FAF9F6;border:1px solid #E3E0D8;text-decoration:none;color:#0B0C0F;transition:transform .3s cubic-bezier(.2,.8,.2,1),border-color .3s" style-hover="transform:translateY(-7px);border-color:#0B0C0F" style-focus="outline:2px solid #1B33B4;outline-offset:3px">
                 <span style="position:relative;display:block;aspect-ratio:1;overflow:hidden;background:#0B0C0F">
                   <span aria-hidden="true" style="position:absolute;inset:0;display:grid;place-items:center;font-size:clamp(56px,6vw,86px);font-weight:600;letter-spacing:-.06em;color:rgba(243,241,236,.08)">{{ c.initials }}</span>
-                  <image-slot id="{{ c.slotId }}" shape="rect" fit="cover" placeholder="{{ t.dropPortrait }}" style="position:absolute;inset:0;width:100%;height:100%;filter:grayscale(1) contrast(1.05);transition:filter .5s,transform .7s" style-hover="filter:grayscale(0) contrast(1);transform:scale(1.04)"></image-slot>
+                  <image-slot id="{{ c.slotId }}" shape="rect" fit="cover" placeholder="{{ t.dropPortrait }}" style="position:absolute;inset:0;width:100%;height:100%;transition:transform .7s" style-hover="transform:scale(1.04)"></image-slot>
                   <span aria-hidden="true" style="position:absolute;left:0;top:0;padding:7px 9px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;color:#F3F1EC;background:rgba(11,12,15,.55)">{{ c.idx }}</span>
                 </span>
                 <span aria-hidden="true" style="display:grid;grid-template-columns:repeat(6,1fr);height:7px">
@@ -260,7 +259,7 @@ body.cmp-dragging,body.cmp-dragging *{cursor:grabbing!important;user-select:none
                 <span role="listbox" aria-label="{{ t.filterCand }}" style="position:absolute;top:calc(100% + 6px);right:0;z-index:40;min-width:262px;max-height:320px;overflow-y:auto;display:flex;flex-direction:column;background:#F3F1EC;border:1px solid #0B0C0F;box-shadow:0 20px 44px rgba(11,12,15,.2)">
                   <sc-for list="{{ candItems }}" as="ci" hint-placeholder-count="8">
                     <a href="{{ ci.href }}" role="option" aria-selected="{{ ci.selected }}" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #E3E0D8;background:{{ ci.bg }};color:#0B0C0F;text-decoration:none;font-size:13px;transition:background .15s" style-hover="background:#E9E6DE" style-focus="outline:2px solid #1B33B4;outline-offset:-2px">
-                      <span aria-hidden="true" style="display:grid;place-items:center;flex:none;width:26px;height:26px;border-radius:3px;overflow:hidden;background:#0B0C0F {{ ci.photoCss }} center/cover;filter:grayscale(1);color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:9px">
+                      <span aria-hidden="true" style="display:grid;place-items:center;flex:none;width:26px;height:26px;border-radius:3px;overflow:hidden;background:#0B0C0F {{ ci.photoCss }} center/cover;color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:9px">
                         <sc-if value="{{ ci.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ ci.initials }}</span></sc-if>
                       </span>
                       <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ ci.label }}</span>
@@ -311,7 +310,7 @@ body.cmp-dragging,body.cmp-dragging *{cursor:grabbing!important;user-select:none
                 <article aria-labelledby="{{ it.hId }}" style="display:grid;grid-template-columns:clamp(52px,5vw,68px) minmax(0,1fr);gap:0 clamp(16px,1.8vw,26px);padding:{{ cardPad }} clamp(16px,2vw,28px);background:{{ it.wash }}">
                   <div style="display:flex;flex-direction:column;align-items:stretch;gap:8px">
                     <span aria-hidden="true" style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;color:#8A8F99">{{ it.idx }}</span>
-                    <a href="{{ it.candHref }}" tabindex="-1" aria-hidden="true" style="display:grid;place-items:center;width:100%;aspect-ratio:1;overflow:hidden;background:#0B0C0F {{ it.photoCss }} center/cover;filter:grayscale(1) contrast(1.05);color:#F3F1EC;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.04em;transition:filter .5s" style-hover="filter:grayscale(0) contrast(1)">
+                    <a href="{{ it.candHref }}" tabindex="-1" aria-hidden="true" style="display:grid;place-items:center;width:100%;aspect-ratio:1;overflow:hidden;background:#0B0C0F {{ it.photoCss }} center/cover;color:#F3F1EC;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.04em">
                       <sc-if value="{{ it.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ it.initials }}</span></sc-if>
                     </a>
                   </div>
@@ -391,7 +390,7 @@ body.cmp-dragging,body.cmp-dragging *{cursor:grabbing!important;user-select:none
                 <tr style="height:92px">
                   <th scope="row" style="text-align:left;padding:10px 12px 10px 0;border-bottom:1px solid #D8D5CE;font-weight:400;vertical-align:middle">
                     <a href="{{ r.href }}" style="display:flex;align-items:center;gap:14px;color:#0B0C0F;text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid #1B33B4;outline-offset:2px">
-                      <span aria-hidden="true" style="display:grid;place-items:center;flex:none;width:38px;height:38px;border-radius:3px;overflow:hidden;background:#0B0C0F {{ r.photoCss }} center/cover;filter:grayscale(1);color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.04em">
+                      <span aria-hidden="true" style="display:grid;place-items:center;flex:none;width:38px;height:38px;border-radius:3px;overflow:hidden;background:#0B0C0F {{ r.photoCss }} center/cover;color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.04em">
                         <sc-if value="{{ r.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ r.initials }}</span></sc-if>
                       </span>
                       <span style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-size:17px;line-height:1.1;font-weight:500;letter-spacing:-.02em">{{ r.name }}</span><span style="font-size:12px;color:#5F646E">{{ r.party }}</span>
@@ -465,7 +464,7 @@ body.cmp-dragging,body.cmp-dragging *{cursor:grabbing!important;user-select:none
                 <div style="position:absolute;inset:36px 44px">
                   <sc-for list="{{ scDots }}" as="d" hint-placeholder-count="10">
                     <div class="sc-dot" tabindex="{{ d.tab }}" aria-label="{{ d.aria }}" style="position:absolute;left:{{ d.left }};top:{{ d.top }};width:{{ d.size }};height:{{ d.size }};transform:translate(-50%,-50%) scale({{ d.scale }});pointer-events:{{ d.events }};z-index:{{ d.z }}">
-                      <span aria-hidden="true" style="display:grid;place-items:center;width:100%;height:100%;box-sizing:border-box;border-radius:50%;overflow:hidden;border:2px {{ d.ringStyle }} #0B0C0F;background:#0B0C0F {{ d.photoCss }} center/cover;filter:grayscale(1);opacity:{{ d.opacity }};color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:11px"><sc-if value="{{ d.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ d.initials }}</span></sc-if></span>
+                      <span aria-hidden="true" style="display:grid;place-items:center;width:100%;height:100%;box-sizing:border-box;border-radius:50%;overflow:hidden;border:2px {{ d.ringStyle }} #0B0C0F;background:#0B0C0F {{ d.photoCss }} center/cover;opacity:{{ d.opacity }};color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:11px"><sc-if value="{{ d.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ d.initials }}</span></sc-if></span>
                       <span aria-hidden="true" style="position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:3px;opacity:{{ d.opacity }};white-space:nowrap;font-size:11px;font-weight:500;color:#0B0C0F;background:rgba(250,249,246,.85);padding:0 3px">{{ d.last }}</span>
                       <div class="sc-card" role="tooltip" style="position:absolute;{{ d.cardX }};{{ d.cardY }};width:280px;padding:14px 16px;background:#0B0C0F;color:#F3F1EC;font-size:13px;line-height:1.45;box-shadow:0 8px 28px rgba(0,0,0,.25)">
                         <strong style="display:block;font-size:16px;font-weight:500">{{ d.name }}</strong>
@@ -493,7 +492,7 @@ body.cmp-dragging,body.cmp-dragging *{cursor:grabbing!important;user-select:none
             <p style="margin:0 0 18px;max-width:72ch;font-size:16px;line-height:1.5;color:#3A3E46">{{ t.lnLead }}</p>
             <nav aria-label="{{ t.lnFollow }}" style="display:flex;flex-wrap:wrap;gap:7px;margin:0 0 22px">
               <sc-for list="{{ lnChips }}" as="lc" hint-placeholder-count="12">
-                <a href="{{ lc.href }}" aria-current="{{ lc.current }}" style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;padding:4px 11px 4px {{ lc.padLeft }};border-radius:3px;border:1px solid {{ lc.border }};background:{{ lc.bg }};color:{{ lc.color }};text-decoration:none" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><sc-if value="{{ lc.hasFace }}" hint-placeholder-val="{{ true }}"><span aria-hidden="true" style="display:grid;place-items:center;width:22px;height:22px;border-radius:50%;overflow:hidden;background:#0B0C0F {{ lc.photoCss }} center/cover;filter:grayscale(1);color:#F3F1EC;font-size:9px"><sc-if value="{{ lc.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ lc.initials }}</span></sc-if></span></sc-if>{{ lc.label }}</a>
+                <a href="{{ lc.href }}" aria-current="{{ lc.current }}" style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;padding:4px 11px 4px {{ lc.padLeft }};border-radius:3px;border:1px solid {{ lc.border }};background:{{ lc.bg }};color:{{ lc.color }};text-decoration:none" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><sc-if value="{{ lc.hasFace }}" hint-placeholder-val="{{ true }}"><span aria-hidden="true" style="display:grid;place-items:center;width:22px;height:22px;border-radius:50%;overflow:hidden;background:#0B0C0F {{ lc.photoCss }} center/cover;color:#F3F1EC;font-size:9px"><sc-if value="{{ lc.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ lc.initials }}</span></sc-if></span></sc-if>{{ lc.label }}</a>
               </sc-for>
             </nav>
             <div style="display:grid;grid-template-columns:minmax(150px,210px) minmax(0,1fr);border-top:2px solid #0B0C0F">
@@ -505,7 +504,7 @@ body.cmp-dragging,body.cmp-dragging *{cursor:grabbing!important;user-select:none
                   <sc-if value="{{ lr.isEmpty }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;left:22px;top:50%;transform:translateY(-50%);font-size:13px;font-style:italic;font-family:Spectral,Georgia,serif;color:#8A8F99">{{ t.lnEmpty }}</span></sc-if>
                   <div style="position:absolute;inset:0 22px">
                     <sc-for list="{{ lr.dots }}" as="ld" hint-placeholder-count="6">
-                      <a class="ln-dot" href="{{ ld.href }}" tabindex="{{ ld.tab }}" title="{{ ld.title }}" aria-label="{{ ld.title }}" style="position:absolute;left:{{ ld.left }};top:{{ ld.top }};z-index:{{ ld.z }};width:{{ ld.size }};height:{{ ld.size }};transform:translate(-50%,-50%) scale({{ ld.scale }});pointer-events:{{ ld.events }};border-radius:50%;overflow:hidden;box-sizing:border-box;border:2px {{ ld.ring }} {{ ld.ringColor }};background:#0B0C0F {{ ld.photoCss }} center/cover;filter:{{ ld.filter }};opacity:{{ ld.opacity }};display:grid;place-items:center;color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:10px;text-decoration:none" style-hover="filter:grayscale(0);z-index:40" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><sc-if value="{{ ld.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ ld.initials }}</span></sc-if></a>
+                      <a class="ln-dot" href="{{ ld.href }}" tabindex="{{ ld.tab }}" title="{{ ld.title }}" aria-label="{{ ld.title }}" style="position:absolute;left:{{ ld.left }};top:{{ ld.top }};z-index:{{ ld.z }};width:{{ ld.size }};height:{{ ld.size }};transform:translate(-50%,-50%) scale({{ ld.scale }});pointer-events:{{ ld.events }};border-radius:50%;overflow:hidden;box-sizing:border-box;border:2px {{ ld.ring }} {{ ld.ringColor }};background:#0B0C0F {{ ld.photoCss }} center/cover;opacity:{{ ld.opacity }};display:grid;place-items:center;color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:10px;text-decoration:none" style-hover="z-index:40" style-focus="outline:2px solid #1B33B4;outline-offset:2px"><sc-if value="{{ ld.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ ld.initials }}</span></sc-if></a>
                       <sc-if value="{{ ld.isFocus }}" hint-placeholder-val="{{ false }}"><span class="ln-word" aria-hidden="true" style="position:absolute;left:{{ ld.left }};top:calc({{ ld.top }} + 22px);transform:translateX(-50%);opacity:{{ ld.wordOpacity }};white-space:nowrap;font-size:11px;font-weight:500;color:#0B0C0F">{{ ld.word }}</span></sc-if>
                     </sc-for>
                   </div>
@@ -526,7 +525,7 @@ body.cmp-dragging,body.cmp-dragging *{cursor:grabbing!important;user-select:none
           <sc-for list="{{ sourceRows }}" as="r" hint-placeholder-count="13">
             <section role="listitem" data-reveal style="display:grid;grid-template-columns:minmax(220px,300px) minmax(0,1fr);gap:16px 48px;padding:28px 0;border-bottom:1px solid #D8D5CE">
               <a href="{{ r.href }}" style="display:flex;align-items:flex-start;gap:14px;color:#0B0C0F;text-decoration:none;align-self:start" style-hover="text-decoration:underline" style-focus="outline:2px solid #1B33B4;outline-offset:2px">
-                <span aria-hidden="true" style="display:grid;place-items:center;flex:none;width:48px;height:60px;border-radius:3px;overflow:hidden;background:#0B0C0F {{ r.photoCss }} center/cover;filter:grayscale(1);color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.04em">
+                <span aria-hidden="true" style="display:grid;place-items:center;flex:none;width:48px;height:60px;border-radius:3px;overflow:hidden;background:#0B0C0F {{ r.photoCss }} center/cover;color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.04em">
                   <sc-if value="{{ r.noPhoto }}" hint-placeholder-val="{{ true }}"><span>{{ r.initials }}</span></sc-if>
                 </span>
                 <span style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font-size:20px;line-height:1.1;font-weight:500;letter-spacing:-.02em">{{ r.name }}</span><span style="font-size:13px;color:#5F646E">{{ r.party }}</span><span style="margin-top:4px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.04em;color:#3A3E46">{{ r.summary }}</span></span>
@@ -586,7 +585,7 @@ body.cmp-dragging,body.cmp-dragging *{cursor:grabbing!important;user-select:none
         <div data-reveal style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin:0 0 56px">
           <sc-for list="{{ cmpCards }}" as="cc" hint-placeholder-count="13">
             <button type="button" class="cmp-card" onPointerDown="{{ cc.onGrab }}" onClick="{{ cc.onPick }}" aria-pressed="{{ cc.pressed }}" style="display:flex;align-items:center;gap:12px;padding:10px 12px;text-align:left;border:1px solid {{ cc.border }};border-radius:8px;background:{{ cc.bg }};color:#0B0C0F" style-focus="outline:2px solid #1B33B4;outline-offset:2px">
-              <span aria-hidden="true" style="display:grid;place-items:center;flex:none;width:44px;height:44px;border-radius:50%;overflow:hidden;background:#0B0C0F {{ cc.photoCss }} center/cover;filter:{{ cc.filter }};color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:11px"><sc-if value="{{ cc.noPhoto }}" hint-placeholder-val="{{ false }}"><span>{{ cc.initials }}</span></sc-if></span>
+              <span aria-hidden="true" style="display:grid;place-items:center;flex:none;width:44px;height:44px;border-radius:50%;overflow:hidden;background:#0B0C0F {{ cc.photoCss }} center/cover;color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:11px"><sc-if value="{{ cc.noPhoto }}" hint-placeholder-val="{{ false }}"><span>{{ cc.initials }}</span></sc-if></span>
               <span style="display:flex;flex-direction:column;gap:2px;min-width:0"><strong style="font-size:15px;font-weight:500;line-height:1.15">{{ cc.name }}</strong><span style="font-size:12px;color:#5F646E;line-height:1.3">{{ cc.party }}</span></span>
               <sc-if value="{{ cc.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="margin-left:auto;flex:none;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#0B0C0F;color:#F3F1EC;font-family:'JetBrains Mono',monospace;font-size:11px">{{ cc.badge }}</span></sc-if>
             </button>
@@ -837,7 +836,7 @@ const I18N = {
     ],
     correctionsTitle: "Corrections", correctionsIntro: [["Registre des corrections", ["Chaque correction apportée à une déclaration publiée est consignée ici, de la plus récente à la plus ancienne, avec un lien vers la déclaration concernée."]]],
     legalTitle: "Mentions légales",
-    legalDoc: [["Éditeur", ["Institute for AI & Business, institut de l'ESSEC Business School. Adresse, directeur de la publication et contact à compléter avant mise en ligne."]], ["Hébergement", ["Site statique généré à partir d'un fichier de données et déployé sous forme de fichiers. Hébergeur à compléter."]], ["Données personnelles", ["Le site ne collecte aucune donnée personnelle : aucun compte, aucun cookie, aucun traceur, aucune mesure d'audience."]], ["Réutilisation", ["Les citations appartiennent à leurs auteurs et sont reproduites au titre du droit de citation. Les résumés, notes de contexte et données structurées du registre sont réutilisables avec mention de la source."]], ["Crédits photos", ["Portraits issus de Wikimedia Commons, sous licence libre ou réutilisables avec mention de la source ; recadrés au même format et passés en noir et blanc, ce qui modifie l'original.", "Gabriel Attal : Ismail Aissoub, 2025 — CC BY 4.0.", "Olivier Faure : Maxime Clam, 2025 — domaine public.", "Raphaël Glucksmann : © Union européenne 2024, source : Parlement européen — réutilisation autorisée avec mention.", "François Hollande : Web Summit, 2017 — CC BY 2.0.", "Marine Le Pen : Vox España, 2025 — CC0.", "David Lisnard : Grégor Sauvagère, 2026 — CC BY-SA 4.0.", "Jean-Luc Mélenchon : jlm2017.fr, 2026 — CC BY 4.0.", "Édouard Philippe : Jacques Paquier, 2019 — CC BY 2.0.", "Bruno Retailleau : © Union européenne, 2024 — réutilisation autorisée avec mention.", "Fabien Roussel : Zouhaïr Nakara, 2021 — CC BY-SA 4.0.", "François Ruffin : Thinkerview, 2022 — CC BY-SA 4.0.", "Marine Tondelier : Greenbox, 2021 — CC BY-SA 4.0.", "Éric Zemmour : Anh De France, 2022 — CC0."]]]
+    legalDoc: [["Éditeur", ["Institute for AI & Business, institut de l'ESSEC Business School. Adresse, directeur de la publication et contact à compléter avant mise en ligne."]], ["Hébergement", ["Site statique généré à partir d'un fichier de données et déployé sous forme de fichiers. Hébergeur à compléter."]], ["Données personnelles", ["Le site ne collecte aucune donnée personnelle : aucun compte, aucun cookie, aucun traceur, aucune mesure d'audience."]], ["Réutilisation", ["Les citations appartiennent à leurs auteurs et sont reproduites au titre du droit de citation. Les résumés, notes de contexte et données structurées du registre sont réutilisables avec mention de la source."]], ["Crédits photos", ["Portraits issus de Wikimedia Commons, sous licence libre ou réutilisables avec mention de la source ; recadrés au même format.", "Gabriel Attal : Ismail Aissoub, 2025 — CC BY 4.0.", "Olivier Faure : Maxime Clam, 2025 — domaine public.", "Raphaël Glucksmann : © Union européenne 2024, source : Parlement européen — réutilisation autorisée avec mention.", "François Hollande : Web Summit, 2017 — CC BY 2.0.", "Marine Le Pen : Vox España, 2025 — CC0.", "David Lisnard : Grégor Sauvagère, 2026 — CC BY-SA 4.0.", "Jean-Luc Mélenchon : jlm2017.fr, 2026 — CC BY 4.0.", "Édouard Philippe : Jacques Paquier, 2019 — CC BY 2.0.", "Bruno Retailleau : © Union européenne, 2024 — réutilisation autorisée avec mention.", "Fabien Roussel : Zouhaïr Nakara, 2021 — CC BY-SA 4.0.", "François Ruffin : Thinkerview, 2022 — CC BY-SA 4.0.", "Marine Tondelier : Greenbox, 2021 — CC BY-SA 4.0.", "Éric Zemmour : Anh De France, 2022 — CC0."]]]
   },
   en: {
     skip: "Skip to content", siteSub: "Register of AI positions", navLabel: "Main navigation", langLabel: "Language",
@@ -1202,7 +1201,7 @@ class Component extends DCLogic {
         return {
           ...face(c), left: left.toFixed(2) + "%", top: "calc(50% + " + shift + "px)", isFocus, word: lnFocus.length > 1 ? c.last : word,
           size: isFocus ? "40px" : "32px", z: String(10 + i), ring: thin ? "dashed" : "solid", ringColor: "#0B0C0F",
-          filter: isFocus ? "grayscale(0)" : "grayscale(1)", opacity: hidden ? "0" : thin ? ".6" : "1",
+          opacity: hidden ? "0" : thin ? ".6" : "1",
           scale: hidden ? ".3" : "1", events: hidden ? "none" : "auto", tab: hidden ? "-1" : "0", wordOpacity: hidden ? "0" : "1",
           href: H("grille", null, { focus: toggled(lnFocus, c.id), theme: themeQ }),
           title: fullName(c) + " — " + axLabel(a) + " : " + word + " (" + fmtAvg(p.m) + " / 5, " + p.n + " " + (p.n === 1 ? t.scCount1 : t.scCountN) + ")"
@@ -1320,7 +1319,7 @@ class Component extends DCLogic {
       const isA = c.id === cA, isB = c.id === cB;
       return {
         name: fullName(c), party: partyLine(c), ...face(c), hasBadge: isA || isB, badge: isA ? "A" : "B", pressed: isA || isB ? "true" : "false",
-        border: isA ? "#1B33B4" : isB ? "#B4401B" : "#D8D5CE", bg: isA || isB ? "#FAF9F6" : "transparent", filter: isA || isB ? "grayscale(0)" : "grayscale(1)", 
+        border: isA ? "#1B33B4" : isB ? "#B4401B" : "#D8D5CE", bg: isA || isB ? "#FAF9F6" : "transparent", 
         onGrab: e => cmpGrab(c, e),
         onPick: () => { if (this._cmpDragged) return; if (isA) cmpGo("", cB); else if (isB) cmpGo(cA, ""); else if (!cA) cmpGo(c.id, cB); else cmpGo(cA, c.id); }
       };
