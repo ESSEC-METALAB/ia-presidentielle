@@ -99,6 +99,10 @@ cat > "$PLIST" <<EOF
     <key>HOME</key><string>$RUNNER_HOME</string>
     <key>PATH</key><string>$JOB_PATH</string>
   </dict>
+  <!-- Without it launchd applies "light resource limits", throttling CPU: the
+       first transcription on this runner took 56 min against 8 min run by
+       hand (2026-11-13), with the runner at priority 20 against 31. -->
+  <key>ProcessType</key><string>Interactive</string>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
   <key>StandardOutPath</key><string>$RUNNER_DIR/runner.log</string>
