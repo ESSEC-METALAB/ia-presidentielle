@@ -234,3 +234,27 @@ def test_a_single_speaker_video_becomes_a_document_with_its_cues(monkeypatch):
     assert leads == []
     assert (docs[0].url, docs[0].kind) == ("https://videos.test/video/x1", "video")
     assert docs[0].cues[0].t == 10 and "puissance de calcul" in docs[0].text
+
+
+# --- a shared item naming two people belongs to both ------------------------
+
+def test_a_shared_lead_naming_two_people_is_kept_for_each(tmp_path, monkeypatch):
+    """Measured 2026-11-12: 211 leads were kept across 17 channels but 201
+    stored — the leads table was keyed by URL alone, so a debate naming two
+    candidates was filed under whichever was matched last. Coverage per
+    candidate is what the site states; losing one silently skews it."""
+    import yaml
+
+    sources = tmp_path / "sources.yaml"
+    sources.write_text(yaml.safe_dump({
+        "people": [{"slug": s, "match": m, "sources": []} for s, m in
+                   (("marine-le-pen", ["Marine Le Pen"]), ("jean-luc-melenchon", ["Mélenchon"]))],
+        "shared": [{"type": "video", "url": "https://videos.test/chaine", "tier": "3",
+                    "speakers": "multi"}],
+    }, allow_unicode=True), encoding="utf-8")
+    monkeypatch.setitem(fetch.FETCHERS, "video", lambda src, person, sid: ([], [Lead(
+        person=person["slug"], source_id=sid, title="Duel Marine Le Pen - Mélenchon",
+        url="https://videos.test/video/x1")]))
+    store = Store(tmp_path / "t.db")
+    fetch.run(sources, store, do_archive=False)
+    assert sorted(lead.person for lead in store.leads()) == ["jean-luc-melenchon", "marine-le-pen"]

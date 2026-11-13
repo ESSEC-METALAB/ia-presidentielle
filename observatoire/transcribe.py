@@ -203,7 +203,7 @@ def run(store: Store, people: list[dict], cache: Path, asr: str = "tiny") -> Rep
     once per ASR model, so a better model re-examines everything."""
     report = Report()
     for lead in store.leads():
-        done = f"{lead.url_hash}:transcribed:{asr}"
+        done = f"{lead.url_hash}:{lead.person}:transcribed:{asr}"
         if ":video:" not in lead.source_id or not store.is_new(done):
             continue
         report.examined += 1
