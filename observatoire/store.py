@@ -200,9 +200,13 @@ class Store:
         self.mark_seen(doc.url_hash, doc.url)
 
     def add_lead(self, lead: Lead) -> None:
+        # Keyed by URL *and* person: a shared item naming two candidates is a
+        # lead for each. Keyed by URL alone, the second overwrote the first
+        # (measured 2026-11-12: 211 kept, 201 stored). Dedup is `seen`'s job.
         self.db.execute(
             "INSERT OR REPLACE INTO leads VALUES (?,?,?,?,?)",
-            (lead.url_hash, lead.person, lead.source_id, _now(), lead.model_dump_json()),
+            (f"{lead.url_hash}:{lead.person}", lead.person, lead.source_id, _now(),
+             lead.model_dump_json()),
         )
         self.mark_seen(lead.url_hash, lead.url)
 
