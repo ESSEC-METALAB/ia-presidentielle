@@ -25,7 +25,7 @@ people:
       - {type: rss, url: "https://republicains.fr/feed/", tier: "2", max: 15}
       # one-off archive backfill; RSS carries the delta
       - {type: site, url: "https://republicains.fr", tier: "2", max: 500}
-      - {type: youtube, channel: "https://www.youtube.com/@lesrepublicains/videos",
+      - {type: video, url: "https://www.youtube.com/@lesrepublicains/videos",
          tier: "2", speakers: multi, label: "Les Républicains", max: 5}
       # 33 séances, 234k chars — all of it ministerial, and it stops in July
       # 2025. He returned to the Sénat on 13 November 2025, so this source is
@@ -95,6 +95,52 @@ people:
 shared:
   - {type: rss, url: "https://next.ink/feed/",            tier: "3", max: 25, label: "Next"}
   - {type: rss, url: "https://synthmedia.fr/feed/",       tier: "3", max: 15, label: "Synthmedia"}
+#
+# The video watch: broadcaster channels, attributed by the names in a title.
+# Probed 2026-11-12. Each lists 300 videos in under 4 seconds and carries
+# YouTube's verified badge. A guessed handle is not safe: @CNEWS is a Taiwanese
+# channel, and @LCP, @rtlfrance and @SudRadio do not exist. max: 300 covers
+# three days on the busiest channel measured (Europe 1, 89 videos a day), so a
+# missed weekend loses nothing.
+#
+# Disabled on purpose. A title naming a candidate says nothing about AI, and a
+# lead marks its URL as seen — so switching these on before the transcript
+# step exists would spend the campaign's interviews as title-only leads that
+# the pipeline then never reads. Enable them together with that step.
+  - {type: video, url: "https://www.youtube.com/@BFMTV/videos", tier: "3",
+     speakers: multi, max: 300, label: "BFMTV", enabled: false}
+  - {type: video, url: "https://www.youtube.com/@franceinfo/videos", tier: "3",
+     speakers: multi, max: 300, label: "franceinfo", enabled: false}
+  - {type: video, url: "https://www.youtube.com/@franceinter/videos", tier: "3",
+     speakers: multi, max: 300, label: "France Inter", enabled: false}
+  - {type: video, url: "https://www.youtube.com/@franceculture/videos", tier: "3",
+     speakers: multi, max: 300, label: "France Culture", enabled: false}
+  - {type: video, url: "https://www.youtube.com/@FRANCE24/videos", tier: "3",
+     speakers: multi, max: 300, label: "France 24", enabled: false}
+  - {type: video, url: "https://www.youtube.com/@publicsenat/videos", tier: "3",
+     speakers: multi, max: 300, label: "Public Sénat", enabled: false}
+  - {type: video, url: "https://www.youtube.com/@lcpassembleenationale/videos", tier: "3",
+     speakers: multi, max: 300, label: "LCP - Assemblée nationale", enabled: false}
+  - {type: video, url: "https://www.youtube.com/@TF1INFO/videos", tier: "3",
+     speakers: multi, max: 300, label: "TF1 Info", enabled: false}
+  - {type: video, url: "https://www.youtube.com/@LCI/videos", tier: "3",
+     speakers: multi, max: 300, label: "LCI", enabled: false}
+  - {type: video, url: "https://www.youtube.com/@CNEWSofficiel/videos", tier: "3",
+     speakers: multi, max: 300, label: "CNEWS", enabled: false}
+  - {type: video, url: "https://www.youtube.com/@Europe1/videos", tier: "3",
+     speakers: multi, max: 300, label: "Europe 1", enabled: false}
+  - {type: video, url: "https://www.youtube.com/@RMC/videos", tier: "3",
+     speakers: multi, max: 300, label: "RMC", enabled: false}
+  - {type: video, url: "https://www.youtube.com/@rtl_france/videos", tier: "3",
+     speakers: multi, max: 300, label: "RTL", enabled: false}
+  - {type: video, url: "https://www.youtube.com/@SudRadioOfficiel/videos", tier: "3",
+     speakers: multi, max: 300, label: "Sud Radio", enabled: false}
+  - {type: video, url: "https://www.youtube.com/@telematinf2/videos", tier: "3",
+     speakers: multi, max: 300, label: "Télématin", enabled: false}
+  - {type: video, url: "https://www.youtube.com/@cavousofficiel/videos", tier: "3",
+     speakers: multi, max: 300, label: "C à vous", enabled: false}
+  - {type: video, url: "https://www.youtube.com/@QuotidienTMC/videos", tier: "3",
+     speakers: multi, max: 300, label: "Quotidien", enabled: false}
 # Removed 2026-09-18 — both disallow this crawler in robots.txt, so bodies are
 # unfetchable, and their headlines alone almost never name a candidate:
 #   numerama.com          robots.txt: disallowed

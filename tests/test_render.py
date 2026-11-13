@@ -100,8 +100,8 @@ def test_grid_has_a_cell_for_every_person_on_every_axis():
 
 def test_absence_is_rendered_not_hidden(site):
     doc = html(site, PATHS["grille"]["en"])
-    # 3 people x 6 axes = 18 cells, 2 filled
-    assert doc.count("No position identified") == 16
+    # every monitored person x every axis, less the two filled cells
+    assert doc.count("No position identified") == len(PEOPLE) * len(AXES) - 2
 
 
 def test_a_person_with_no_claims_still_appears(site):
@@ -216,7 +216,7 @@ def test_an_unmonitored_candidate_is_not_shown_as_having_no_policy(site2):
     """The most serious review finding. A candidate we never looked at must not
     render identically to one we looked at and found nothing for."""
     doc = html(site2, PATHS["grille"]["fr"])
-    assert doc.count("Non suivi") == len(AXES)          # all six of her cells
+    assert doc.count("Non suivi") == len(AXES)          # every one of her cells
     assert "Marine Le Pen" in doc
 
 

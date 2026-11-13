@@ -1,0 +1,108 @@
+# The video loop, end to end, on the self-hosted Mac: list a channel → leads →
+# audio → speaker turns → the named candidate's own turns → extraction by a
+# local model → gates → site. Dispatch-only.
+#
+# Why a separate workflow and a Mac. YouTube refuses caption and audio
+# downloads from GitHub's servers (measured 2026-09-21: "Sign in to confirm
+# you're not a bot"), while the same requests succeed from a home connection
+# (measured 2026-11-12/13: 201 caption downloads, 0 refused).
+#
+# Why it commits nothing. The default models are deliberately tiny — Whisper
+# tiny and a 0.6B language model — so this proves the loop, not the content.
+# It works on a throwaway database and uploads what it produced as a workflow
+# artifact. The daily review is untouched until the models and the speaker
+# rule have been measured.
+#
+# The models are inputs, so a bigger one is a dispatch, not a code change.
+name: video-smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Channel, playlist or video page (any site yt-dlp can list)"
+        default: "https://www.youtube.com/@BFMTV/videos"
+      max:
+        description: "How many of its latest videos to list"
+        default: "10"
+      model:
+        description: "Ollama model for extraction"
+        default: "qwen3:0.6b"
+      asr:
+        description: "Whisper size, from transcribe.ASR"
+        default: "tiny"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: video-smoke
+  cancel-in-progress: false
+
+jobs:
+  loop:
+    # Only the Mac carries this label; nothing else in this repository asks
+    # for it. See README § Self-hosted runner for what that does and does not
+    # protect against on a public repository.
+    runs-on: [self-hosted, macOS, ARM64, observatoire-video]
+    timeout-minutes: 180
+    env:
+      # Inputs reach the shell through the environment, never by ${{ }}
+      # expansion inside a script, so a crafted value cannot become code.
+      URL: ${{ inputs.url }}
+      MAX: ${{ inputs.max }}
+      MODEL: ${{ inputs.model }}
+      ASR: ${{ inputs.asr }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+
+      # yt-dlp at its latest on every run: YouTube changes underneath it, and a
+      # four-month-old release answered audio requests with HTTP 403 where the
+      # current one succeeded (measured 2026-11-13). Installed into this job's
+      # temp directory, so nothing the machine's owner installed is replaced.
+      - name: Install
+        run: |
+          uv sync --frozen --all-extras
+          export UV_TOOL_DIR="$RUNNER_TEMP/uv-tools" UV_TOOL_BIN_DIR="$RUNNER_TEMP/bin"
+          uv tool install 'yt-dlp[default]@latest'
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+          ollama pull "$MODEL"
+
+      - name: A throwaway corpus holding only this channel
+        run: |
+          mkdir -p "$RUNNER_TEMP/smoke"
+          uv run python - "$RUNNER_TEMP/smoke/sources.yaml" <<'EOF'
+          import os, sys, yaml
+          cfg = yaml.safe_load(open("sources.yaml", encoding="utf-8"))
+          # Every person, so titles are matched against the whole roster, but
+          # none of their own sources: this run is about the one channel.
+          cfg["people"] = [{**p, "sources": []} for p in cfg["people"]]
+          cfg["shared"] = [{"type": "video", "url": os.environ["URL"], "tier": "3",
+                            "speakers": "multi", "max": int(os.environ["MAX"]),
+                            "label": "video-smoke"}]
+          open(sys.argv[1], "w", encoding="utf-8").write(yaml.safe_dump(cfg, allow_unicode=True))
+          EOF
+
+      - name: Fetch → transcribe → extract → gates → render
+        run: |
+          W="$RUNNER_TEMP/smoke"
+          uv run python -m observatoire.fetch --sources "$W/sources.yaml" --db "$W/smoke.db" --no-archive
+          uv run python -m observatoire.transcribe --sources "$W/sources.yaml" --db "$W/smoke.db" --asr "$ASR"
+          uv run python -m observatoire.extract submit --provider ollama --model "$MODEL" \
+            --db "$W/smoke.db" --sources "$W/sources.yaml" --claims "$W/claims.json" --artifacts "$W/artifacts"
+          # No document to extract means no batch, and so no claims file: that
+          # is the empty corpus, which the gates and the site must still take.
+          [ -f "$W/claims.json" ] || echo "[]" > "$W/claims.json"
+          # Expected to report missing Wayback captures: this run skips
+          # archiving. Shown, not fatal.
+          uv run python -m observatoire.lint --claims "$W/claims.json" --db "$W/smoke.db" || true
+          uv run python -m observatoire.render --claims "$W/claims.json" --sources "$W/sources.yaml" --out "$W/site"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: video-smoke
+          path: ${{ runner.temp }}/smoke
+          retention-days: 14

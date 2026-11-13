@@ -11,13 +11,40 @@ AXES = {
     "regulation": "Regulating AI: the EU AI Act, national rules, bans, oversight bodies, "
                   "liability, or an explicit deregulation stance.",
     "souverainete": "Sovereignty and infrastructure: sovereign cloud, data localisation, "
-                    "compute capacity, dependence on foreign providers, European preference.",
-    "emploi-formation": "Work and training: jobs created or displaced, retraining, engineers, "
-                        "AI in education and higher education.",
+                    "compute capacity, dependence on foreign providers, European preference. "
+                    "Energy or compute presented as a national asset or industrial advantage "
+                    "belongs here, not under environnement.",
+    "environnement": "The environmental cost and resource demand of AI: electricity and water "
+                     "consumption of data centres, waste-heat recovery, siting and land use, "
+                     "carbon footprint; and AI applied to the ecological transition. Energy "
+                     "framed as a sovereignty or industrial advantage is souverainete, not this.",
+    "emploi": "Work: jobs created or displaced by AI, automation of tasks, labour law and "
+              "working conditions, hiring, protection for exposed occupations. A labour-market "
+              "measure belongs here even when it mentions skills.",
+    "formation": "Education and training: schools, universities and higher education, the "
+                 "engineer and researcher pipeline, AI literacy, continuing professional "
+                 "training and reconversion. A measure delivered as teaching or training "
+                 "belongs here even when its stated purpose is protecting jobs.",
     "services-publics": "AI inside the state: administration, public services, healthcare, "
                         "fraud detection, civil service headcount.",
     "surveillance-libertes": "Surveillance and civil liberties: facial recognition, policing, "
-                             "algorithmic decisions about people, privacy.",
+                             "algorithmic decisions about people, privacy. This is AI turned on "
+                             "the population at home and what it does to their rights; defending "
+                             "systems or the country from attack is securite or defense.",
+    "securite": "Security: cybersecurity and the protection of critical infrastructure and "
+                "systems, and foreign interference, disinformation or election manipulation. "
+                "Protecting the country from an adversary by civilian means. AI used on the "
+                "population at home is surveillance-libertes; who owns or controls the "
+                "infrastructure is souverainete, while defending it from attack is here; the "
+                "armed forces are defense.",
+    "defense": "Defence: AI in the armed forces, military doctrine, autonomous weapons, drones "
+               "and military cyber operations. Protecting civilian systems and infrastructure "
+               "is securite.",
+    "peur": "Fear: the risks of AI as a technology: loss of human control, catastrophic or "
+            "existential risk, calls to pause or slow its development, AI safety research and "
+            "institutes. The danger the person says AI itself poses. A concrete rule or "
+            "oversight body is regulation; an attack by an adversary is securite or defense; "
+            "jobs lost to AI are emploi.",
     "financement": "Money: public or private investment, tax measures, procurement, budgets.",
 }
 

@@ -32,6 +32,10 @@ fetch = [
 # and never imported once, so it is gone. `schema.py` stays provider-neutral,
 # and adding a Claude client is about twenty lines when one is needed.
 extract = ["openai==3.15.0"]
+# Hearing video: speaker separation and transcription, run locally on ONNX
+# models (observatoire/transcribe.py). No torch and no account to accept terms
+# with, which is what lets the same stage run on a laptop or a runner.
+video = ["sherpa-onnx==2.0.1", "numpy==2.5.4"]
 
 [dependency-groups]
 dev = ["pytest==9.1.1", "ruff==0.16.8"]
@@ -89,3 +93,7 @@ ignore = [
 # Field descriptions. These are sent to the model as part of the schema, so
 # the same reasoning applies as for the prompt.
 "observatoire/schema.py" = ["E501"]
+# The placement prompt and the axis poles, for the same reason: score.py
+# records its own prompt_hash with every placement, so a formatting rule must
+# not be able to alter what was asked.
+"observatoire/score.py" = ["E501"]

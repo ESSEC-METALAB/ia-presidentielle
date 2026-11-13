@@ -24,13 +24,25 @@ MAX_QUOTE_WORDS = 40
 
 
 class Axis(StrEnum):
-    """The six policy axes. Adding one is a config change plus a backfill."""
+    """The eleven policy axes. Adding one is a config change plus a backfill.
+
+    Order is the grid's column order: the physical substrate first, then
+    people, then the state, then rights, then security and defence, then the
+    risks of AI itself, then money. ``surveillance-libertes``, ``securite``
+    and ``defense`` sit adjacent on purpose — they are three security
+    framings and a reader needs to see that they are not the same question.
+    """
 
     REGULATION = "regulation"
     SOUVERAINETE = "souverainete"
-    EMPLOI_FORMATION = "emploi-formation"
+    ENVIRONNEMENT = "environnement"
+    EMPLOI = "emploi"
+    FORMATION = "formation"
     SERVICES_PUBLICS = "services-publics"
     SURVEILLANCE_LIBERTES = "surveillance-libertes"
+    SECURITE = "securite"
+    DEFENSE = "defense"
+    PEUR = "peur"
     FINANCEMENT = "financement"
 
 
@@ -69,7 +81,7 @@ class ExtractedClaim(BaseModel):
     # kind of thing, which they were not.
     model_config = ConfigDict(extra="forbid")
 
-    axis: Axis = Field(description="Which of the six policy axes this position belongs to.")
+    axis: Axis = Field(description="Which of the policy axes this position belongs to.")
     claim_type: ClaimType = Field(
         description="The kind of source this came from: a written programme, a speech, "
         "a recorded parliamentary vote, an interview, a video, or a social post."
@@ -243,12 +255,15 @@ def _strip(node: object) -> object:
     return node
 
 
-def llm_json_schema() -> dict:
+def llm_json_schema(model: type[BaseModel] = ExtractionResult) -> dict:
     """The structured-output contract. Flat, no ``$ref``, no keywords a strict
     mode would reject. Provider-neutral: the same object drives OpenAI's
     ``strict: true`` and Claude's ``output_config.format``.
+
+    Defaults to the extraction contract. ``score.py`` passes its own model so
+    the two cannot drift into different strict-mode dialects.
     """
-    schema = ExtractionResult.model_json_schema()
+    schema = model.model_json_schema()
     defs = schema.pop("$defs", {})
     return _strip(_inline_refs(schema, defs))  # type: ignore[return-value]
 

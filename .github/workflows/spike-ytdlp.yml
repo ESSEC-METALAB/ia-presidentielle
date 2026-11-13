@@ -35,10 +35,10 @@ jobs:
           channel=$(python -c "
           import yaml
           cfg = yaml.safe_load(open('sources.yaml'))
-          print(next(s['channel']
+          print(next(s['url']
                      for p in cfg['people']
                      for s in p.get('sources', [])
-                     if s['type'] == 'youtube'))
+                     if s['type'] == 'video'))
           ")
           echo "channel: $channel"
           # The listing half. This already works in production — the daily run

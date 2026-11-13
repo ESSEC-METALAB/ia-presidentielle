@@ -24,3 +24,13 @@ site/
 data/*.db-journal
 data/*.db-wal
 backfill.log
+
+# Spectrum placements (observatoire/score.py). An internal research instrument,
+# and this repository is PUBLIC — committing scores would publish a ranking of
+# named candidates during a campaign whatever the site renders. The morning job
+# runs `git add -A data/`, so without this line it would commit them by itself.
+data/scores.json
+
+# Dry-run batch artifacts. Real ones under data/artifacts/ are committed as
+# provenance; these are from the fake client and prove nothing.
+data/artifacts-dry-run/
