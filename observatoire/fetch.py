@@ -21,6 +21,7 @@ import re
 import subprocess
 import tempfile
 import time
+import unicodedata
 import xml.etree.ElementTree as ET
 import zipfile
 from dataclasses import dataclass, field
@@ -96,7 +97,20 @@ def get(url: str, timeout: float = 30.0) -> httpx.Response | None:
         return None
 
 
-SNAPSHOT = re.compile(r"web\.archive\.org/web/\d{14}/")
+def _feed(url: str) -> feedparser.FeedParserDict:
+    """A feed, fetched through :func:`get` like every page.
+
+    ``feedparser.parse(url)`` fetches by itself: no timeout, so one feed that
+    stops answering holds the morning until the runner kills the job; not our
+    user agent; and no robots.txt check, which every page fetch makes. A feed
+    that cannot be fetched parses as empty, so it counts as returning nothing
+    and the liveness check sees it.
+    """
+    r = get(url)
+    return feedparser.parse(r.content if r else b"")
+
+
+SNAPSHOT =re.compile(r"web\.archive\.org/web/\d{14}/")
 
 
 def archive(url: str, timeout: float = 25.0) -> str | None:
@@ -148,7 +162,7 @@ Result = tuple[list[Document], list[Lead]]
 
 
 def fetch_rss(src: dict, person: dict, sid: str) -> Result:
-    feed = feedparser.parse(src["url"])
+    feed = _feed(src["url"])
     docs: list[Document] = []
     for entry in feed.entries[: src.get("max", 20)]:
         link = entry.get("link")
@@ -174,6 +188,28 @@ def fetch_rss(src: dict, person: dict, sid: str) -> Result:
     return docs, []
 
 
+def flatten_pdf_text(text: str) -> str:
+    """Undo the page layout, so a faithful quote can pass the quote gate.
+
+    A PDF carries lines, not sentences. pymupdf returns them as it finds them:
+    measured on the LR programme, 881 non-breaking spaces and ~1,900 line
+    breaks *inside* sentences against only 57 real paragraph breaks. A model
+    copying « À condition de le vouloir » writes ordinary spaces, so
+    ``lint.check_quote_in_source`` — a byte-exact substring test — could never
+    match it. Measured on one real extraction: 30% of correct quotes passed
+    before this, 85% after.
+
+    Fixed here rather than by relaxing the lint, so the anti-fabrication gate
+    stays byte-exact. Paragraph breaks are preserved because ``extract.chunk``
+    splits on them. No de-hyphenation: the same measurement found zero
+    end-of-line hyphens, so there is nothing to repair and guessing at word
+    joins would corrupt the quote it is meant to protect.
+    """
+    text = unicodedata.normalize("NFKC", text)  # U+00A0 and friends become spaces
+    paragraphs = re.split(r"\n\s*\n", text)
+    return "\n\n".join(re.sub(r"\s+", " ", p).strip() for p in paragraphs if p.strip())
+
+
 def fetch_pdf(src: dict, person: dict, sid: str) -> Result:
     r = get(src["url"], timeout=60)
     if r is None:
@@ -184,7 +220,7 @@ def fetch_pdf(src: dict, person: dict, sid: str) -> Result:
         return [], []
     return [Document(
         person=person["slug"], source_id=sid, kind="pdf", tier=Tier(str(src["tier"])),
-        url=src["url"], text=text.strip(), title=src.get("label"),
+        url=src["url"], text=flatten_pdf_text(text), title=src.get("label"),
         date=_parse_date(src.get("date")),
     )], []
 
@@ -257,7 +293,7 @@ def _ytdlp(args: list[str]) -> str:
     Returning ``out.stdout`` regardless of the exit code made the two
     outcomes that matter indistinguishable: a video whose transcript carries
     no AI content produces nothing, and a blocked yt-dlp also produces
-    nothing — ``fetch_youtube`` would ``continue`` past both. Measured
+    nothing — ``fetch_video`` would ``continue`` past both. Measured
     2026-09-21: from a GitHub runner, caption download fails with *"Sign in to
     confirm you're not a bot"* while the playlist listing still succeeds, so
     the silent version would have reported a healthy source forever.
@@ -275,42 +311,61 @@ def _ytdlp(args: list[str]) -> str:
     return out.stdout
 
 
-def fetch_youtube(src: dict, person: dict, sid: str) -> Result:
-    """``speakers: single`` becomes documents; ``multi`` becomes leads.
+# Title last, so a tab inside one cannot shift the other two fields. French is
+# asked for because YouTube otherwise machine-translates titles for the client:
+# measured 2026-11-12, a BFMTV title came back in English. The argument is
+# scoped to that extractor and is a no-op on every other site.
+VIDEO_FIELDS = ["--extractor-args", "youtube:lang=fr",
+                "--print", "%(webpage_url)s\t%(upload_date)s\t%(title)s"]
+YTDLP_MISSING = "NA"  # what yt-dlp prints for a field the site did not give
 
+
+def captions(url: str) -> list[tuple[int, str]] | None:
+    """The video's French auto-captions as cues, or ``None`` if it has none."""
+    with tempfile.TemporaryDirectory() as tmp:
+        _ytdlp(["--skip-download", "--write-auto-subs", "--sub-lang", "fr",
+                "--sub-format", "vtt", "-o", f"{tmp}/%(id)s.%(ext)s", url])
+        vtt = next(Path(tmp).glob("*.vtt"), None)
+        if vtt is None:
+            return None
+        return parse_vtt(vtt.read_text(encoding="utf-8", errors="replace"))
+
+
+def fetch_video(src: dict, person: dict, sid: str) -> Result:
+    """Any channel, playlist or video page yt-dlp can list, on any site.
+
+    ``speakers: single`` becomes documents; ``multi`` becomes leads.
     Auto-captions carry no speaker labels, so on an interview a question from
     the journalist is indistinguishable from the candidate's answer. The
     quote-in-source lint cannot catch that — the quote really is in the
     transcript, it is simply not his.
+
+    The URL is the one the site reports, never one rebuilt from an id.
     """
     single = src.get("speakers") == "single"
-    listing = _ytdlp(["--flat-playlist", "--print", "%(id)s\t%(title)s\t%(upload_date)s",
-                      "--playlist-end", str(src.get("max", 10)), src["channel"]])
+    listing = _ytdlp(["--flat-playlist", *VIDEO_FIELDS,
+                      "--playlist-end", str(src.get("max", 10)), src["url"]])
     docs: list[Document] = []
     leads: list[Lead] = []
     for line in filter(None, listing.splitlines()):
-        parts = line.split("\t")
-        if len(parts) < 2:
-            continue
-        vid, title, upload = parts[0], parts[1], (parts[2] if len(parts) > 2 else "")
-        url = f"https://youtu.be/{vid}"
+        url, upload, title = line.split("\t", 2)
+        if title == YTDLP_MISSING:
+            # Measured 2026-11-12: a Dailymotion channel lists ids only, while
+            # the video's own page carries the title and the date.
+            url, upload, title = _ytdlp([*VIDEO_FIELDS, url]).strip().split("\t", 2)
         if not single:
             leads.append(Lead(person=person["slug"], source_id=sid, title=title, url=url,
                               publisher=src.get("label"), date=_parse_date(upload),
                               reason="multi-speaker video: no speaker labels in captions"))
             continue
-        with tempfile.TemporaryDirectory() as tmp:
-            _ytdlp(["--skip-download", "--write-auto-subs", "--sub-lang", "fr",
-                    "--sub-format", "vtt", "-o", f"{tmp}/%(id)s.%(ext)s", url])
-            vtt = next(Path(tmp).glob("*.vtt"), None)
-            if vtt is None:
-                continue
-            cues = parse_vtt(vtt.read_text(encoding="utf-8", errors="replace"))
+        cues = captions(url)
+        if cues is None:
+            continue
         text = flatten(cues)
         if not mentions_ai(text):  # a 90-min transcript is ~29K tokens; check first
             continue
         docs.append(Document(
-            person=person["slug"], source_id=sid, kind="youtube", tier=Tier(str(src["tier"])),
+            person=person["slug"], source_id=sid, kind="video", tier=Tier(str(src["tier"])),
             url=url, text=text, title=title, date=_parse_date(upload),
             cues=[Cue(t=at, line=said) for at, said in cues],
         ))
@@ -322,7 +377,7 @@ def fetch_news(src: dict, person: dict, sid: str) -> Result:
     produces leads: *"X wrote about this on the 15th — do we have it from a
     primary source?"*
     """
-    feed = feedparser.parse(src["url"])
+    feed = _feed(src["url"])
     leads = [
         Lead(person=person["slug"], source_id=sid, title=e.get("title", "(untitled)"),
              url=e["link"], publisher=(e.get("source") or {}).get("title"),
@@ -437,7 +492,7 @@ def fetch_x(src: dict, person: dict, sid: str) -> Result:
 
 
 FETCHERS = {"rss": fetch_rss, "pdf": fetch_pdf, "page": fetch_page, "site": fetch_site,
-            "youtube": fetch_youtube, "news": fetch_news, "x": fetch_x, "an": fetch_an}
+            "video": fetch_video, "news": fetch_news, "x": fetch_x, "an": fetch_an}
 
 # Archive crawls are one-off. Daily runs skip them; --backfill includes them.
 BACKFILL_ONLY = {"site"}
@@ -484,7 +539,7 @@ def match_people(text: str, people: list[dict]) -> list[dict]:
 
 
 def source_id(person: dict, src: dict) -> str:
-    key = src.get("url") or src.get("channel") or src.get("query") or ""
+    key = src.get("url") or src.get("query") or ""
     digest = hashlib.sha1(key.encode(), usedforsecurity=False).hexdigest()[:8]
     return f"{person['slug']}:{src['type']}:{digest}"
 

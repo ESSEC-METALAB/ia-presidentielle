@@ -13,6 +13,7 @@ Pydantic model drives OpenAI's strict Structured Outputs and Claude's
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass
 from datetime import date as Date
@@ -20,7 +21,7 @@ from pathlib import Path
 from typing import Protocol
 
 from .prompt import prompt_hash, system_prompt, user_prompt
-from .schema import Claim, Document, ExtractionResult, Status, llm_json_schema
+from .schema import Claim, ClaimType, Document, ExtractionResult, Status, llm_json_schema
 from .transcript import locate
 
 # ~1,700 tokens. Long documents are split because recall drops across a very
@@ -81,7 +82,14 @@ def build_requests(docs: list[Document], people: dict[str, str]) -> list[Request
 
 
 class BatchClient(Protocol):
-    """Minimal surface both providers satisfy."""
+    """Minimal surface both providers satisfy.
+
+    ``unusable`` maps ``custom_id`` to why that answer could not be used —
+    refused, truncated, unparseable. A gap in the results is honest; a gap
+    with no reason beside it cannot be acted on.
+    """
+
+    unusable: dict[str, str]
 
     def submit(self, payloads: list[dict]) -> str: ...
 
@@ -100,6 +108,7 @@ class FakeClient:
         self.answers = answers or {}
         self.status = status
         self.submitted: list[dict] = []
+        self.unusable: dict[str, str] = {}
 
     def submit(self, payloads: list[dict]) -> str:
         self.submitted = payloads
@@ -122,19 +131,49 @@ RESPONSES_SUFFIX = ".responses.jsonl"
 EXPIRED_SUFFIX = ".expired.jsonl"
 
 
-def submitted_ids(artifacts: Path) -> set[str]:
-    """Every ``custom_id`` already sent in some batch.
+def chunk_hash(text: str) -> str:
+    """The identity of a chunk's *content*. Defined once, because ``submit``
+    records it and the next ``submit`` compares against it — computed two
+    different ways they would never match and every chunk would be re-sent."""
+    return hashlib.sha256(text.encode()).hexdigest()
+
+
+def submitted(artifacts: Path) -> dict[str, str]:
+    """Every chunk already sent, as ``custom_id`` → ``text_sha256``.
 
     Keyed on what was *asked*, not on what came back: a chunk that answered
     ``[]`` has been extracted correctly — that is the expected answer for most
     documents — and must not be paid for again tomorrow.
+
+    The **text hash is half the key**, because ``custom_id`` alone is not one.
+    It is ``{url_hash}:{i}``, and ``url_hash`` is the bare URL hash for a PDF,
+    which carries no content fingerprint. So a document whose extraction
+    changes — a re-published programme, or a change to how PDFs are
+    flattened — keeps the same ids with different text underneath. Measured
+    once: flattening the LR programme changed 24 chunks without changing a
+    single id, and an id-only check skipped all 24.
+
+    The hash was already being written into every request artifact for
+    provenance; this reads it back, so nothing new is stored.
     """
-    out: set[str] = set()
+    out: dict[str, str] = {}
     for path in artifacts.glob(f"*{REQUESTS_SUFFIX}"):
         for line in path.read_text(encoding="utf-8").splitlines():
             if line.strip():
-                out.add(json.loads(line)["custom_id"])
+                rec = json.loads(line)
+                out[rec["custom_id"]] = rec.get("text_sha256", "")
     return out
+
+
+def unsent(requests: list[Request], artifacts: Path) -> list[Request]:
+    """The chunks that still have to be paid for.
+
+    A chunk is skipped only when the same ``custom_id`` was sent with the same
+    text. Identical work is never bought twice, and changed work is never
+    silently skipped.
+    """
+    already = submitted(artifacts)
+    return [r for r in requests if already.get(r.custom_id) != chunk_hash(r.text)]
 
 
 def pending_batches(artifacts: Path) -> list[str]:
@@ -160,7 +199,7 @@ def submit(requests: list[Request], client: BatchClient, model: str,
                 "person": r.document.person,
                 "model": model,
                 "prompt_hash": prompt_hash(),
-                "text_sha256": __import__("hashlib").sha256(r.text.encode()).hexdigest(),
+                "text_sha256": chunk_hash(r.text),
                 "request": p,
             }, ensure_ascii=False) + "\n")
     return batch_id
@@ -207,11 +246,16 @@ def to_claims(doc: Document, result: ExtractionResult, *, party: str = "",
     """
     out = []
     for ec in result.claims:
+        fields = ec.model_dump()
         timestamp = None
         if doc.cues:
+            # The model types a filmed speech "discours" without knowing the
+            # medium. The fetch context does know, and Claim rejects a
+            # timestamp on anything that is not video.
+            fields["claim_type"] = ClaimType.VIDEO
             timestamp = locate([(c.t, c.line) for c in doc.cues], ec.quote_fr)
         out.append(Claim(
-            **ec.model_dump(),
+            **fields,
             person=doc.person,
             party=party,
             tier=doc.tier,
@@ -241,9 +285,12 @@ MODEL = "gpt-5.6-luna"
 
 if __name__ == "__main__":
     import argparse
+    import functools
+    from collections import Counter
 
     import yaml
 
+    from .clients import PROVIDERS, TRUNCATED
     from .store import Store, merge_claims
 
     ap = argparse.ArgumentParser(
@@ -252,17 +299,30 @@ if __name__ == "__main__":
     ap.add_argument("--db", default="data/observatoire.db")
     ap.add_argument("--sources", default="sources.yaml")
     ap.add_argument("--claims", default="data/claims.json")
-    ap.add_argument("--artifacts", default="data/artifacts", type=Path)
-    ap.add_argument("--model", default=MODEL)
+    ap.add_argument("--artifacts", default=None, type=Path)
+    ap.add_argument("--provider", default="openai", choices=sorted(PROVIDERS),
+                    help="which provider to send to; --model defaults to its own")
+    ap.add_argument("--model", default=None)
     ap.add_argument("--dry-run", action="store_true",
                     help="run against the fake client: exercises the whole path "
                          "and writes real artifacts, but spends nothing")
     args = ap.parse_args()
+    # A dry run writes real artifacts — that is the point — but into their own
+    # directory. The fake client always answers with the same batch id, so
+    # dry runs overwrite each other, and one left in data/artifacts both
+    # corrupts the has-this-been-sent record and leaves a batch id that a real
+    # collect would try to poll against a real provider.
+    if args.artifacts is None:
+        args.artifacts = Path("data/artifacts-dry-run" if args.dry_run else "data/artifacts")
+    # The model belongs to the provider, so a bare --provider must not
+    # silently keep the other one's default.
+    args.model = args.model or PROVIDERS[args.provider].default_model
 
     cfg = yaml.safe_load(Path(args.sources).read_text(encoding="utf-8"))
     names = {p["slug"]: p["name"] for p in cfg["people"]}
     parties = {p["slug"]: p.get("party", "") for p in cfg["people"]}
 
+    @functools.cache
     def open_client():
         """Built only once there is actually something to send.
 
@@ -272,21 +332,22 @@ if __name__ == "__main__":
         """
         if args.dry_run:
             return FakeClient()
-        from .clients import OpenAIBatchClient
-        return OpenAIBatchClient()
+        from .clients import batch_client
+        return batch_client(args.provider)
 
     store = Store(args.db)
     requests = build_requests(store.documents(), names)
 
     if args.command == "submit":
-        already = submitted_ids(args.artifacts)
-        todo = [r for r in requests if r.custom_id not in already]
+        todo = unsent(requests, args.artifacts)
         if not todo:
             print(f"nothing new to extract ({len(requests)} chunks already submitted)")
         else:
             batch_id = submit(todo, open_client(), args.model, args.artifacts)
             print(f"submitted {len(todo)} chunks as {batch_id} ({args.model})")
-    else:
+    # A synchronous provider has already answered by now and holds the answers
+    # in memory, so they are collected before this process exits with them.
+    if args.command == "collect" or PROVIDERS[args.provider].batch == "sync":
         outstanding = pending_batches(args.artifacts)
         if not outstanding:
             print("no batch outstanding")
@@ -327,5 +388,17 @@ if __name__ == "__main__":
             store.commit()
             added = merge_claims(args.claims, claims)
             print(f"{batch_id}: {len(claims)} claims, {added} new in {args.claims}")
+
+            # A chunk that answered `[]` is done; a chunk that could not answer
+            # is not, and the two are indistinguishable from the claim count.
+            # `truncated` is the one to act on: it means CHUNK_CHARS is too
+            # large for this document and claims were lost, not absent.
+            if getattr(client, "unusable", None):
+                tally = Counter(client.unusable.values())
+                print(f"  {len(client.unusable)} chunk(s) gave no usable answer: "
+                      + ", ".join(f"{n}x {why}" for why, n in tally.most_common()))
+                for cid, why in sorted(client.unusable.items()):
+                    if why == TRUNCATED:
+                        print(f"  ⚠ {cid} truncated — it lost claims; lower CHUNK_CHARS")
 
     store.close()

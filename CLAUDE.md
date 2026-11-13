@@ -93,6 +93,15 @@ question is indistinguishable from the candidate's answer, and the
 quote-in-source lint cannot catch it — the quote really is in the transcript, it
 is simply not his. `single` → documents, `multi` → leads.
 
+`transcribe.py` can promote a `multi` lead: speaker separation splits the audio
+into anonymous voices, and **a rule, not a model,** names one — the dominant
+voice of a video whose title names exactly one candidate. That rule
+(`DOMINANT_SHARE`) is a placeholder and **unmeasured**; it is wrong whenever a
+title names who is discussed rather than who speaks. It only runs in
+`video-smoke.yml`, on a throwaway database. Do not wire it into `daily.yml`
+until it has been scored against hand-labelled videos. Its documents are
+`tier_confirmed=False`, always.
+
 **YouTube extraction does not work from CI; listing does.**
 Measured 2026-09-21 on a runner, twice, including with `--js-runtimes node` to
 rule out the JS-runtime warning: caption download fails with *"Sign in to
@@ -101,6 +110,14 @@ multi` → leads is fine and `speakers: single` → documents cannot run in CI.
 `fetch._ytdlp` therefore **raises on a non-zero exit** — it used to return
 `out.stdout` regardless, which made a blocked fetcher and a video with no AI
 content produce the identical empty result. Do not restore the quiet version.
+
+Video work therefore runs on the self-hosted Mac (label `observatoire-video`),
+where 201 caption downloads and the audio downloads succeeded (2026-11-12/13).
+The repository is **public**, so that runner is a hostile-input surface: it runs
+as its own hidden account, and outside contributors' pull requests need a
+maintainer's approval before any workflow runs. Read a fork's workflow changes
+before approving one. Audio needs a **current** yt-dlp: the July 2026 release
+got HTTP 403 where 2026.10.26 succeeded.
 
 **No `computed_field` on models that round-trip through JSON.**
 Pydantic serialises computed fields, then `extra="forbid"` rejects them on

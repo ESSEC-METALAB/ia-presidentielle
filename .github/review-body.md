@@ -21,7 +21,9 @@ relecture :
   l'oreille au timestamp indiqué.
 
 Corriger directement dans le fichier : une claim déjà présente n'est jamais
-réécrite par le pipeline le lendemain.
+réécrite par le pipeline le lendemain. Pour écarter une claim, la supprimer du
+fichier : fermer la pull request n'écarte rien, la revue du lendemain la
+reprendra.
 
 `data/observatoire.db` et `data/artifacts/` sont l'état du pipeline et la
 provenance. Ils ne se relisent pas.

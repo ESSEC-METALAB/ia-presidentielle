@@ -5,7 +5,7 @@ artificial intelligence. Published by the **ESSEC Metalab Institute** in French
 and English.
 
 Two views of one dataset: **le fil** (reverse-chronological feed) and **la
-grille** (candidates × six policy axes).
+grille** (candidates × eleven policy axes).
 
 > **Not yet published.** Several pre-launch items are human deliverables, not
 > code — see [§ Before launch](#before-launch).
@@ -136,6 +136,7 @@ observatoire/
   prompt.py       The extraction prompt, versioned and hashed.
   fetch.py        Source dispatch → documents (tier 1-2) and leads (tier 3).
   transcript.py   YouTube caption cleaning, quote→timestamp, AI prefilter.
+  transcribe.py   Video leads → documents: audio, speaker turns, attribution.
   extract.py      Chunking, batch submit/collect, provenance artifacts.
   clients.py      Provider batch clients. Shapes read from current API docs.
   lint.py         The quality gates. Every one fails the build.
@@ -209,6 +210,12 @@ ahead. **No model-extracted claim has been reviewed yet** — the six in
   runner, twice, and via two independent endpoints: both answer *"Sign in to
   confirm you're not a bot"* / `RequestBlocked`. Listing still works, so video
   leads are unaffected; timestamped video claims are not reachable from CI.
+  They are from the self-hosted Mac, through `video-smoke.yml` — see below.
+- **The video loop runs, with deliberately tiny models.** Measured 2026-11-13
+  on an M4 Pro: a 67-minute speech was transcribed in 8 minutes (Whisper tiny
+  plus speaker separation) and extracted in 23 seconds (`qwen3:0.6b`). The
+  0.6B model's only claim quoted the video's *title*, which is not in the
+  transcript, and the quote gate caught it. The speaker rule is unmeasured.
 - **Méthodologie and Mentions légales are placeholders.** Deliberately — that
   prose needs the *directeur de la publication* and legal review.
 - **Link rot warns rather than fails, deliberately.** Spec §7 asks that every
@@ -227,6 +234,43 @@ ahead. **No model-extracted claim has been reviewed yet** — the six in
   Mélenchon and Philippe hold no seat anywhere and stay on press/site sourcing.
 - **`check_grid_complete` lives in the renderer, not `lint.py`** — the rule is a
   property of the rendered grid, so it is asserted in `tests/test_render.py`.
+
+## Self-hosted runner
+
+Video work needs a home connection (see Known gaps), so one Mac is registered
+as a runner for `video-smoke.yml`, under the label `observatoire-video`.
+
+Set up once, by the Mac's owner, from their own account — it asks for the
+password itself:
+
+```bash
+bash scripts/setup-mac-runner.sh
+```
+
+It creates a hidden standard account `ghrunner` for jobs, closes the owner's
+home folder to other accounts (`chmod 700 ~`), and starts the runner as a
+launchd daemon. The script's header says why each step is there. The Mac also
+needs Homebrew's `ffmpeg` and a running Ollama.
+
+Run the loop: Actions → video-smoke → Run workflow. Its inputs are the channel
+and the models, so a larger model is a dispatch, not a change. The result is a
+workflow artifact; nothing is committed.
+
+The repository is public, which is why the runner is isolated and why
+"Require approval for all external contributors" is set (Settings → Actions →
+General). A fork's pull request can edit a workflow to target this runner, so
+read its workflow changes before approving it.
+
+Undo:
+
+```bash
+sudo launchctl bootout system /Library/LaunchDaemons/edu.essec.metalab.actions-runner.plist
+sudo rm /Library/LaunchDaemons/edu.essec.metalab.actions-runner.plist
+gh api repos/ESSEC-METALAB/ia-presidentielle/actions/runners --jq '.runners[] | "\(.id) \(.name)"'
+gh api -X DELETE repos/ESSEC-METALAB/ia-presidentielle/actions/runners/<id>
+sudo sysadminctl -deleteUser ghrunner
+chmod 750 ~        # only if something needed the old permissions
+```
 
 ## Before launch
 

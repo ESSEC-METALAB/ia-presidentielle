@@ -13,11 +13,12 @@ from observatoire.extract import (
     collect,
     pending_batches,
     submit,
-    submitted_ids,
+    submitted,
     to_claims,
+    unsent,
 )
 from observatoire.prompt import prompt_hash, system_prompt
-from observatoire.schema import Cue, Document, ExtractionResult, Tier
+from observatoire.schema import Axis, Cue, Document, ExtractionResult, Tier
 
 EC = dict(
     axis="souverainete", claim_type="discours", date="2026-07-07",
@@ -126,10 +127,10 @@ def test_malformed_answer_is_dropped_not_guessed_at(tmp_path):
 # There is no batch-id table to drift out of sync with them.
 
 def test_nothing_is_submitted_when_there_is_nothing_new(tmp_path):
-    assert submitted_ids(tmp_path) == set()
+    assert submitted(tmp_path) == {}
     reqs = build_requests([document()], {})
     submit(reqs, FakeClient(), "m", tmp_path)
-    assert submitted_ids(tmp_path) == {r.custom_id for r in reqs}
+    assert set(submitted(tmp_path)) == {r.custom_id for r in reqs}
 
 
 def test_a_chunk_that_answered_nothing_is_not_asked_again(tmp_path):
@@ -139,7 +140,7 @@ def test_a_chunk_that_answered_nothing_is_not_asked_again(tmp_path):
     client = FakeClient()  # defaults to {"claims": []}
     bid = submit(reqs, client, "m", tmp_path)
     assert collect(bid, reqs, client, tmp_path) == []
-    assert submitted_ids(tmp_path) == {r.custom_id for r in reqs}
+    assert set(submitted(tmp_path)) == {r.custom_id for r in reqs}
 
 
 def test_a_collected_batch_is_no_longer_pending(tmp_path):
@@ -158,7 +159,7 @@ def test_an_expired_batch_returns_its_chunks_to_the_queue(tmp_path):
     bid = submit(reqs, FakeClient(), "m", tmp_path)
     (tmp_path / f"{bid}{REQUESTS_SUFFIX}").rename(tmp_path / f"{bid}{EXPIRED_SUFFIX}")
 
-    assert submitted_ids(tmp_path) == set()
+    assert submitted(tmp_path) == {}
     assert pending_batches(tmp_path) == []
     assert (tmp_path / f"{bid}{EXPIRED_SUFFIX}").exists()
 
@@ -191,6 +192,17 @@ def test_video_quote_is_resolved_to_a_timestamp():
     assert c.citation_url().endswith("?t=10")
 
 
+def test_a_video_quote_the_model_typed_as_a_speech_keeps_its_timestamp():
+    """The model picks claim_type without being told the medium, and a filmed
+    speech is plausibly a "discours". Claim rejects a timestamp on anything
+    but video, so that one label used to raise and stop the whole collect."""
+    doc = document(kind="video", cues=[Cue(t=10, line="Nous doublerons la puissance")])
+    ec = {**EC, "claim_type": "discours", "quote_fr": "doublerons la puissance"}
+    c = to_claims(doc, ExtractionResult(claims=[ec]))[0]
+    assert c.claim_type == "video"
+    assert c.citation_url().endswith("?t=10")
+
+
 def test_video_quote_absent_from_the_transcript_gets_no_timestamp():
     doc = document(kind="youtube", cues=[Cue(t=10, line="autre chose entièrement")])
     ec = {**EC, "claim_type": "video", "quote_fr": "un pourcentage de souveraineté"}
@@ -217,7 +229,7 @@ def test_prompt_states_the_rules_the_lints_enforce():
     assert "empty list" in sp                  # anti-invention
     assert "character for character" in sp     # quote-in-source
     assert "ambitieux" in sp                   # neutrality
-    assert sp.count("- **") == 6               # six axes
+    assert sp.count("- **") == len(Axis)       # every axis is described
 
 
 def test_a_batch_where_every_line_errored_is_not_a_successful_extraction(tmp_path):
@@ -251,3 +263,39 @@ def test_a_batch_that_genuinely_found_nothing_still_writes_a_response(tmp_path):
     bid = submit(reqs, client, "m", tmp_path)
     assert collect(bid, reqs, client, tmp_path) == []
     assert (tmp_path / f"{bid}{RESPONSES_SUFFIX}").stat().st_size > 0
+
+
+# --- the text hash is half the key ----------------------------------------
+
+def test_identical_work_is_never_bought_twice(tmp_path):
+    reqs = build_requests([document()], {})
+    submit(reqs, FakeClient(), "m", tmp_path)
+    assert unsent(reqs, tmp_path) == []
+
+
+def test_a_chunk_whose_text_changed_is_asked_again(tmp_path):
+    """custom_id is {url_hash}:{i}, and url_hash is the bare URL hash for a
+    PDF. Re-extracting or re-flattening a document keeps every id and changes
+    the text underneath — measured once at 24 chunks on the LR programme, all
+    of which an id-only check skipped."""
+    reqs = build_requests([document()], {})
+    submit(reqs, FakeClient(), "m", tmp_path)
+
+    changed = build_requests([document(text="texte révisé")], {})
+    assert [r.custom_id for r in changed] == [r.custom_id for r in reqs]   # ids identical
+    assert unsent(changed, tmp_path) == changed                            # still re-asked
+
+
+def test_an_expired_batch_puts_its_chunks_back_in_the_queue(tmp_path):
+    reqs = build_requests([document()], {})
+    bid = submit(reqs, FakeClient(), "m", tmp_path)
+    assert unsent(reqs, tmp_path) == []
+    (tmp_path / f"{bid}{REQUESTS_SUFFIX}").rename(tmp_path / f"{bid}{EXPIRED_SUFFIX}")
+    assert unsent(reqs, tmp_path) == reqs
+
+
+def test_a_missing_artifacts_directory_means_everything_is_unsent(tmp_path):
+    """The failure mode that costs real money: if data/artifacts is not
+    restored, every chunk looks new and the whole corpus is paid for again."""
+    reqs = build_requests([document()], {})
+    assert unsent(reqs, tmp_path / "does-not-exist") == reqs

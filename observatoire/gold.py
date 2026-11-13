@@ -179,7 +179,7 @@ def load(path: str | Path) -> list[dict]:
 if __name__ == "__main__":
     import argparse
 
-    from .clients import OpenAISyncClient
+    from .clients import PROVIDERS, SyncClient
     from .extract import MODEL, chunk
     from .prompt import system_prompt, user_prompt
     from .schema import llm_json_schema
@@ -187,6 +187,8 @@ if __name__ == "__main__":
 
     ap = argparse.ArgumentParser(description="Score models against the gold set.")
     ap.add_argument("--gold", default="gold/claims.json")
+    ap.add_argument("--provider", default="openai", choices=sorted(PROVIDERS),
+                    help="which provider to send to; --model defaults to its own")
     ap.add_argument("--db", default="data/observatoire.db")
     ap.add_argument("--model", action="append", default=None,
                     help="repeatable; defaults to the incumbent, which a costlier "
@@ -199,7 +201,7 @@ if __name__ == "__main__":
     store = Store(args.db)
     documents = {d.url_hash: d for d in store.documents()}
     store.close()
-    client = OpenAISyncClient()
+    client = SyncClient(provider=args.provider)
 
     def predictor(model: str):
         """Bound explicitly rather than closed over the loop variable."""

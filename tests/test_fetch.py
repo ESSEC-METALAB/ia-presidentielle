@@ -2,6 +2,7 @@ from datetime import date
 
 import pytest
 
+from observatoire import fetch
 from observatoire.fetch import match_people, route, source_id, to_lead
 from observatoire.schema import Document, Lead, Tier
 from observatoire.store import Store
@@ -47,6 +48,17 @@ def test_existing_leads_are_preserved_through_routing():
 
 def test_untitled_document_still_yields_a_usable_lead():
     assert to_lead(doc(Tier.PRESS, title=None), "press").title == "(untitled)"
+
+
+# --- feeds go through the same politeness as pages ---------------------------
+
+def test_a_feed_is_requested_through_get_and_a_refusal_yields_nothing(monkeypatch):
+    # `get` carries the timeout, the user agent and the robots.txt check. A
+    # feed parsed straight from its URL had none of the three.
+    asked = []
+    monkeypatch.setattr(fetch, "get", lambda url, timeout=30.0: asked.append(url))
+    assert fetch.fetch_rss({"url": "https://a.test/feed", "tier": "2"}, {"slug": "p"}, "s") == ([], [])
+    assert asked == ["https://a.test/feed"]
 
 
 # --- attribution for shared feeds -----------------------------------------
@@ -155,3 +167,70 @@ def test_a_successful_ytdlp_still_returns_its_output(monkeypatch):
     monkeypatch.setattr(subprocess, "run",
                         lambda *a, **k: subprocess.CompletedProcess(a[0], 0, stdout="ok\n", stderr=""))
     assert fetch._ytdlp(["--version"]) == "ok\n"
+
+
+# --- video: one fetcher for every site yt-dlp can list ---------------------
+
+VIDEO_SRC = {"type": "video", "url": "https://videos.test/chaine", "tier": "1", "max": 2}
+PERSON = {"slug": "bruno-retailleau"}
+
+
+def test_a_multi_speaker_video_becomes_a_lead_at_the_url_the_site_reports(monkeypatch):
+    """No URL is rebuilt from an id: that only ever worked for one site."""
+    monkeypatch.setattr(fetch, "_ytdlp", lambda args: (
+        "https://videos.test/video/x1\t20261105\tRetailleau face aux lecteurs\n"))
+    docs, leads = fetch.fetch_video({**VIDEO_SRC, "speakers": "multi"}, PERSON, "s")
+    assert docs == []
+    assert [(x.url, x.title, x.date) for x in leads] == [
+        ("https://videos.test/video/x1", "Retailleau face aux lecteurs", date(2026, 11, 5))]
+
+
+def test_a_listing_without_titles_is_completed_from_the_video_itself(monkeypatch):
+    """Measured 2026-11-12: a Dailymotion channel lists ids and nothing else,
+    and a lead titled "NA" can be neither read nor matched to a person."""
+    def ytdlp(args):
+        if "--flat-playlist" in args:
+            return "https://videos.test/video/x1\tNA\tNA\n"
+        assert args[-1] == "https://videos.test/video/x1"
+        return "https://videos.test/video/x1\t20261112\tLe vrai titre\n"
+
+    monkeypatch.setattr(fetch, "_ytdlp", ytdlp)
+    _, leads = fetch.fetch_video({**VIDEO_SRC, "speakers": "multi"}, PERSON, "s")
+    assert (leads[0].title, leads[0].date) == ("Le vrai titre", date(2026, 11, 12))
+
+
+def test_titles_are_asked_for_in_french_on_every_lookup(monkeypatch):
+    """Measured 2026-11-12: without it YouTube machine-translates titles for
+    the client, so a BFMTV title came back as "Gabriel Attal, Renaissance
+    presidential candidate, speaks from..." — not what the channel published."""
+    calls = []
+
+    def ytdlp(args):
+        calls.append(args)
+        if "--flat-playlist" in args:
+            return "https://videos.test/video/x1\tNA\tNA\n"
+        return "https://videos.test/video/x1\t20261112\tLe vrai titre\n"
+
+    monkeypatch.setattr(fetch, "_ytdlp", ytdlp)
+    fetch.fetch_video({**VIDEO_SRC, "speakers": "multi"}, PERSON, "s")
+    assert len(calls) == 2
+    assert all("youtube:lang=fr" in args for args in calls)
+
+
+def test_a_single_speaker_video_becomes_a_document_with_its_cues(monkeypatch):
+    from pathlib import Path
+
+    from test_transcript import VTT
+
+    def ytdlp(args):
+        if "--flat-playlist" in args:
+            return "https://videos.test/video/x1\t20261105\tDiscours\n"
+        out = args[args.index("-o") + 1]
+        Path(out.replace("%(id)s.%(ext)s", "x1.fr.vtt")).write_text(VTT, encoding="utf-8")
+        return ""
+
+    monkeypatch.setattr(fetch, "_ytdlp", ytdlp)
+    docs, leads = fetch.fetch_video({**VIDEO_SRC, "speakers": "single"}, PERSON, "s")
+    assert leads == []
+    assert (docs[0].url, docs[0].kind) == ("https://videos.test/video/x1", "video")
+    assert docs[0].cues[0].t == 10 and "puissance de calcul" in docs[0].text
