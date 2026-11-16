@@ -119,6 +119,21 @@ def test_a_statement_carries_the_stored_documents_provenance() -> None:
     assert not entry.verified
 
 
+def test_an_excluded_document_gives_no_statement() -> None:
+    store = InMemoryStore()
+    doc = document(TEXT)
+    _annotated(store, doc)
+    use_case = BuildRegister(
+        corpus=store, segments=store, annotations=store, relevance=RELEVANCE, clock=FrozenClock()
+    )
+
+    register = use_case.build(
+        [candidate()], [FEED], DIMENSIONS, since=date(2026, 7, 1), excluded=frozenset({doc.url})
+    )
+
+    assert register.entries == ()
+
+
 def test_withdrawn_people_are_listed_apart_and_never_shown() -> None:
     store = InMemoryStore()
     _annotated(store, document(TEXT, source_id="x/rss/y", candidate_id="dominique-temoin"))

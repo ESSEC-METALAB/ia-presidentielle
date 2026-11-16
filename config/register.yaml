@@ -18,3 +18,25 @@
 # that no longer exist, so it can no longer outrank the daily annotator. Its record stays
 # in the repository. A new cross-verified edition, on the ten axes, is to be listed here.
 verified_editions: []
+
+# Documents kept in the database but never shown, with why. On 2026-11-16, every video
+# read from a YouTube channel before the speech check existed went through it
+# (check_speech.v1, Mistral): these are not one person speaking alone, so a journalist's
+# or a host's words could be put in the candidate's mouth.
+excluded_documents:
+  - url: "https://www.youtube.com/watch?v=FJCYiaBsOCo"
+    reason: "Marine Le Pen, « Au cœur de la campagne » : émission avec son directeur de campagne, elle n'y parle pas seule"
+  - url: "https://www.youtube.com/watch?v=LFMmbi4up7Q"
+    reason: "Marine Le Pen, « Le grand meeting d'Orléans » : émission avec deux présentateurs autour du discours (le discours seul est une source transcript)"
+  - url: "https://www.youtube.com/watch?v=2QZwlpyS3qk"
+    reason: "Jean-Luc Mélenchon : point presse, il répond aux questions des journalistes"
+  - url: "https://www.youtube.com/watch?v=84HDDOEYmMw"
+    reason: "Bruno Retailleau : entretien dans « Les Grandes Gueules » (RMC)"
+  - url: "https://www.youtube.com/watch?v=5_K5l-naz08"
+    reason: "Bruno Retailleau : questions et réponses lors d'un événement public"
+  - url: "https://www.youtube.com/watch?v=XG7_RYQQ7Ko"
+    reason: "Bruno Retailleau : entretien télévisé avec des journalistes"
+  - url: "https://www.youtube.com/watch?v=aCTIE2XS55Y"
+    reason: "François Ruffin : entretien dans « C à vous » (France 5)"
+  - url: "https://www.youtube.com/watch?v=H4Vu0Zij1Hs"
+    reason: "François Ruffin, « Itinéraires » : reportage, échanges avec des gilets jaunes"

@@ -77,10 +77,12 @@ class BuildRegister:
         verified: Sequence[str] = (),
         framings: Sequence[StatementFraming] = (),
         scores: Sequence[StatementScore] = (),
+        excluded: frozenset[str] = frozenset(),
     ) -> Register:
-        """`verified`: annotator versions of cross-verified editions, in precedence order."""
+        """`verified`: annotator versions of cross-verified editions, in precedence order.
+        `excluded`: URLs of documents an editor left out (config/register.yaml)."""
         shown = [c for c in candidates if c.on_register]
-        documents = self._documents({c.id for c in shown}, sources, since)
+        documents = self._documents({c.id for c in shown}, sources, since, excluded)
         read = {d.source_id for d in documents.values()}
         passages = self._current_passages(documents, sources)
         hashes = {pid: content_hash(p.segment.text) for pid, p in passages.items()}
@@ -106,7 +108,11 @@ class BuildRegister:
         )
 
     def _documents(
-        self, people: set[str], sources: Sequence[Source], since: date | None
+        self,
+        people: set[str],
+        sources: Sequence[Source],
+        since: date | None,
+        excluded: frozenset[str],
     ) -> dict[str, RawDocument]:
         """Shown people's level-1 and level-2 documents in the window, by content hash."""
         publishable = {
@@ -115,7 +121,9 @@ class BuildRegister:
         return {
             d.content_hash: d
             for d in self._corpus.list_documents()
-            if d.source_id in publishable and in_window(d.published_on, since)
+            if d.source_id in publishable
+            and in_window(d.published_on, since)
+            and d.url not in excluded
         }
 
     def _current_passages(

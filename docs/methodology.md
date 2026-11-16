@@ -347,7 +347,10 @@ automatique ne dit pas qui parle. Trois filtres, du moins cher au plus sûr :
 Le premier filtre peut laisser passer un entretien au titre trompeur, que le troisième
 rattrape ; le troisième peut se tromper dans les deux sens, et une citation peut porter une
 erreur de sous-titrage : chaque déclaration renvoie à la vidéo, où elle se vérifie. Une
-vidéo est de niveau 1, confirmé : on y voit le candidat parler. `observatoire youtube-scan`
+vidéo est de niveau 1, confirmé : on y voit le candidat parler. Les vidéos lues avant
+cette vérification (collecte YouTube du 9 au 10 novembre) l'ont passée le 16 novembre :
+huit d'entre elles, des entretiens et des émissions, sont retirées du registre, avec leur
+motif, dans `config/register.yaml` (`excluded_documents`). `observatoire youtube-scan`
 liste ce que les filtres gratuits retiennent et écartent, sans rien payer. La première
 lecture remonte au début de la fenêtre ; la mise à jour quotidienne ne regarde que les
 trois derniers jours, et transcrit au plus cinq vidéos par chaîne.

@@ -160,12 +160,25 @@ class VerifiedEdition(BaseModel):
     note: str = ""
 
 
+class ExcludedDocument(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    url: str = Field(pattern=r"^https://")
+    reason: str = Field(min_length=1)
+
+
 class RegisterSettings(BaseModel):
     """config/register.yaml: which annotations the public register shows."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     verified_editions: tuple[VerifiedEdition, ...] = ()
+    # Documents kept in the database but never shown: an editorial decision, with why.
+    excluded_documents: tuple[ExcludedDocument, ...] = ()
+
+    @property
+    def excluded_urls(self) -> frozenset[str]:
+        return frozenset(d.url for d in self.excluded_documents)
 
     @property
     def verified_annotators(self) -> tuple[str, ...]:

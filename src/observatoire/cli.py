@@ -391,6 +391,7 @@ def _frame(args: argparse.Namespace, settings: Settings, registry: Registry) -> 
             registry.taxonomy.dimensions,
             since=registry.collection.since,
             verified=registry.publication.verified_annotators,
+            excluded=registry.publication.excluded_urls,
         )
         client = MistralClient(
             http, api_key=settings.mistral_api_key.get_secret_value(), model=settings.mistral_model
@@ -435,6 +436,7 @@ def _score(args: argparse.Namespace, settings: Settings, registry: Registry) -> 
             registry.taxonomy.dimensions,
             since=registry.collection.since,
             verified=registry.publication.verified_annotators,
+            excluded=registry.publication.excluded_urls,
         )
         client = MistralClient(
             http, api_key=settings.mistral_api_key.get_secret_value(), model=settings.mistral_model
@@ -517,6 +519,7 @@ def _register(args: argparse.Namespace, settings: Settings, registry: Registry) 
             registry.taxonomy.dimensions,
             since=registry.collection.since,
             verified=registry.publication.verified_annotators,
+            excluded=registry.publication.excluded_urls,
             framings=repository.list_framings(),
             scores=repository.list_scores(),
         )
