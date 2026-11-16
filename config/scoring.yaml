@@ -82,3 +82,38 @@ scales:
       dates ("create a sovereign cloud"). 4: a measure with one figure, a date or an actor
       ("10 billion euros", "by 2030", "a national agency"). 5: a measure with figures and
       dates or a funding plan. Always give a score.
+
+  # Added on 2026-11-16 (the CTO's request): how strongly the quote presents AI as a
+  # danger, and as a chance. Finer than the framing (opportunity, threat, both, none),
+  # which says only whether; both are read from the quote alone.
+  - id: threat
+    label_fr: Menace
+    label_en: Threat
+    low_fr: Aucune menace
+    low_en: No threat
+    high_fr: Menace forte
+    high_en: Strong threat
+    question_en: >-
+      How strongly does the quote itself present AI, or what it brings, as a danger, a harm,
+      a loss or a risk to contain? 1: not at all (a measure, a fact, or AI as a chance
+      only). 2: a risk mentioned in passing or implied by a safeguard. 3: a clear risk among
+      other points. 4: a serious danger, the point of the quote. 5: a grave or existential
+      danger, in strong words ("une menace pour nos libertés", "détruire des millions
+      d'emplois"). Always give a score; the evidence is the words that show the danger, or
+      for 1 the words that show what the quote is about instead.
+
+  - id: opportunity
+    label_fr: Opportunité
+    label_en: Opportunity
+    low_fr: Aucune opportunité
+    low_en: No opportunity
+    high_fr: Opportunité forte
+    high_en: Strong opportunity
+    question_en: >-
+      How strongly does the quote itself present AI, or what it brings, as a chance, a
+      benefit, progress or a source of power? 1: not at all (a measure, a fact, or AI as a
+      danger only). 2: a benefit mentioned in passing or implied by a measure to develop
+      AI. 3: a clear benefit among other points. 4: a major chance, the point of the quote.
+      5: a historic opportunity, in strong words ("une chance immense pour la France",
+      "la révolution de notre siècle"). Always give a score; the evidence is the words that
+      show the chance, or for 1 the words that show what the quote is about instead.

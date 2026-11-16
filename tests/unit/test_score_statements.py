@@ -151,7 +151,7 @@ def test_the_scales_of_the_configuration_are_written_into_the_prompt() -> None:
     scales = load_registry(CONFIG).scoring.scales
     scorer = LLMScorer(_Client(), scales)  # type: ignore[arg-type]
 
-    assert {s.id for s in scales} == {"orientation", "concreteness"}
+    assert {s.id for s in scales} == {"orientation", "concreteness", "threat", "opportunity"}
     assert all(set(s.anchors) <= set(load_registry(CONFIG).taxonomy.dimension_ids) for s in scales)
     assert "`emploi`" in scorer._system
     assert "{scales}" not in scorer._system

@@ -157,6 +157,15 @@ la revue du CTO, à valider ; changer la grille change la consigne, donc la vers
 noteur : tout est noté de nouveau. C'est le score qu'excluait la question ouverte 1
 ci-dessous, décidé en connaissance de cause.
 
+**Notes Menace et Opportunité (16 novembre 2026).** À la demande du CTO, deux échelles
+de plus : `threat` (à quel point la citation présente l'IA comme un danger, 1 = pas du
+tout, 5 = danger grave en termes forts) et `opportunity` (de même pour une chance).
+Elles mesurent l'intensité de ce que le cadrage ci-dessous dit en quatre cases, et sont
+toujours notées : 1 quand la citation ne présente ni danger, ni chance. Même garde-fou
+(les mots cités doivent être retrouvés). Le comparateur montre leur moyenne par candidat
+sur l'ensemble de ses déclarations. L'ajout a changé la version du noteur : toutes les
+déclarations ont été notées de nouveau.
+
 **Opportunité ou menace (10 novembre 2026).** À la demande du CTO, chaque déclaration
 publiée reçoit en plus un cadrage : `opportunity` (l'IA présentée comme une chance),
 `threat` (comme un danger), `both`, ou `none` (une mesure, un fait, une critique, sans
