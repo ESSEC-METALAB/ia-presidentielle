@@ -109,6 +109,19 @@ def in_window(published_on: date | None, since: date | None) -> bool:
     return since is None or published_on is None or published_on >= since
 
 
+class SpeechVerdict(_Frozen):
+    """Whether a video's transcript is one person speaking alone, and whether that person
+    is the candidate: a transcript does not say who speaks, so an exchange is left out."""
+
+    single_speaker: bool
+    speaker_is_person: bool
+    reason: str = Field(min_length=1, max_length=400)
+
+    @property
+    def kept(self) -> bool:
+        return self.single_speaker and self.speaker_is_person
+
+
 class ExtractedText(_Frozen):
     text: str
     title: str | None

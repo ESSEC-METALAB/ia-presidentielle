@@ -6,6 +6,7 @@ TODO: score, report and run-all, if the register ever publishes a score.
 
 import argparse
 import sys
+from collections import Counter
 from collections.abc import Callable, Mapping, Sequence
 from contextlib import closing
 from datetime import date, datetime, timedelta
@@ -18,6 +19,7 @@ from observatoire.adapters.llm.fake_llm_client import FakeLLMClient
 from observatoire.adapters.llm.llm_annotator import LLMAnnotator
 from observatoire.adapters.llm.llm_framer import LLMFramer
 from observatoire.adapters.llm.llm_scorer import LLMScorer
+from observatoire.adapters.llm.llm_speech_check import LLMSpeechCheck
 from observatoire.adapters.llm.mistral_client import MistralClient
 from observatoire.adapters.llm.prompt_template import PromptTemplate
 from observatoire.adapters.llm.recorded_llm_client import (
@@ -39,6 +41,13 @@ from observatoire.adapters.sources.pdf_reader import PdfReader
 from observatoire.adapters.sources.rss_reader import RssReader
 from observatoire.adapters.sources.social_reader import SocialReader
 from observatoire.adapters.sources.transcript_reader import TranscriptReader
+from observatoire.adapters.sources.youtube_reader import (
+    TRANSCRIPT_ACTOR,
+    Screened,
+    SetAside,
+    YoutubeApi,
+    YoutubeReader,
+)
 from observatoire.adapters.storage.discarding_store import DiscardingAnnotationStore
 from observatoire.adapters.storage.sqlite_repository import SqliteRepository
 from observatoire.adapters.system_clock import SystemClock
@@ -52,12 +61,18 @@ from observatoire.application.inspect_corpus import InspectCorpus
 from observatoire.application.score_statements import ScoreStatements
 from observatoire.application.segment_documents import SegmentDocuments
 from observatoire.application.watch_changes import WatchChanges
-from observatoire.config.registry import CrawlerSettings, Registry, SocialSettings, load_registry
+from observatoire.config.registry import (
+    CrawlerSettings,
+    Registry,
+    SocialSettings,
+    YoutubeSettings,
+    load_registry,
+)
 from observatoire.config.settings import Settings
 from observatoire.domain.annotation import AnnotationReport
 from observatoire.domain.errors import ConfigurationError
 from observatoire.domain.models import CollectionReport, RawDocument, SegmentationReport, Source
-from observatoire.domain.ports import Clock, LLMClient, SourceReader
+from observatoire.domain.ports import Clock, LLMClient, SourceReader, SpeechCheck
 from observatoire.domain.watch import needs_review
 from observatoire.observability.logging import configure_logging
 from observatoire.observability.usage_tracker import BufferedUsage, UsageRecordingClient
@@ -104,6 +119,13 @@ def _parser() -> argparse.ArgumentParser:
         help="réseaux sociaux : toute la fenêtre de collecte, pas seulement les derniers jours",
     )
     collect.set_defaults(handler=_collect)
+    scan = commands.add_parser(
+        "youtube-scan",
+        help="chaînes YouTube : vidéos retenues ou écartées par les filtres gratuits (gratuit)",
+    )
+    scan.add_argument("--source-id", action="append", dest="source_ids", help="répétable")
+    scan.add_argument("--examples", type=int, default=4, help="exemples de titres par chaîne")
+    scan.set_defaults(handler=_youtube_scan)
     legacy = commands.add_parser(
         "import-legacy", help="importe la base de la version précédente (branche daily)"
     )
@@ -214,6 +236,8 @@ def _collect(args: argparse.Namespace, settings: Settings, registry: Registry) -
         closing(SqliteRepository(settings.database_path)) as repository,
     ):
         token = settings.apify_token.get_secret_value() if settings.apify_token else None
+        documents = repository.list_documents()
+        usage = BufferedUsage()
         readers = _live_readers(
             client,
             crawler,
@@ -222,7 +246,16 @@ def _collect(args: argparse.Namespace, settings: Settings, registry: Registry) -
             social=registry.social,
             apify_token=token,
             full_window=args.full_window,
-            last_stored=_last_stored(repository.list_documents()),
+            last_stored=_last_stored(documents),
+        )
+        readers["youtube"] = _youtube_reader(
+            client,
+            clock,
+            settings,
+            registry,
+            documents=documents,
+            full_window=args.full_window,
+            speech_check=_speech_check(settings, clock, usage),
         )
         use_case = CollectDaily(
             readers,
@@ -233,6 +266,7 @@ def _collect(args: argparse.Namespace, settings: Settings, registry: Registry) -
         )
         since = effective_since(args.since, registry.collection.since)
         report = use_case.run(sources, run_id=_run_id("collect", clock), since=since)
+        usage.flush(repository)
     _print_report(report)
     # Some sources down is a normal morning; all of them down is an outage worth a non-zero
     # exit (no network, proxy, DNS), so the daily summary says ÉCHEC rather than ok.
@@ -592,11 +626,107 @@ def _live_readers(
             clock,
             daily_max_items=social.daily_max_items,
             lookback_days=None if full_window else social.lookback_days,
-            skip_titles=social.youtube_skip_titles,
             last_stored=last_stored,
             min_hours_between_reads=social.min_hours_between_reads,
         ),
     }
+
+
+def _youtube_reader(
+    client: httpx.Client,
+    clock: Clock,
+    settings: Settings,
+    registry: Registry,
+    *,
+    documents: Sequence[RawDocument],
+    full_window: bool = False,
+    speech_check: SpeechCheck | None = None,
+) -> YoutubeReader:
+    youtube: YoutubeSettings = registry.youtube
+    key = settings.youtube_api_key.get_secret_value() if settings.youtube_api_key else None
+    token = settings.apify_token.get_secret_value() if settings.apify_token else None
+    youtube_sources = {s.id for s in registry.sources if s.kind == "youtube"}
+    stored: dict[str, list[str]] = {}
+    for document in documents:
+        if document.source_id in youtube_sources:
+            stored.setdefault(document.candidate_id, []).append(document.text)
+    return YoutubeReader(
+        YoutubeApi(client, key),
+        ApifyClient(
+            client,
+            token,
+            max_charge_usd=registry.social.max_charge_usd,
+            timeout_seconds=registry.social.timeout_seconds,
+        ),
+        clock,
+        speakers={c.id: c.name for c in registry.candidates},
+        daily_max_items=youtube.daily_max_items,
+        lookback_days=None if full_window else youtube.lookback_days,
+        min_minutes=youtube.min_minutes,
+        skip_titles=youtube.skip_titles,
+        skip_titles_only=youtube.skip_titles_only,
+        known_urls=[d.url for d in documents],
+        stored_texts=stored,
+        speech_check=speech_check,
+        set_aside=SetAside(settings.database_path.parent / "youtube-set-aside.json"),
+    )
+
+
+def _speech_check(settings: Settings, clock: Clock, usage: BufferedUsage) -> SpeechCheck | None:
+    """The Mistral check of each video transcript; None without Mistral (videos then kept)."""
+    if settings.llm_provider != "mistral" or not settings.mistral_model:
+        return None
+    if settings.mistral_api_key is None:
+        return None
+    http = httpx.Client(timeout=settings.llm_timeout_seconds)
+    client = MistralClient(
+        http, api_key=settings.mistral_api_key.get_secret_value(), model=settings.mistral_model
+    )
+    return LLMSpeechCheck(UsageRecordingClient(client, usage, clock, "speech"))
+
+
+def _youtube_scan(args: argparse.Namespace, settings: Settings, registry: Registry) -> int:
+    chosen = [s for s in registry.sources if s.kind == "youtube"]
+    if args.source_ids:
+        chosen = [s for s in chosen if s.id in args.source_ids]
+    if not chosen:
+        print("Aucune source YouTube choisie.", file=sys.stderr)
+        return 2
+    clock = SystemClock()
+    with (
+        httpx.Client(timeout=registry.crawler.timeout_seconds) as client,
+        closing(SqliteRepository(settings.database_path)) as repository,
+    ):
+        reader = _youtube_reader(
+            client,
+            clock,
+            settings,
+            registry,
+            documents=repository.list_documents(),
+            full_window=True,
+        )
+        total = sum(
+            _print_screened(source, reader.screen(source, registry.collection.since), args.examples)
+            for source in chosen
+        )
+    print(f"\nÀ transcrire : {total} vidéos ({TRANSCRIPT_ACTOR}, environ 0,001 $ chacune).")
+    return 0
+
+
+def _print_screened(source: Source, screened: Sequence[Screened], examples: int) -> int:
+    """Prints one channel's count; returns how many videos a full run would transcribe."""
+    kept = [s.video for s in screened if s.reason is None]
+    reasons = Counter(s.reason for s in screened if s.reason)
+    state = "" if source.enabled else " (désactivée)"
+    print(f"\n{source.id}{state} : {len(screened)} vidéos, {len(kept)} à transcrire")
+    for reason, n in reasons.most_common():
+        print(f"    écartées, {reason} : {n}")
+    for video in kept[:examples]:
+        print(f"    + {video.published_on} {video.seconds // 60:3d} min  {video.title[:80]}")
+    dropped = [s for s in screened if s.reason and s.reason != "déjà collectée"]
+    for s in dropped[:examples]:
+        print(f"    - {s.video.seconds // 60:3d} min  {s.video.title[:70]}  ({s.reason})")
+    return min(len(kept), source.max_items)
 
 
 def _last_stored(documents: Sequence[RawDocument]) -> dict[str, datetime]:

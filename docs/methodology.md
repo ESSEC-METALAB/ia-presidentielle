@@ -293,14 +293,12 @@ compte sont gardés : ni republications, ni réponses à d'autres comptes, et ja
 commentaires des internautes, qui ne sont pas stockés. Un post est de niveau 1 par
 défaut, non confirmé : l'équipe de campagne écrit souvent les posts d'un candidat. Une
 vidéo compte par ses mots : la légende, plus les sous-titres français quand TikTok les
-fournit, ou la transcription automatique pour YouTube, où seuls les discours sont gardés
-(les vidéos dont le titre ou la description annoncent un entretien, un débat ou des
-questions sont écartées, mais le filtre peut en laisser passer). La première lecture d'un
+fournit (YouTube a son propre lecteur depuis le 16 novembre, voir plus bas). La première lecture d'un
 compte remonte au début de la fenêtre, dans la limite de son `max_items` ; la mise à jour
 quotidienne ne lit que les deux derniers jours. Priorités fixées le 10 novembre 2026 : X, LinkedIn et
 Instagram sont lus depuis le début de la fenêtre ; Facebook ne l'est que pour les posts
-récents (remonter à juillet coûterait environ 12 dollars) ; la collecte TikTok et YouTube
-est arrêtée, et ce qu'elle a donné reste publié, sa source marquée « collecte arrêtée ».
+récents (remonter à juillet coûterait environ 12 dollars) ; la collecte TikTok est
+arrêtée, et ce qu'elle a donné reste publié, sa source marquée « collecte arrêtée ».
 
 **Discours en vidéo (depuis le 5 novembre 2026).** Un discours prononcé par le candidat
 est de niveau 1, même quand la vidéo est diffusée par une chaîne de télévision : ce sont
@@ -315,6 +313,44 @@ candidat passe la parole. Premiers ajouts : Éric Zemmour à Port-Marly (13 sept
 2026) ; Marine Le Pen à Hénin-Beaumont (13 septembre), en conférence de presse
 (6 octobre) et à Orléans (25 octobre 2026) ; Jean-Luc Mélenchon à la Fête de
 l'Humanité (12 septembre) et à Clermont-Ferrand (11 octobre 2026).
+
+**Chaînes YouTube (depuis le 16 novembre 2026).** Les discours publiés sur YouTube sont
+transcrits et passent dans la même chaîne que les autres textes (source `youtube`). Les
+chaînes lues :
+- la chaîne du candidat quand il en a une active : Marine Le Pen, Jean-Luc Mélenchon,
+  Éric Zemmour, François Ruffin, Bruno Retailleau, Édouard Philippe, Gabriel Attal,
+  Raphaël Glucksmann, David Lisnard ;
+- sinon la chaîne de son parti, celle qui publie le plus ses discours (recherche du
+  16 novembre 2026, vidéos de plus de dix minutes), en ne gardant que les vidéos dont le
+  titre ou la description le nomment : le PCF pour Fabien Roussel, le Parti socialiste pour Olivier Faure,
+  Les Écologistes pour Marine Tondelier. François Hollande n'en a pas : Public Sénat et
+  BFMTV, comptés le même jour, ne le nommaient dans aucun discours de la fenêtre hormis
+  celui de la fête de la Rose, déjà transcrit ; le reste était des entretiens.
+
+Peu de chaînes, choisies pour couvrir les candidats sans chaîne : les médias couvrent les
+candidats très inégalement, et les ajouter aurait surtout grossi les mieux exposés.
+
+Seuls les discours sont gardés, pour la même raison que plus haut : une transcription
+automatique ne dit pas qui parle. Trois filtres, du moins cher au plus sûr :
+1. la liste des vidéos, lue par l'API officielle de YouTube (gratuite) : les vidéos dont
+   le titre ou le début de la description annoncent un entretien, un débat, un invité,
+   une émission ou une conférence de presse sont écartées (« face à » seulement dans le
+   titre : dans une description, c'est souvent une simple tournure), ainsi que celles de moins de
+   cinq minutes (des extraits, souvent d'un discours déjà gardé) ;
+2. la transcription, les sous-titres automatiques en français lus par un outil d'Apify,
+   payée à la vidéo (0,001 dollar), jamais deux fois pour la même vidéo ;
+3. une vérification par Mistral, sur le début et le milieu de la transcription : une seule
+   personne parle-t-elle, et est-ce le candidat ? Sinon la vidéo est écartée, avec le motif
+   (`data/youtube-set-aside.json`). Une vidéo dont la transcription est presque entièrement
+   contenue dans celle d'une vidéo déjà gardée du même candidat (un extrait) l'est aussi.
+
+Le premier filtre peut laisser passer un entretien au titre trompeur, que le troisième
+rattrape ; le troisième peut se tromper dans les deux sens, et une citation peut porter une
+erreur de sous-titrage : chaque déclaration renvoie à la vidéo, où elle se vérifie. Une
+vidéo est de niveau 1, confirmé : on y voit le candidat parler. `observatoire youtube-scan`
+liste ce que les filtres gratuits retiennent et écartent, sans rien payer. La première
+lecture remonte au début de la fenêtre ; la mise à jour quotidienne ne regarde que les
+trois derniers jours, et transcrit au plus cinq vidéos par chaîne.
 
 ## Indicateur
 

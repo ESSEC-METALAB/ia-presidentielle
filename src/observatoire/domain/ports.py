@@ -30,6 +30,7 @@ from observatoire.domain.models import (
     Segment,
     Source,
     SourceOutcome,
+    SpeechVerdict,
 )
 from observatoire.domain.register import Register, RegisterEntry
 from observatoire.domain.scoring import ScoreDraft, StatementScore
@@ -45,6 +46,12 @@ class Clock(Protocol):
 class SourceReader(Protocol):
     def fetch(self, source: Source, since: date | None) -> Iterable[RawDocument]:
         """Documents published on or after `since`; undated documents are always kept."""
+        ...
+
+
+class SpeechCheck(Protocol):
+    def check(self, speaker: str, title: str, transcript: str) -> SpeechVerdict:
+        """Raises AnnotationUnavailableError or MalformedAnnotationError."""
         ...
 
 

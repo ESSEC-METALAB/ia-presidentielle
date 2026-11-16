@@ -35,7 +35,6 @@ def _reader(
     lookback_days: int | None = None,
     token: str | None = "secret",
     asked: list[dict[str, Any]] | None = None,
-    skip_titles: tuple[str, ...] = (),
     last_stored: dict[str, datetime] | None = None,
 ) -> SocialReader:
     def handle(request: httpx.Request) -> httpx.Response:
@@ -53,7 +52,6 @@ def _reader(
         FrozenClock(),
         daily_max_items=10,
         lookback_days=lookback_days,
-        skip_titles=skip_titles,
         last_stored={"camille-exemple/x/camille_exemple": T0 - timedelta(days=2)}
         if last_stored is None
         else last_stored,
@@ -155,33 +153,6 @@ def test_a_tiktok_video_carries_its_caption_and_its_french_subtitles() -> None:
     (document,) = _reader([video]).fetch(_source("tiktok"), since=None)
 
     assert document.text == "Mon programme\n\nL'IA à l'école."
-
-
-def test_a_youtube_interview_is_skipped_and_a_speech_is_kept() -> None:
-    def video(title: str) -> dict[str, Any]:
-        return {
-            "metadata": {
-                "url": f"https://youtube.test/{len(title)}",
-                "title": title,
-                "publish_date": "20261011",
-            },
-            "language": "fr",
-            "transcript_text": "Mes chers amis, l'IA va changer le travail.",
-        }
-
-    answered = video("Vous président")
-    answered["metadata"]["description"] = (
-        "Pendant trois heures, j'ai répondu aux questions de BFMTV."
-    )
-    reader = _reader(
-        [video("Discours à Clermont-Ferrand"), video("Entretien sur France Inter"), answered],
-        skip_titles=(r"\bentretien", r"\bquestions?\b"),
-    )
-
-    (document,) = reader.fetch(_source("youtube"), since=None)
-
-    assert document.title == "Discours à Clermont-Ferrand"
-    assert document.published_on == date(2026, 10, 11)
 
 
 def test_comments_returned_by_a_scraper_are_never_stored() -> None:

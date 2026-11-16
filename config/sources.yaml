@@ -30,17 +30,36 @@ social:
   max_charge_usd: 0.5   # Apify's minimum cap for some actors
   timeout_seconds: 280
   min_hours_between_reads: 20
-  # Matched against the title and the start of the description.
-  youtube_skip_titles:
+
+# YouTube channels (kind: youtube), added on 2026-11-16: the transcripts of the speeches
+# they publish. Listed through the YouTube Data API (YOUTUBE_API_KEY, free), transcribed
+# through Apify (the `social` cap and timeout apply), each transcript checked by Mistral
+# (one person speaking alone, the candidate) before it is kept
+# (src/observatoire/adapters/sources/youtube_reader.py).
+youtube:
+  lookback_days: 3
+  daily_max_items: 5
+  min_minutes: 5
+  # Matched against the title and the start of the description, before any transcript is
+  # paid for: interviews, debates, programmes with a host.
+  skip_titles:
     - "\\binterview"
     - "\\bentretien"
     - "\\binvit[ée]"
     - "\\bmatinale"
-    - "\\bface [àa]\\b"
     - "\\bd[ée]bat"
     - "\\bgrand jury"
     - "\\bquestions?\\b"
     - "\\bsur (bfm|lci|cnews|rtl|tf1|france ?(2|3|5|inter|info|culture)|franceinfo|europe ?1|sud radio|rmc|politico|c8|lcp|public s[ée]nat)"
+    - "\\bavec (bfm|lci|cnews|rtl|tf1|franceinfo|france ?inter)"
+    - "\\bconf[ée]rence de presse"
+    - "\\bplateau\\b"
+    - "\\bpodcast"
+  # In the title only: in a description, "face à" is ordinary phrasing ("Face à la Chine,
+  # l'Europe doit…"), and it set aside real speeches (counted on 2026-11-16).
+  skip_titles_only:
+    - "\\bface [àa]\\b"
+
 
 collection:
   since: 2026-07-01
@@ -501,7 +520,7 @@ sources:
   # (the addresses given answer "not available" or nothing) and of François Hollande
   # (last post in July 2025); Instagram accounts edouardphilippe, francoisruffin and
   # francoishollande (not found); LinkedIn profiles of Raphaël Glucksmann and François
-  # Hollande (no post); Fabien Roussel's YouTube channel (the PCF's, a party channel).
+  # Hollande (no post); YouTube channels have their own section, at the end.
   # Level 1 by default, to confirm: a campaign team often writes a candidate's posts.
   # max_items bounds `collect --full-window`; a daily run reads fewer (`social` above).
   # Priorities set on 2026-11-10 (the CTO's: X, LinkedIn, Instagram, then Facebook) and
@@ -535,16 +554,6 @@ sources:
     label: "Marine Le Pen sur Instagram (@marine_lepen)"
     max_items: 120
     options: {platform: instagram, account: "marine_lepen"}
-
-  - id: marine-le-pen/youtube/chaine
-    candidate_id: marine-le-pen
-    kind: social
-    url: "https://www.youtube.com/channel/UCU3z3px1_RCqYBwrs8LJVWg"
-    trust_level: 1
-    label: "Marine Le Pen sur YouTube (discours ; entretiens exclus)"
-    max_items: 8
-    options: {platform: youtube, account: "chaine"}
-    enabled: false   # collection stopped on 2026-11-10; what it gave stays shown
 
   - id: jean-luc-melenchon/x/jlmelenchon
     candidate_id: jean-luc-melenchon
@@ -581,16 +590,6 @@ sources:
     label: "Jean-Luc Mélenchon sur TikTok (@jlmelenchon)"
     max_items: 20
     options: {platform: tiktok, account: "jlmelenchon"}
-    enabled: false   # collection stopped on 2026-11-10; what it gave stays shown
-
-  - id: jean-luc-melenchon/youtube/chaine
-    candidate_id: jean-luc-melenchon
-    kind: social
-    url: "https://www.youtube.com/channel/UCk-_PEY3iC6DIGJKuoEe9bw"
-    trust_level: 1
-    label: "Jean-Luc Mélenchon sur YouTube (discours ; entretiens exclus)"
-    max_items: 8
-    options: {platform: youtube, account: "chaine"}
     enabled: false   # collection stopped on 2026-11-10; what it gave stays shown
 
   - id: edouard-philippe/x/ephilippe-lh
@@ -701,16 +700,6 @@ sources:
     max_items: 150
     options: {platform: linkedin, account: "brunoretailleau"}
 
-  - id: bruno-retailleau/youtube/chaine
-    candidate_id: bruno-retailleau
-    kind: social
-    url: "https://www.youtube.com/@Bruno_Retailleau"
-    trust_level: 1
-    label: "Bruno Retailleau sur YouTube (discours ; entretiens exclus)"
-    max_items: 8
-    options: {platform: youtube, account: "chaine"}
-    enabled: false   # collection stopped on 2026-11-10; what it gave stays shown
-
   - id: francois-hollande/x/fhollande
     candidate_id: francois-hollande
     kind: social
@@ -802,16 +791,6 @@ sources:
     max_items: 120
     options: {platform: instagram, account: "ericzemmour_"}
 
-  - id: eric-zemmour/youtube/chaine
-    candidate_id: eric-zemmour
-    kind: social
-    url: "https://www.youtube.com/channel/UCjTbZBXEw-gplUAnMXLYHpg"
-    trust_level: 1
-    label: "Éric Zemmour sur YouTube (discours ; entretiens exclus)"
-    max_items: 8
-    options: {platform: youtube, account: "chaine"}
-    enabled: false   # collection stopped on 2026-11-10; what it gave stays shown
-
   - id: marine-tondelier/x/marinetondelier
     candidate_id: marine-tondelier
     kind: social
@@ -875,16 +854,6 @@ sources:
     max_items: 150
     options: {platform: linkedin, account: "francois-ruffin"}
 
-  - id: francois-ruffin/youtube/chaine
-    candidate_id: francois-ruffin
-    kind: social
-    url: "https://www.youtube.com/c/Fran%C3%A7oisRuffin80"
-    trust_level: 1
-    label: "François Ruffin sur YouTube (discours ; entretiens exclus)"
-    max_items: 8
-    options: {platform: youtube, account: "chaine"}
-    enabled: false   # collection stopped on 2026-11-10; what it gave stays shown
-
   - id: fabien-roussel/x/fabien-roussel
     candidate_id: fabien-roussel
     kind: social
@@ -911,3 +880,138 @@ sources:
     label: "Fabien Roussel sur LinkedIn"
     max_items: 150
     options: {platform: linkedin, account: "fabien-roussel-6151bb21b"}
+
+  # --- YouTube channels (kind: youtube), 2026-11-16 -------------------------------------
+  # The candidate's own channel. The five ids read before through Apify alone (kind
+  # social, stopped on 2026-11-10) are kept: their statements stay attached to them.
+  # Checked on 2026-11-16 through the API (title, handle, recent videos). Left out:
+  # Marine Tondelier (a channel of 887 subscribers, two videos in 2026, not shown to be
+  # hers), and Olivier Faure, François Hollande, Fabien Roussel (no channel of their
+  # own): their party's channel stands in, below.
+
+  - id: marine-le-pen/youtube/chaine
+    candidate_id: marine-le-pen
+    kind: youtube
+    url: "https://www.youtube.com/@marinelepenofficiel"
+    trust_level: 1
+    trust_confirmed: true   # a speech on video, checked to be theirs alone: the speaker is seen
+    label: "Marine Le Pen sur YouTube (discours ; entretiens exclus)"
+    max_items: 150
+    options: {channel: "UCU3z3px1_RCqYBwrs8LJVWg"}
+
+  - id: jean-luc-melenchon/youtube/chaine
+    candidate_id: jean-luc-melenchon
+    kind: youtube
+    url: "https://www.youtube.com/@jlmelenchon"
+    trust_level: 1
+    trust_confirmed: true   # a speech on video, checked to be theirs alone: the speaker is seen
+    label: "Jean-Luc Mélenchon sur YouTube (discours ; entretiens exclus)"
+    max_items: 150
+    options: {channel: "UCk-_PEY3iC6DIGJKuoEe9bw"}
+
+  - id: eric-zemmour/youtube/chaine
+    candidate_id: eric-zemmour
+    kind: youtube
+    url: "https://www.youtube.com/@ericzemmouroff"
+    trust_level: 1
+    trust_confirmed: true   # a speech on video, checked to be theirs alone: the speaker is seen
+    label: "Éric Zemmour sur YouTube (discours ; entretiens exclus)"
+    max_items: 150
+    options: {channel: "UCjTbZBXEw-gplUAnMXLYHpg"}
+
+  - id: francois-ruffin/youtube/chaine
+    candidate_id: francois-ruffin
+    kind: youtube
+    url: "https://www.youtube.com/@francois_ruffin"
+    trust_level: 1
+    trust_confirmed: true   # a speech on video, checked to be theirs alone: the speaker is seen
+    label: "François Ruffin sur YouTube (discours ; entretiens exclus)"
+    max_items: 150
+    options: {channel: "UCIQGSp79vVch0vO3Efqif_w"}
+
+  - id: bruno-retailleau/youtube/chaine
+    candidate_id: bruno-retailleau
+    kind: youtube
+    url: "https://www.youtube.com/@bruno_retailleau"
+    trust_level: 1
+    trust_confirmed: true   # a speech on video, checked to be theirs alone: the speaker is seen
+    label: "Bruno Retailleau sur YouTube (discours ; entretiens exclus)"
+    max_items: 150
+    options: {channel: "UCRkuLQabW1hsihpZuHJSbEA"}
+
+  - id: edouard-philippe/youtube/chaine
+    candidate_id: edouard-philippe
+    kind: youtube
+    url: "https://www.youtube.com/@edouardphilippe"
+    trust_level: 1
+    trust_confirmed: true   # a speech on video, checked to be theirs alone: the speaker is seen
+    label: "Édouard Philippe sur YouTube (discours ; entretiens exclus)"
+    max_items: 150
+    options: {channel: "UCoDttl6w1T-Stuw_pvNOvLA"}
+
+  - id: gabriel-attal/youtube/chaine
+    candidate_id: gabriel-attal
+    kind: youtube
+    url: "https://www.youtube.com/@gabriel_attal"
+    trust_level: 1
+    trust_confirmed: true   # a speech on video, checked to be theirs alone: the speaker is seen
+    label: "Gabriel Attal sur YouTube (discours ; entretiens exclus)"
+    max_items: 150
+    options: {channel: "UCOcDPuYTuxoRBtfmTBXtqBA"}
+
+  - id: raphael-glucksmann/youtube/chaine
+    candidate_id: raphael-glucksmann
+    kind: youtube
+    url: "https://www.youtube.com/@raphaelglucksmann1"
+    trust_level: 1
+    trust_confirmed: true   # a speech on video, checked to be theirs alone: the speaker is seen
+    label: "Raphaël Glucksmann sur YouTube (discours ; entretiens exclus)"
+    max_items: 150
+    options: {channel: "UCyVYj4HdtEbcMngyD6_OLzg"}
+
+  - id: david-lisnard/youtube/chaine
+    candidate_id: david-lisnard
+    kind: youtube
+    url: "https://www.youtube.com/@david_lisnard"
+    trust_level: 1
+    trust_confirmed: true   # a speech on video, checked to be theirs alone: the speaker is seen
+    label: "David Lisnard sur YouTube (discours ; entretiens exclus)"
+    max_items: 150
+    options: {channel: "UC2XZY-bjIEmyLZ9MPJQytZg"}
+
+  # A candidate without a channel: their party's channel, the one that publishes their
+  # speeches most (searched on 2026-11-16, videos of more than 10 minutes). Only the
+  # videos whose title or description names them (`match`); the speech check then makes
+  # sure they are the one speaking alone. François Hollande has none: Public Sénat and
+  # BFMTV, counted on 2026-11-16, named him in no speech of the window but the one
+  # already kept (fête de la Rose, a transcript above); the rest were interviews.
+
+  - id: fabien-roussel/youtube/pcf
+    candidate_id: fabien-roussel
+    kind: youtube
+    url: "https://www.youtube.com/@pcf-particommunistefrancais"
+    trust_level: 1
+    trust_confirmed: true   # the party publishes it; checked to be the candidate speaking alone
+    label: "Fabien Roussel sur la chaîne YouTube du PCF (discours ; entretiens exclus)"
+    max_items: 60
+    options: {channel: "UCSwPcnzaMTuDcTgjRiJvZnw", match: "Roussel"}
+
+  - id: olivier-faure/youtube/parti-socialiste
+    candidate_id: olivier-faure
+    kind: youtube
+    url: "https://www.youtube.com/@partisocialiste"
+    trust_level: 1
+    trust_confirmed: true   # the party publishes it; checked to be the candidate speaking alone
+    label: "Olivier Faure sur la chaîne YouTube du Parti socialiste (discours ; entretiens exclus)"
+    max_items: 60
+    options: {channel: "UCo7xGEOV-RfxOAxRfhlR3Ww", match: "Faure|Premier secr[ée]taire"}
+
+  - id: marine-tondelier/youtube/les-ecologistes
+    candidate_id: marine-tondelier
+    kind: youtube
+    url: "https://www.youtube.com/@lesecologistesfr"
+    trust_level: 1
+    trust_confirmed: true   # the party publishes it; checked to be the candidate speaking alone
+    label: "Marine Tondelier sur la chaîne YouTube des Écologistes (discours ; entretiens exclus)"
+    max_items: 60
+    options: {channel: "UCB8Q3N-nvX1YlMUL7Zl_16w", match: "Tondelier"}

@@ -4,9 +4,8 @@ One source is one account (`options.platform`, `options.account`). Each post the
 account wrote becomes one document: its own words only. Reposts of other accounts are
 left out, and so are other people's comments, which are never stored (personal data
 of third parties). A video counts by the words it carries: the caption, plus the
-French subtitles when the platform provides them (TikTok), or the transcript of the
-video (YouTube, where only speeches are kept: an interview's transcript does not say
-who is speaking).
+French subtitles when the platform provides them (TikTok). YouTube channels have
+their own reader (youtube_reader.py).
 
 The scrapers are third-party Apify actors; each platform's input and output shape
 belongs to its actor, and is written here, next to it.
@@ -38,7 +37,6 @@ class _Post(BaseModel):
     text: str
     title: str | None = None
     subtitles_url: str | None = None  # French subtitles to append, fetched separately
-    about: str = ""  # the video's description: says whether it is an interview
 
 
 class _Platform(BaseModel):
@@ -58,7 +56,6 @@ class SocialReader:
         *,
         daily_max_items: int,
         lookback_days: int | None,
-        skip_titles: Sequence[str] = (),
         last_stored: Mapping[str, datetime] | None = None,
         min_hours_between_reads: float = 0,
     ) -> None:
@@ -73,9 +70,6 @@ class SocialReader:
         self._clock = clock
         self._daily_max_items = daily_max_items
         self._lookback_days = lookback_days
-        self._skip_titles = (
-            re.compile("|".join(skip_titles), re.IGNORECASE) if skip_titles else None
-        )
         self._last_stored = dict(last_stored or {})
         self._min_gap = timedelta(hours=min_hours_between_reads)
 
@@ -118,8 +112,6 @@ class SocialReader:
     def _document(self, source: Source, post: _Post, start: date | None) -> RawDocument | None:
         if not in_window(post.published_on, start):
             return None
-        if self._skip_titles and self._skip_titles.search(f"{post.title or ''}\n{post.about}"):
-            return None
         text = self._with_subtitles(post)
         if not text.strip():
             return None
@@ -160,7 +152,7 @@ def webvtt_text(vtt: str) -> str:
 
 
 def _has_content(item: dict[str, Any]) -> bool:
-    return any(item.get(key) for key in ("text", "caption", "content", "transcript_text"))
+    return any(item.get(key) for key in ("text", "caption", "content"))
 
 
 def _first_line(text: str) -> str:
@@ -290,39 +282,6 @@ def _tiktok_posts(source: Source, account: str, items: Sequence[dict[str, Any]])
         )
 
 
-# --- YouTube: codepoetry/youtube-transcript-ai-scraper -----------------------------------
-
-
-def _youtube_input(source: Source, account: str, start: date | None, limit: int) -> dict[str, Any]:
-    return {
-        "startUrls": [{"url": source.url}],
-        "maxResults": limit,
-        "languages": ["fr"],
-        "subType": "both",
-        "outputFormats": ["text"],
-        "machineTranslateCaptions": False,
-        "enableAiFallback": False,
-    }
-
-
-def _youtube_posts(
-    source: Source, account: str, items: Sequence[dict[str, Any]]
-) -> Iterator[_Post]:
-    for item in items:
-        meta = item.get("metadata") or {}
-        if not meta.get("url") or not item.get("transcript_text"):
-            continue
-        if item.get("language") and not str(item["language"]).startswith("fr"):
-            continue  # a translation is not the speaker's words
-        yield _Post(
-            url=meta["url"],
-            published_on=_day(meta.get("publish_date") or meta.get("upload_date")),
-            text=item["transcript_text"],
-            title=meta.get("title"),
-            about=str(meta.get("description") or "")[:300],
-        )
-
-
 # --- LinkedIn: harvestapi/linkedin-profile-posts -----------------------------------------
 
 
@@ -369,11 +328,6 @@ _PLATFORMS = {
     ),
     "tiktok": _Platform(
         actor="clockworks/tiktok-scraper", run_input=_tiktok_input, posts=_tiktok_posts
-    ),
-    "youtube": _Platform(
-        actor="codepoetry/youtube-transcript-ai-scraper",
-        run_input=_youtube_input,
-        posts=_youtube_posts,
     ),
     "linkedin": _Platform(
         actor="harvestapi/linkedin-profile-posts", run_input=_linkedin_input, posts=_linkedin_posts

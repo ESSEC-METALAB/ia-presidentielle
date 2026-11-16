@@ -57,9 +57,9 @@ def test_a_failing_source_is_recorded_and_the_run_carries_on() -> None:
 
 
 def test_a_kind_without_reader_is_a_failure_not_a_crash() -> None:
-    report = _collect({}, InMemoryStore(), source(kind="youtube"))
+    report = _collect({}, InMemoryStore(), source(kind="fax"))
 
-    assert report.outcomes[0].error == "no reader registered for kind 'youtube'"
+    assert report.outcomes[0].error == "no reader registered for kind 'fax'"
 
 
 def test_every_source_outcome_is_logged_with_its_duration() -> None:

@@ -63,11 +63,31 @@ class SocialSettings(BaseModel):
     # An account that stored a post less than this many hours ago is not read again: the
     # site's refresh button, pressed several times a day, does not pay Apify twice.
     min_hours_between_reads: float = Field(default=20, ge=0)
-    # YouTube videos whose title matches one of these are skipped: interviews and
-    # debates, whose transcript does not say who is speaking.
-    youtube_skip_titles: tuple[str, ...] = ()
 
-    @field_validator("youtube_skip_titles")
+
+class YoutubeSettings(BaseModel):
+    """How YouTube channels are read (config/sources.yaml, `youtube`): listed through the
+    YouTube Data API, transcribed through Apify (the `social` cap and timeout apply)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    # A daily run lists only the last days' videos, and transcribes at most this many
+    # per channel; `observatoire collect --full-window` lists the whole window instead,
+    # up to each source's max_items.
+    lookback_days: int = Field(default=3, ge=1)
+    daily_max_items: int = Field(default=5, ge=1)
+    # A shorter video is a clip, often of a speech already kept. A source can set its own
+    # (`options.min_minutes`).
+    min_minutes: float = Field(default=5, ge=0)
+    # Videos whose title (or the start of their description) matches one of these are
+    # skipped before any transcript is paid for: interviews and debates, whose transcript
+    # does not say who is speaking.
+    skip_titles: tuple[str, ...] = ()
+    # Matched against the title only: words that announce a programme in a title but are
+    # ordinary phrasing in a description ("Face à la Chine…").
+    skip_titles_only: tuple[str, ...] = ()
+
+    @field_validator("skip_titles", "skip_titles_only")
     @classmethod
     def _titles_compile(cls, patterns: tuple[str, ...]) -> tuple[str, ...]:
         for pattern in patterns:
@@ -160,6 +180,7 @@ class Registry(BaseModel):
     crawler: CrawlerSettings
     collection: CollectionSettings
     social: SocialSettings
+    youtube: YoutubeSettings
     segmentation: SegmentationSettings
     taxonomy: TaxonomySettings
     watch: WatchSettings
@@ -179,6 +200,7 @@ class _SourcesFile(BaseModel):
     crawler: CrawlerSettings
     collection: CollectionSettings
     social: SocialSettings = SocialSettings()  # no social source: never read
+    youtube: YoutubeSettings = YoutubeSettings()
     sources: list[Source]
 
 
@@ -196,6 +218,7 @@ def load_registry(config_dir: Path) -> Registry:
         crawler=sources_file.crawler,
         collection=sources_file.collection,
         social=sources_file.social,
+        youtube=sources_file.youtube,
         segmentation=_load(config_dir / "segmentation.yaml", SegmentationSettings),
         taxonomy=taxonomy,
         watch=_load(config_dir / "watch.yaml", WatchSettings),

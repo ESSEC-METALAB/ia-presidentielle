@@ -330,7 +330,7 @@ def test_a_missing_legacy_database_fails_the_source(tmp_path: Path) -> None:
 def test_a_kind_the_previous_version_never_had_yields_nothing(tmp_path: Path) -> None:
     reader = LegacyPipelineReader(_legacy_db(tmp_path / "legacy.db", []))
 
-    assert reader.fetch(source(kind="youtube"), since=None) == []
+    assert reader.fetch(source(kind="fax"), since=None) == []
 
 
 def test_a_legacy_snapshot_is_kept_only_when_it_is_a_real_capture(tmp_path: Path) -> None:
