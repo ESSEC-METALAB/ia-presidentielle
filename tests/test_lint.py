@@ -38,7 +38,7 @@ def claim(**over):
 
 
 def test_a_clean_claim_passes_every_gate():
-    assert lint([claim()], {"https://a.test/1": document()}) == []
+    assert lint([claim()], {"https://a.test/1": [document()]}) == []
 
 
 # --- anti-fabrication -----------------------------------------------------
@@ -99,7 +99,7 @@ def test_claim_with_no_source_document_is_caught():
 
 def test_every_finding_names_the_claim():
     c = claim(quote_fr="inventé", archive_url=None, position_fr="Vraiment ambitieux.")
-    findings = lint([c], {"https://a.test/1": document()})
+    findings = lint([c], {"https://a.test/1": [document()]})
     assert len(findings) == 3
     assert all(f.claim_id == c.id for f in findings)
     assert {f.gate for f in findings} == {"quote-in-source", "neutrality", "archive"}
@@ -162,3 +162,27 @@ def test_a_dated_query_url_does_not_count_as_a_capture():
 def test_a_warning_says_so_when_printed():
     found = check_links([claim(archive_url=CAPTURE)], probe=lambda url: False)
     assert "(warning)" in str(found[0])
+
+
+def test_a_quote_across_a_pdf_line_break_is_still_verbatim():
+    """Measured 2026-11-17: 131 of 159 claims from the LR programme failed this
+    gate because the PDF text keeps its line breaks and non-breaking spaces
+    mid-sentence ("avance \\nde\\xa0trésorerie") while the quote reads them as the
+    single space a reader sees. Layout is not words."""
+    pdf = "sur-amortissement sans avance \nde\xa0trésorerie\xa0;\n\t•\nFormer"
+    assert check_quote_in_source(
+        claim(quote_fr="sur-amortissement sans avance de trésorerie ;"), pdf) == []
+
+
+def test_ignoring_layout_does_not_ignore_words_or_case():
+    pdf = "sans avance \nde\xa0trésorerie"
+    assert check_quote_in_source(claim(quote_fr="sans avance de liquidités"), pdf)
+    assert check_quote_in_source(claim(quote_fr="Sans avance de trésorerie"), pdf)
+
+
+def test_a_quote_from_an_earlier_version_of_a_rewritten_page_is_verbatim():
+    """Philippe's priorities page was rewritten without its AI pledges; the
+    quotes stand in the version that was fetched, and archived, before."""
+    before, after = document(), document(text="Une page réécrite, sans l'IA.")
+    assert lint([claim()], {"https://a.test/1": [before, after]}) == []
+    assert lint([claim()], {"https://a.test/1": [after]})

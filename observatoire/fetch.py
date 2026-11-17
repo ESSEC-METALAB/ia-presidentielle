@@ -142,6 +142,82 @@ def archive(url: str, timeout: float = 25.0) -> str | None:
     return final if r.status_code == 200 and SNAPSHOT.search(final) else None
 
 
+def capture_text(snapshot: str) -> str:
+    """What a capture holds, as text: the original bytes (Wayback's ``id_``
+    form, without its toolbar), read as a PDF or as a page."""
+    raw = re.sub(r"(/web/\d{14})/", r"\1id_/", snapshot, count=1)
+    r = httpx.get(raw, follow_redirects=True, timeout=120, headers={"User-Agent": UA})
+    r.raise_for_status()
+    if r.content[:5] == b"%PDF-":
+        with pymupdf.open(stream=r.content, filetype="pdf") as pdf:
+            return flatten_pdf_text("\n".join(page.get_text() for page in pdf))
+    return trafilatura.html2txt(r.text)
+
+
+def attach_archives(claims_path: str | Path, store: Store) -> tuple[int, int]:
+    """Give each claim without a capture one that holds its quote.
+
+    A capture is attempted once, at ingest, and Wayback often refuses or times
+    out: on 2026-11-17, 166 of 342 documents had none, and 186 of 203 claims
+    could not be published. This retries — but a capture taken after the
+    fact is of the page *as it is now*, and a page can change (Philippe's
+    lost its AI pledges). So a capture is attached only once its text is
+    checked to hold the quote; otherwise the claim keeps no capture and the
+    archive gate keeps saying so. Only the empty field is ever written: what
+    an editor changed in the file stays as they left it.
+
+    Returns (attached, still without a capture).
+    """
+    from .lint import _layout_free
+    from .store import export_claims, load_claims
+
+    claims = load_claims(claims_path)
+    versions: dict[str, list[Document]] = {}
+    for doc in store.documents():  # oldest first
+        versions.setdefault(doc.url, []).append(doc)
+    # Captures already on other claims from the same page are candidates too:
+    # a rewritten page's earlier version may be captured nowhere else.
+    known: dict[str, list[str]] = {}
+    for c in claims:
+        if c.archive_url and SNAPSHOT.search(c.archive_url):
+            known.setdefault(c.source_url, []).append(c.archive_url)
+    texts: dict[str, str | None] = {}
+
+    def holds(snapshot: str, quote: str) -> bool:
+        if snapshot not in texts:
+            try:
+                texts[snapshot] = _layout_free(capture_text(snapshot))
+            except Exception:  # an unreadable capture proves nothing either way
+                texts[snapshot] = None
+        return texts[snapshot] is not None and _layout_free(quote) in texts[snapshot]
+
+    attached = missing = 0
+    for claim in claims:
+        if claim.archive_url and SNAPSHOT.search(claim.archive_url):
+            continue
+        docs = versions.get(claim.source_url, [])
+        candidates = dict.fromkeys(
+            [d.archive_url for d in docs if d.archive_url] + known.get(claim.source_url, []))
+        snap = next((s for s in candidates if holds(s, claim.quote_fr)), None)
+        # Only when no existing capture will do, and none was ever taken.
+        if snap is None and docs and not any(d.archive_url for d in docs):
+            newest = docs[-1]
+            newest.archive_url = archive(claim.source_url)
+            if newest.archive_url:
+                store.add_document(newest)
+                store.commit()
+                if holds(newest.archive_url, claim.quote_fr):
+                    snap = newest.archive_url
+        if snap:
+            claim.archive_url = snap
+            attached += 1
+        else:
+            missing += 1
+    if attached:
+        export_claims(claims_path, claims)
+    return attached, missing
+
+
 def _parse_date(value: str | None) -> Date | None:
     if not value:
         return None
@@ -679,6 +755,8 @@ if __name__ == "__main__":
     ap.add_argument("--sources", default="sources.yaml")
     ap.add_argument("--db", default="data/observatoire.db")
     ap.add_argument("--no-archive", action="store_true", help="skip Wayback (much faster)")
+    ap.add_argument("--claims", default="data/claims.json",
+                    help="claims to give a capture to, when theirs is missing")
     ap.add_argument("--only", help="restrict to one person slug")
     ap.add_argument("--backfill", action="store_true",
                     help="run archive crawls (site sources) instead of the daily sources")
@@ -688,5 +766,8 @@ if __name__ == "__main__":
     report = run(args.sources, store, do_archive=not args.no_archive, only=args.only,
                  backfill=args.backfill)
     print(report.summary())
+    if not args.no_archive and Path(args.claims).exists():
+        attached, missing = attach_archives(args.claims, store)
+        print(f"captures attached to {attached} claims · {missing} still without one")
     store.close()
     raise SystemExit(1 if report.dead else 0)

@@ -258,3 +258,70 @@ def test_a_shared_lead_naming_two_people_is_kept_for_each(tmp_path, monkeypatch)
     store = Store(tmp_path / "t.db")
     fetch.run(sources, store, do_archive=False)
     assert sorted(lead.person for lead in store.leads()) == ["jean-luc-melenchon", "marine-le-pen"]
+
+
+# --- a capture is attached to a claim only if it holds the quote ------------
+
+def _claim_file(tmp_path, **over):
+    from observatoire.schema import Claim
+    from observatoire.store import export_claims
+    base = dict(axis="souverainete", claim_type="programme", date=None,
+                quote_fr="doubler notre capacité de calcul", quote_gloss_en="g",
+                position_fr="p", position_en="p", contexte_fr="c", contexte_en="c",
+                person="p", party="X", tier=Tier.OWN_WORDS, source_url="https://a.test/1",
+                archive_url=None, last_verified=date(2026, 11, 17))
+    path = tmp_path / "claims.json"
+    export_claims(path, [Claim(**{**base, **over})])
+    return path
+
+
+SNAP = "https://web.archive.org/web/20261117090000/https://a.test/1"
+
+
+def test_a_capture_holding_the_quote_is_attached(tmp_path, monkeypatch):
+    from observatoire.store import load_claims
+    store = Store(tmp_path / "t.db")
+    store.add_document(doc(Tier.OWN_WORDS, text="nous voulons doubler notre capacité de calcul"))
+    monkeypatch.setattr(fetch, "archive", lambda url: SNAP)
+    monkeypatch.setattr(fetch, "capture_text", lambda s: "nous voulons doubler notre\ncapacité de calcul")
+    path = _claim_file(tmp_path)
+    assert fetch.attach_archives(path, store) == (1, 0)
+    assert load_claims(path)[0].archive_url == SNAP
+    assert store.documents()[0].archive_url == SNAP  # the next claim from it needs no new capture
+
+
+def test_a_capture_of_a_page_that_has_since_changed_is_not_attached(tmp_path, monkeypatch):
+    """A capture taken after the fact is of the page as it is now."""
+    from observatoire.store import load_claims
+    store = Store(tmp_path / "t.db")
+    store.add_document(doc(Tier.OWN_WORDS, text="nous voulons doubler notre capacité de calcul"))
+    monkeypatch.setattr(fetch, "archive", lambda url: SNAP)
+    monkeypatch.setattr(fetch, "capture_text", lambda s: "une page réécrite, sans l'IA")
+    path = _claim_file(tmp_path)
+    assert fetch.attach_archives(path, store) == (0, 1)
+    assert load_claims(path)[0].archive_url is None
+
+
+def test_a_claim_that_has_a_capture_is_left_alone(tmp_path, monkeypatch):
+    store = Store(tmp_path / "t.db")
+    store.add_document(doc(Tier.OWN_WORDS))
+    monkeypatch.setattr(fetch, "archive", lambda url: pytest.fail("no capture needed"))
+    path = _claim_file(tmp_path, archive_url=SNAP)
+    before = path.read_text(encoding="utf-8")
+    assert fetch.attach_archives(path, store) == (0, 0)
+    assert path.read_text(encoding="utf-8") == before
+
+
+def test_a_capture_on_another_claim_from_the_same_page_is_a_candidate(tmp_path, monkeypatch):
+    """Philippe's page: the version holding the quote is captured only on the
+    claims taken from it before the rewrite."""
+    from observatoire.store import export_claims, load_claims
+    store = Store(tmp_path / "t.db")
+    store.add_document(doc(Tier.OWN_WORDS, text="nous voulons doubler notre capacité de calcul"))
+    monkeypatch.setattr(fetch, "archive", lambda url: pytest.fail("a capture already exists"))
+    monkeypatch.setattr(fetch, "capture_text", lambda s: "nous voulons doubler notre capacité de calcul")
+    path = _claim_file(tmp_path)
+    old = load_claims(path)[0].model_copy(update={"quote_fr": "nous voulons", "archive_url": SNAP})
+    export_claims(path, [*load_claims(path), old])
+    assert fetch.attach_archives(path, store) == (1, 0)
+    assert all(c.archive_url == SNAP for c in load_claims(path))
