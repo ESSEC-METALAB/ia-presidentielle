@@ -251,6 +251,10 @@ def _strip(node: object) -> object:
         return [_strip(n) for n in node]
     if isinstance(node, dict):
         cleaned = {k: _strip(v) for k, v in node.items() if k not in _UNSUPPORTED}
+        if "properties" in cleaned:
+            # Strict mode refuses an object that does not require every field,
+            # and Pydantic omits fields with a default (`claims` has one).
+            cleaned["required"] = list(cleaned["properties"])
         return _collapse_nullable(cleaned)
     return node
 

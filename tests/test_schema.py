@@ -158,3 +158,22 @@ def test_tier_is_unconfirmed_until_an_editor_says_otherwise():
     candidate's own words or his party's."""
     assert claim().tier_confirmed is False
     assert claim(tier_confirmed=True).tier_confirmed is True
+
+
+def test_every_object_in_the_strict_schema_requires_all_its_fields():
+    """Measured 2026-11-14 to 16: OpenAI failed all 1,187 lines of three
+    batches with "'required' ... Missing 'claims'". `claims` has a default, so
+    Pydantic left it out of `required`, and strict mode refuses that at any
+    depth. Optional values are expressed as nullable, never as absent."""
+    def objects(node):
+        if isinstance(node, dict):
+            if "properties" in node:
+                yield node
+            for v in node.values():
+                yield from objects(v)
+        elif isinstance(node, list):
+            for v in node:
+                yield from objects(v)
+
+    for obj in objects(llm_json_schema()):
+        assert set(obj.get("required", [])) == set(obj["properties"])
