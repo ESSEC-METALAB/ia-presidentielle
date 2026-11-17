@@ -8,6 +8,7 @@ confident, but ``quote_fr in source_text`` is either true or it is not.
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass
 
 from .schema import Claim, Document
@@ -50,13 +51,20 @@ class Finding:
         return f"{self.gate}{where}{mark}: {self.message}"
 
 
+def _layout_free(text: str) -> str:
+    """A PDF keeps its line breaks and non-breaking spaces mid-sentence; a
+    reader sees one space. Only spacing is folded: words, case and punctuation
+    must still match exactly, and the published quote is never altered."""
+    return re.sub(r"\s+", " ", unicodedata.normalize("NFC", text)).strip()
+
+
 def check_quote_in_source(claim: Claim, source_text: str) -> list[Finding]:
     """The anti-fabrication gate. Makes an invented quote impossible to publish.
 
     It cannot catch a *real* quote bent into a claim it does not support —
     only the human review can. That is why the human gate exists.
     """
-    if claim.quote_fr.strip() in source_text:
+    if _layout_free(claim.quote_fr) in _layout_free(source_text):
         return []
     return [Finding("quote-in-source",
                     f"quote not found verbatim in {claim.source_url}", claim.id)]
@@ -145,8 +153,11 @@ def check_links(claims: list[Claim], probe=resolves) -> list[Finding]:
     return out
 
 
-def lint(claims: list[Claim], sources: dict[str, Document]) -> list[Finding]:
-    """Run every per-claim gate. ``sources`` maps source_url → document.
+def lint(claims: list[Claim], sources: dict[str, list[Document]]) -> list[Finding]:
+    """Run every per-claim gate. ``sources`` maps source_url → every version
+    fetched of it. A standing page that was rewritten keeps its earlier
+    version, and a quote taken from that version is still verbatim: the
+    claim's archive capture is of it (measured 2026-11-17, Philippe's page).
 
     Structural pluralism — every person having a cell on every axis — is not
     checked here. It is a property of the rendered grid, so it is enforced in
@@ -154,12 +165,13 @@ def lint(claims: list[Claim], sources: dict[str, Document]) -> list[Finding]:
     """
     findings: list[Finding] = []
     for claim in claims:
-        doc = sources.get(claim.source_url)
-        if doc is None:
+        versions = sources.get(claim.source_url)
+        if not versions:
             findings.append(Finding("provenance",
                                     f"no source document for {claim.source_url}", claim.id))
         else:
-            findings.extend(check_quote_in_source(claim, doc.text))
+            misses = [check_quote_in_source(claim, d.text) for d in versions]
+            findings.extend(min(misses, key=len))
         findings.extend(check_no_evaluative_language(claim))
         findings.extend(check_archive_present(claim))
     return findings
@@ -184,7 +196,9 @@ if __name__ == "__main__":
 
     claims = load_claims(args.claims)
     store = Store(args.db)
-    sources = {d.url: d for d in store.documents()}
+    sources: dict[str, list[Document]] = {}
+    for d in store.documents():
+        sources.setdefault(d.url, []).append(d)
     store.close()
 
     findings = lint(claims, sources)
