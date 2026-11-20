@@ -34,3 +34,9 @@ data/scores.json
 # Dry-run batch artifacts. Real ones under data/artifacts/ are committed as
 # provenance; these are from the fake client and prove nothing.
 data/artifacts-dry-run/
+
+# Business notes: pricing, the L'Express sales strategy, competitor audits.
+# They live in a private repository, never here — this one is PUBLIC, and a
+# "snapshot everything" push on 2026-11-19 published them once already.
+reports/
+research_notes/
