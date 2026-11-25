@@ -20,6 +20,7 @@ from observatoire.adapters.llm.llm_annotator import LLMAnnotator
 from observatoire.adapters.llm.llm_framer import LLMFramer
 from observatoire.adapters.llm.llm_scorer import LLMScorer
 from observatoire.adapters.llm.llm_speech_check import LLMSpeechCheck
+from observatoire.adapters.llm.llm_turn_attributor import LLMTurnAttributor
 from observatoire.adapters.llm.mistral_client import MistralClient
 from observatoire.adapters.llm.prompt_template import PromptTemplate
 from observatoire.adapters.llm.recorded_llm_client import (
@@ -36,6 +37,7 @@ from observatoire.adapters.sources.assemblee_nationale_reader import AssembleeNa
 from observatoire.adapters.sources.html_page_reader import HtmlPageReader
 from observatoire.adapters.sources.http_client import PoliteHttpClient, robots_fetcher
 from observatoire.adapters.sources.legacy_pipeline_reader import LEGACY_KINDS, LegacyPipelineReader
+from observatoire.adapters.sources.media_reader import MediaReader
 from observatoire.adapters.sources.mieuxvoter_roster import MieuxVoterRoster
 from observatoire.adapters.sources.pdf_reader import PdfReader
 from observatoire.adapters.sources.rss_reader import RssReader
@@ -45,6 +47,7 @@ from observatoire.adapters.sources.youtube_reader import (
     TRANSCRIPT_ACTOR,
     Screened,
     SetAside,
+    VideoLedger,
     YoutubeApi,
     YoutubeReader,
 )
@@ -72,7 +75,7 @@ from observatoire.config.settings import Settings
 from observatoire.domain.annotation import AnnotationReport
 from observatoire.domain.errors import ConfigurationError
 from observatoire.domain.models import CollectionReport, RawDocument, SegmentationReport, Source
-from observatoire.domain.ports import Clock, LLMClient, SourceReader, SpeechCheck
+from observatoire.domain.ports import Clock, LLMClient, SourceReader, SpeechCheck, TurnAttributor
 from observatoire.domain.watch import needs_review
 from observatoire.observability.logging import configure_logging
 from observatoire.observability.usage_tracker import BufferedUsage, UsageRecordingClient
@@ -125,6 +128,7 @@ def _parser() -> argparse.ArgumentParser:
     )
     scan.add_argument("--source-id", action="append", dest="source_ids", help="répétable")
     scan.add_argument("--examples", type=int, default=4, help="exemples de titres par chaîne")
+    scan.add_argument("--media", action="store_true", help="seulement les chaînes des médias")
     scan.set_defaults(handler=_youtube_scan)
     legacy = commands.add_parser(
         "import-legacy", help="importe la base de la version précédente (branche daily)"
@@ -256,6 +260,15 @@ def _collect(args: argparse.Namespace, settings: Settings, registry: Registry) -
             documents=documents,
             full_window=args.full_window,
             speech_check=_speech_check(settings, clock, usage),
+        )
+        readers["media"] = _media_reader(
+            client,
+            clock,
+            settings,
+            registry,
+            documents=documents,
+            full_window=args.full_window,
+            attributor=_turn_attributor(settings, clock, usage),
         )
         use_case = CollectDaily(
             readers,
@@ -647,20 +660,9 @@ def _youtube_reader(
 ) -> YoutubeReader:
     youtube: YoutubeSettings = registry.youtube
     key = settings.youtube_api_key.get_secret_value() if settings.youtube_api_key else None
-    token = settings.apify_token.get_secret_value() if settings.apify_token else None
-    youtube_sources = {s.id for s in registry.sources if s.kind == "youtube"}
-    stored: dict[str, list[str]] = {}
-    for document in documents:
-        if document.source_id in youtube_sources:
-            stored.setdefault(document.candidate_id, []).append(document.text)
     return YoutubeReader(
         YoutubeApi(client, key),
-        ApifyClient(
-            client,
-            token,
-            max_charge_usd=registry.social.max_charge_usd,
-            timeout_seconds=registry.social.timeout_seconds,
-        ),
+        _apify(client, settings, registry),
         clock,
         speakers={c.id: c.name for c in registry.candidates},
         daily_max_items=youtube.daily_max_items,
@@ -669,27 +671,95 @@ def _youtube_reader(
         skip_titles=youtube.skip_titles,
         skip_titles_only=youtube.skip_titles_only,
         known_urls=[d.url for d in documents],
-        stored_texts=stored,
+        stored_texts=_spoken_texts(registry, documents),
         speech_check=speech_check,
         set_aside=SetAside(settings.database_path.parent / "youtube-set-aside.json"),
+        ledger=VideoLedger(settings.database_path.parent / "youtube-ledger.json"),
     )
 
 
-def _speech_check(settings: Settings, clock: Clock, usage: BufferedUsage) -> SpeechCheck | None:
-    """The Mistral check of each video transcript; None without Mistral (videos then kept)."""
+def _media_reader(
+    client: httpx.Client,
+    clock: Clock,
+    settings: Settings,
+    registry: Registry,
+    *,
+    documents: Sequence[RawDocument],
+    full_window: bool = False,
+    attributor: TurnAttributor | None = None,
+) -> MediaReader:
+    media = registry.media
+    key = settings.youtube_api_key.get_secret_value() if settings.youtube_api_key else None
+    return MediaReader(
+        YoutubeApi(client, key),
+        _apify(client, settings, registry),
+        clock,
+        speakers={c.id: c.name for c in registry.candidates},
+        daily_max_items=media.daily_max_items,
+        lookback_days=None if full_window else media.lookback_days,
+        min_minutes=media.min_minutes,
+        keep_titles=media.keep_titles,
+        skip_titles=media.skip_titles,
+        known_urls=[d.url for d in documents],
+        stored_texts=_spoken_texts(registry, documents),
+        attributor=attributor,
+        set_aside=SetAside(settings.database_path.parent / "youtube-set-aside.json"),
+        ledger=VideoLedger(settings.database_path.parent / "youtube-ledger.json"),
+    )
+
+
+def _apify(client: httpx.Client, settings: Settings, registry: Registry) -> ApifyClient:
+    token = settings.apify_token.get_secret_value() if settings.apify_token else None
+    return ApifyClient(
+        client,
+        token,
+        max_charge_usd=registry.social.max_charge_usd,
+        timeout_seconds=registry.social.timeout_seconds,
+    )
+
+
+def _spoken_texts(registry: Registry, documents: Sequence[RawDocument]) -> dict[str, list[str]]:
+    """Candidate id -> their speeches and interviews already stored, any channel."""
+    spoken = {s.id for s in registry.sources if s.kind in ("youtube", "media", "transcript")}
+    stored: dict[str, list[str]] = {}
+    for document in documents:
+        if document.source_id in spoken:
+            stored.setdefault(document.candidate_id, []).append(document.text)
+    return stored
+
+
+def _mistral(settings: Settings) -> MistralClient | None:
     if settings.llm_provider != "mistral" or not settings.mistral_model:
         return None
     if settings.mistral_api_key is None:
         return None
     http = httpx.Client(timeout=settings.llm_timeout_seconds)
-    client = MistralClient(
+    return MistralClient(
         http, api_key=settings.mistral_api_key.get_secret_value(), model=settings.mistral_model
     )
-    return LLMSpeechCheck(UsageRecordingClient(client, usage, clock, "speech"))
+
+
+def _speech_check(settings: Settings, clock: Clock, usage: BufferedUsage) -> SpeechCheck | None:
+    """The Mistral check of each video transcript; None without Mistral (videos then kept)."""
+    client = _mistral(settings)
+    return LLMSpeechCheck(UsageRecordingClient(client, usage, clock, "speech")) if client else None
+
+
+def _turn_attributor(
+    settings: Settings, clock: Clock, usage: BufferedUsage
+) -> TurnAttributor | None:
+    """Mistral splitting interviews into speaking turns; None without Mistral (no
+    interview is then read)."""
+    client = _mistral(settings)
+    return (
+        LLMTurnAttributor(UsageRecordingClient(client, usage, clock, "turns")) if client else None
+    )
 
 
 def _youtube_scan(args: argparse.Namespace, settings: Settings, registry: Registry) -> int:
-    chosen = [s for s in registry.sources if s.kind == "youtube"]
+    chosen = [s for s in registry.sources if s.kind in ("youtube", "media")]
+    if args.media:
+        chosen = [s for s in chosen if s.kind == "media"]
     if args.source_ids:
         chosen = [s for s in chosen if s.id in args.source_ids]
     if not chosen:
@@ -700,16 +770,21 @@ def _youtube_scan(args: argparse.Namespace, settings: Settings, registry: Regist
         httpx.Client(timeout=registry.crawler.timeout_seconds) as client,
         closing(SqliteRepository(settings.database_path)) as repository,
     ):
-        reader = _youtube_reader(
-            client,
-            clock,
-            settings,
-            registry,
-            documents=repository.list_documents(),
-            full_window=True,
-        )
+        documents = repository.list_documents()
+        readers: dict[str, YoutubeReader | MediaReader] = {
+            "youtube": _youtube_reader(
+                client, clock, settings, registry, documents=documents, full_window=True
+            ),
+            "media": _media_reader(
+                client, clock, settings, registry, documents=documents, full_window=True
+            ),
+        }
         total = sum(
-            _print_screened(source, reader.screen(source, registry.collection.since), args.examples)
+            _print_screened(
+                source,
+                readers[source.kind].screen(source, registry.collection.since),
+                args.examples,
+            )
             for source in chosen
         )
     print(f"\nÀ transcrire : {total} vidéos ({TRANSCRIPT_ACTOR}, environ 0,001 $ chacune).")
@@ -719,6 +794,8 @@ def _youtube_scan(args: argparse.Namespace, settings: Settings, registry: Regist
 def _print_screened(source: Source, screened: Sequence[Screened], examples: int) -> int:
     """Prints one channel's count; returns how many videos a full run would transcribe."""
     kept = [s.video for s in screened if s.reason is None]
+    if source.kind == "media" and not kept:
+        return 0  # a media channel is listed for every candidate: only those it covers
     reasons = Counter(s.reason for s in screened if s.reason)
     state = "" if source.enabled else " (désactivée)"
     print(f"\n{source.id}{state} : {len(screened)} vidéos, {len(kept)} à transcrire")

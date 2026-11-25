@@ -122,6 +122,20 @@ class SpeechVerdict(_Frozen):
         return self.single_speaker and self.speaker_is_person
 
 
+class SpeakingTurn(_Frozen):
+    """One turn of an interview transcript, lines `first` to `last` (0-based, inclusive):
+    who speaks, from the text alone, and whether the model is sure."""
+
+    first: int = Field(ge=0)
+    last: int = Field(ge=0)
+    speaker: Literal["candidate", "journalist", "other"]
+    sure: bool
+
+
+class SpeakingTurns(_Frozen):
+    turns: tuple[SpeakingTurn, ...]
+
+
 class ExtractedText(_Frozen):
     text: str
     title: str | None

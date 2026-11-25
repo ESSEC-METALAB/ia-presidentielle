@@ -12,11 +12,12 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 
 from observatoire.domain.annotation import Dimension
 from observatoire.domain.errors import ConfigurationError
-from observatoire.domain.models import Candidate, Source
+from observatoire.domain.models import Candidate, Source, TrustLevel
 from observatoire.domain.scoring import ScoreScale
 from observatoire.domain.watch import WatchedTopic
 from observatoire.services.ai_relevance import RelevanceSettings
 from observatoire.services.annotation_gates import GateSettings
+from observatoire.services.candidate_matcher import alias_pattern
 from observatoire.services.segmentation import SegmentationSettings
 
 _Model = TypeVar("_Model", bound=BaseModel)
@@ -96,6 +97,70 @@ class YoutubeSettings(BaseModel):
             except re.error as error:
                 raise ValueError(f"{pattern!r}: {error}") from error
         return patterns
+
+
+class MediaChannel(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    id: str = Field(pattern=r"^[a-z0-9-]+$")
+    name: str = Field(min_length=1)
+    channel: str = Field(pattern=r"^UC[\w-]{22}$")
+    url: str = Field(pattern=r"^https://")
+
+
+class MediaSettings(BaseModel):
+    """Media channels on YouTube (config/sources.yaml, `media`): each is read for every
+    candidate on the register, as one source per candidate and channel (kind: media)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    lookback_days: int = Field(default=3, ge=1)
+    daily_max_items: int = Field(default=3, ge=1)
+    max_items: int = Field(default=40, ge=1)
+    min_minutes: float = Field(default=8, ge=0)
+    # The title or the start of the description must announce an interview or a speech,
+    # and must not announce an editorial, a debate or an analysis.
+    keep_titles: tuple[str, ...] = ()
+    skip_titles: tuple[str, ...] = ()
+    channels: tuple[MediaChannel, ...] = ()
+
+    @field_validator("keep_titles", "skip_titles")
+    @classmethod
+    def _compile(cls, patterns: tuple[str, ...]) -> tuple[str, ...]:
+        for pattern in patterns:
+            try:
+                re.compile(pattern)
+            except re.error as error:
+                raise ValueError(f"{pattern!r}: {error}") from error
+        return patterns
+
+
+def media_sources(media: MediaSettings, candidates: Sequence[Candidate]) -> list[Source]:
+    """One source per candidate on the register and media channel. `match` names the
+    candidate; `others`, every other candidate on the register."""
+    shown = [c for c in candidates if c.on_register]
+    out = []
+    for channel in media.channels:
+        for person in shown:
+            rivals = [a for c in shown if c.id != person.id for a in (c.aliases or (c.name,))]
+            out.append(
+                Source(
+                    id=f"{person.id}/media/{channel.id}",
+                    candidate_id=person.id,
+                    kind="media",
+                    url=channel.url,
+                    trust_level=TrustLevel.OWN_WORDS,
+                    label=f"{person.name} sur {channel.name} (interviews et discours)",
+                    max_items=media.max_items,
+                    options={
+                        "channel": channel.channel,
+                        "media": channel.name,
+                        "match": alias_pattern(person.aliases or (person.name,)).pattern,
+                        "others": alias_pattern(rivals).pattern if rivals else "",
+                    },
+                )
+            )
+    return out
 
 
 class ScoringSettings(BaseModel):
@@ -194,6 +259,7 @@ class Registry(BaseModel):
     collection: CollectionSettings
     social: SocialSettings
     youtube: YoutubeSettings
+    media: MediaSettings = MediaSettings()
     segmentation: SegmentationSettings
     taxonomy: TaxonomySettings
     watch: WatchSettings
@@ -214,6 +280,7 @@ class _SourcesFile(BaseModel):
     collection: CollectionSettings
     social: SocialSettings = SocialSettings()  # no social source: never read
     youtube: YoutubeSettings = YoutubeSettings()
+    media: MediaSettings = MediaSettings()
     sources: list[Source]
 
 
@@ -221,17 +288,19 @@ def load_registry(config_dir: Path) -> Registry:
     candidates = _load(config_dir / "candidates.yaml", _CandidatesFile).candidates
     sources_file = _load(config_dir / "sources.yaml", _SourcesFile)
     _require_unique("candidate", [c.id for c in candidates])
-    _require_unique("source", [s.id for s in sources_file.sources])
-    _require_known_candidates(candidates, sources_file.sources)
+    sources = [*sources_file.sources, *media_sources(sources_file.media, candidates)]
+    _require_unique("source", [s.id for s in sources])
+    _require_known_candidates(candidates, sources)
     taxonomy = _load(config_dir / "taxonomy.yaml", TaxonomySettings)
     _require_unique("dimension", taxonomy.dimension_ids)
     return Registry(
         candidates=tuple(candidates),
-        sources=tuple(sources_file.sources),
+        sources=tuple(sources),
         crawler=sources_file.crawler,
         collection=sources_file.collection,
         social=sources_file.social,
         youtube=sources_file.youtube,
+        media=sources_file.media,
         segmentation=_load(config_dir / "segmentation.yaml", SegmentationSettings),
         taxonomy=taxonomy,
         watch=_load(config_dir / "watch.yaml", WatchSettings),

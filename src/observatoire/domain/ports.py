@@ -30,6 +30,7 @@ from observatoire.domain.models import (
     Segment,
     Source,
     SourceOutcome,
+    SpeakingTurn,
     SpeechVerdict,
 )
 from observatoire.domain.register import Register, RegisterEntry
@@ -52,6 +53,13 @@ class SourceReader(Protocol):
 class SpeechCheck(Protocol):
     def check(self, speaker: str, title: str, transcript: str) -> SpeechVerdict:
         """Raises AnnotationUnavailableError or MalformedAnnotationError."""
+        ...
+
+
+class TurnAttributor(Protocol):
+    def attribute(self, speaker: str, title: str, lines: Sequence[str]) -> list[SpeakingTurn]:
+        """Speaking turns over the numbered lines. Raises AnnotationUnavailableError or
+        MalformedAnnotationError."""
         ...
 
 

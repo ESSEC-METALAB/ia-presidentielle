@@ -190,6 +190,97 @@ class SetAside:
             )
 
 
+class Transcript(BaseModel):
+    """A video's French captions: the whole text, and its caption lines in order."""
+
+    model_config = ConfigDict(frozen=True)
+
+    text: str
+    lines: tuple[str, ...]
+
+
+class VideoLedger:
+    """Every video transcribed, by any YouTube reader, with its candidate, day and length:
+    a JSON file. The same programme broadcast on two channels (an interview shown on CNews
+    and Europe 1) is then transcribed once, before anything is paid for the second."""
+
+    def __init__(self, path: Path | None) -> None:
+        self._path = path
+        self._videos: dict[str, dict[str, Any]] = {}
+        if path and path.exists():
+            self._videos = json.loads(path.read_text(encoding="utf-8"))
+
+    def twin(self, candidate: str, video: Video) -> str | None:
+        """Another video of this candidate, the same day or the next, of about the same
+        length (a minute, or 5 %, apart): the same programme, on another channel."""
+        if video.published_on is None:
+            return None
+        for vid, seen in self._videos.items():
+            if vid == video.id or seen["candidate"] != candidate or not seen["day"]:
+                continue
+            days = abs((date.fromisoformat(seen["day"]) - video.published_on).days)
+            if days <= 1 and abs(seen["seconds"] - video.seconds) <= max(60, 0.05 * video.seconds):
+                return vid
+        return None
+
+    def add(self, candidate: str, video: Video) -> None:
+        day = video.published_on.isoformat() if video.published_on else None
+        self._videos[video.id] = {"candidate": candidate, "day": day, "seconds": video.seconds}
+        if self._path:
+            self._path.parent.mkdir(parents=True, exist_ok=True)
+            self._path.write_text(json.dumps(self._videos, indent=1), encoding="utf-8")
+
+
+def transcribe(apify: ApifyClient, label: str, chosen: Sequence[Video]) -> dict[str, Transcript]:
+    """Video id -> French captions, from the cheaper actor, then the fallback for the
+    videos YouTube blocked. No caption at all, with errors: the source is unavailable."""
+    by_id = {v.id: v for v in chosen}
+    items = apify.run(
+        TRANSCRIPT_ACTOR,
+        {
+            "startUrls": [{"url": v.url} for v in chosen],
+            "maxResults": len(chosen),
+            "languages": ["fr"],
+            "subType": "both",
+            "outputFormats": ["text", "json"],
+            "machineTranslateCaptions": False,
+            "enableAiFallback": False,
+        },
+        label=label,
+    )
+    transcripts = dict(_transcripts(items, by_id))
+    missing = [v for v in chosen if v.id not in transcripts]
+    errors = [str(i.get("error_code") or i.get("error")) for i in items if i.get("error")]
+    if missing:
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            for found in pool.map(lambda v: _fallback(apify, label, v), missing):
+                transcripts.update(found)
+    if not transcripts and errors:
+        raise SourceUnavailableError(label, f"no transcript: {errors[0]}")
+    return transcripts
+
+
+def _fallback(apify: ApifyClient, label: str, video: Video) -> dict[str, Transcript]:
+    try:
+        items = apify.run(
+            FALLBACK_ACTOR,
+            {"youtube_url": video.url, "language": "fr", "include_transcript_text": True},
+            label=label,
+        )
+    except SourceUnavailableError as error:
+        _log.warning("youtube_fallback_failed", video=video.id, error=str(error))
+        return {}
+    return dict(_transcripts(items, {video.id: video}))
+
+
+def start_of(clock: Clock, lookback_days: int | None, since: date | None) -> date | None:
+    """Where a listing starts: the window's start, or the last days' for a daily run."""
+    if lookback_days is None:
+        return since
+    recent = clock.now().date() - timedelta(days=lookback_days)
+    return max(since, recent) if since else recent
+
+
 class Screened(BaseModel):
     """One listed video and why the free filters left it out (None: to transcribe)."""
 
@@ -216,6 +307,7 @@ class YoutubeReader:
         stored_texts: Mapping[str, Sequence[str]] | None = None,
         speech_check: SpeechCheck | None = None,
         set_aside: SetAside | None = None,
+        ledger: VideoLedger | None = None,
         workers: int = 8,
         retry_seconds: float = 5,
     ) -> None:
@@ -239,6 +331,7 @@ class YoutubeReader:
         self._stored = {k: list(v) for k, v in (stored_texts or {}).items()}
         self._check = speech_check
         self._set_aside = set_aside or SetAside(None)
+        self._ledger = ledger or VideoLedger(None)
         self._workers = workers
         self._retry_seconds = retry_seconds
 
@@ -250,7 +343,7 @@ class YoutubeReader:
         match = source.options.get("match")
         needed = re.compile(match, re.IGNORECASE) if match else None
         min_seconds = float(source.options.get("min_minutes", self._min_seconds / 60)) * 60
-        start = self._start(since)
+        start = start_of(self._clock, self._lookback_days, since)
         return [
             Screened(video=video, reason=self._reason(video, needed, min_seconds))
             for video in self._api.uploads(channel, start)
@@ -282,7 +375,9 @@ class YoutubeReader:
         if not chosen:
             return []
         by_id = {v.id: v for v in chosen}
-        transcripts = self._transcribe(source, chosen)
+        transcripts = {k: t.text for k, t in transcribe(self._apify, source.url, chosen).items()}
+        for vid in transcripts:
+            self._ledger.add(source.candidate_id, by_id[vid])
         speaker = self._speakers.get(source.candidate_id, source.candidate_id)
         verdicts = self._verdicts(speaker, [(by_id[k], t) for k, t in transcripts.items()])
         kept = self._stored.setdefault(source.candidate_id, [])
@@ -312,51 +407,6 @@ class YoutubeReader:
             )
         return documents
 
-    def _transcribe(self, source: Source, chosen: list[Video]) -> dict[str, str]:
-        """Video id -> French transcript, from the cheaper actor, then the fallback."""
-        by_id = {v.id: v for v in chosen}
-        items = self._apify.run(
-            TRANSCRIPT_ACTOR,
-            {
-                "startUrls": [{"url": v.url} for v in chosen],
-                "maxResults": len(chosen),
-                "languages": ["fr"],
-                "subType": "both",
-                "outputFormats": ["text"],
-                "machineTranslateCaptions": False,
-                "enableAiFallback": False,
-            },
-            label=source.url,
-        )
-        transcripts = dict(_transcripts(items, by_id))
-        missing = [v for v in chosen if v.id not in transcripts]
-        errors = [str(i.get("error_code") or i.get("error")) for i in items if i.get("error")]
-        if missing:
-            with ThreadPoolExecutor(max_workers=3) as pool:
-                for found in pool.map(lambda v: self._fallback(source, v), missing):
-                    transcripts.update(found)
-        if not transcripts and errors:
-            raise SourceUnavailableError(source.url, f"no transcript: {errors[0]}")
-        return transcripts
-
-    def _fallback(self, source: Source, video: Video) -> dict[str, str]:
-        try:
-            items = self._apify.run(
-                FALLBACK_ACTOR,
-                {"youtube_url": video.url, "language": "fr", "include_transcript_text": True},
-                label=source.url,
-            )
-        except SourceUnavailableError as error:
-            _log.warning("youtube_fallback_failed", video=video.id, error=str(error))
-            return {}
-        return dict(_transcripts(items, {video.id: video}))
-
-    def _start(self, since: date | None) -> date | None:
-        if self._lookback_days is None:
-            return since
-        recent = self._clock.now().date() - timedelta(days=self._lookback_days)
-        return max(since, recent) if since else recent
-
     def _verdicts(self, speaker: str, videos: list[tuple[Video, str]]) -> dict[str, str | None]:
         """Video id -> why it is set aside (absent when kept). Without a check, all kept."""
         if self._check is None:
@@ -385,16 +435,34 @@ class YoutubeReader:
 
 def _transcripts(
     items: Sequence[dict[str, Any]], by_id: Mapping[str, Video]
-) -> Iterator[tuple[str, str]]:
+) -> Iterator[tuple[str, Transcript]]:
     for item in items:
         meta = item.get("metadata") or {}
         vid = video_id(str(meta.get("url") or item.get("url") or ""))
-        text = str(item.get("transcript_text") or "").strip()
+        text = " ".join(str(item.get("transcript_text") or "").split())
         if vid is None or vid not in by_id or not text:
             continue
         if item.get("language") and not str(item["language"]).startswith("fr"):
             continue  # a translation is not the speaker's words
-        yield vid, text
+        lines = _lines(item.get("transcript_json") or item.get("transcript")) or _sentences(text)
+        yield vid, Transcript(text=text, lines=lines)
+
+
+def _lines(segments: object) -> tuple[str, ...]:
+    """Caption lines from either actor: a list of {text}, or that list as a JSON string."""
+    if isinstance(segments, str):
+        try:
+            segments = json.loads(segments)
+        except ValueError:
+            return ()
+    if not isinstance(segments, list):
+        return ()
+    texts = (" ".join(str(s.get("text", "")).split()) for s in segments if isinstance(s, dict))
+    return tuple(t for t in texts if t)
+
+
+def _sentences(text: str) -> tuple[str, ...]:
+    return tuple(p for p in re.split(r"(?<=[.?!])\s+", text) if p)
 
 
 def excerpt(text: str, size: int = 1500) -> str:

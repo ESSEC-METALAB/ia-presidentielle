@@ -37,6 +37,7 @@ _KIND_LABELS = {
     "transcript": "Transcription vidéo",
     "social": "Réseau social",
     "youtube": "Chaîne YouTube",
+    "media": "Média (YouTube)",
 }
 _LEVEL_LABELS = {1: "paroles propres", 2: "parti", 3: "presse", 4: "tiers"}
 _STATUS_LABELS = {

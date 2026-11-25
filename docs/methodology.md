@@ -323,6 +323,25 @@ candidat passe la parole. Premiers ajouts : Éric Zemmour à Port-Marly (13 sept
 (6 octobre) et à Orléans (25 octobre 2026) ; Jean-Luc Mélenchon à la Fête de
 l'Humanité (12 septembre) et à Clermont-Ferrand (11 octobre 2026).
 
+**Médias sur YouTube : interviews et discours (depuis le 25 novembre 2026).** À la
+demande du CTO, dix-sept chaînes de médias (`media` dans `config/sources.yaml`) sont lues
+pour chaque candidat du registre. Une vidéo est retenue pour un candidat quand son titre
+le nomme, sans nommer d'autre candidat, et annonce une interview ou un discours ; les
+éditos, débats, analyses et sondages sont écartés, ainsi que les vidéos de moins de huit
+minutes. Une interview ne dit pas qui parle : Mistral découpe ses sous-titres en tours de
+parole (consigne `attribute_turns.v1.md`, par tranches de 450 lignes) et seuls les tours
+qu'il attribue au candidat, et dont il est sûr, sont gardés, un paragraphe chacun ; une
+vidéo où le candidat dit moins de 150 mots est écartée. Testé le 25 novembre sur trois
+interviews (Retailleau sur CNews et Europe 1, Tondelier sur LCI, Ruffin sur BFMTV) :
+aucune erreur d'attribution relevée à la lecture, les tours mêlant deux voix marqués
+« pas sûr ». Les doublons sont retirés à trois endroits : avant de payer, une vidéo du
+même candidat, du même jour ou du lendemain et de même durée qu'une vidéo déjà
+transcrite est la même émission sur une autre chaîne (`data/youtube-ledger.json`) ; après
+la transcription, des propos contenus à 60 % dans un texte du candidat déjà gardé
+(discours, transcription, autre interview) sont écartés ; sur le registre, une citation
+déjà publiée depuis une autre source n'est pas montrée une seconde fois. Un média n'est
+listé dans la page des sources que pour les candidats dont il a donné une vidéo.
+
 **Chaînes YouTube (depuis le 16 novembre 2026).** Les discours publiés sur YouTube sont
 transcrits et passent dans la même chaîne que les autres textes (source `youtube`). Les
 chaînes lues :

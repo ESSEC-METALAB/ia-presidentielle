@@ -25,6 +25,11 @@ class AliasMatcher:
         ]
 
 
+def alias_pattern(aliases: Sequence[str]) -> re.Pattern[str]:
+    """Any of the aliases, as a whole word, whatever the case."""
+    return _alias_pattern(aliases)
+
+
 def _alias_pattern(aliases: Sequence[str]) -> re.Pattern[str]:
     alternatives = "|".join(re.escape(alias) for alias in sorted(aliases, key=len, reverse=True))
     return re.compile(rf"(?<!\w)(?:{alternatives})(?!\w)", re.IGNORECASE)

@@ -10,7 +10,7 @@ import pytest
 from pydantic import ValidationError
 
 from observatoire.adapters.storage.sqlite_repository import SqliteRepository
-from observatoire.cli import _live_readers, _youtube_reader, effective_since
+from observatoire.cli import _live_readers, _media_reader, _youtube_reader, effective_since
 from observatoire.config.registry import CrawlerSettings, load_registry
 from observatoire.config.settings import Settings
 from observatoire.domain.annotation import SegmentAnnotation, UsageRecord
@@ -131,6 +131,9 @@ def test_every_enabled_source_kind_has_a_live_reader() -> None:
         httpx.Client(), crawler, FrozenClock(), CONFIG, social=registry.social, apify_token=None
     )
     readers["youtube"] = _youtube_reader(
+        httpx.Client(), FrozenClock(), Settings(_env_file=None), registry, documents=[]
+    )
+    readers["media"] = _media_reader(
         httpx.Client(), FrozenClock(), Settings(_env_file=None), registry, documents=[]
     )
 

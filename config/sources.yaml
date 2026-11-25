@@ -61,6 +61,66 @@ youtube:
     - "\\bface [àa]\\b"
 
 
+# Media channels on YouTube (kind: media), added on 2026-11-25 (the CTO's list): each is
+# read for every candidate on the register, one source per candidate and channel, built
+# by the loader. A video is kept for a candidate when its title names them and no other
+# candidate, and announces an interview or a speech; Mistral then splits its captions
+# into speaking turns, and only the candidate's turns it is sure of are kept
+# (src/observatoire/adapters/sources/media_reader.py, which also says how repeats are
+# removed). Counted on 2026-11-25 (`youtube-scan`): the commentary channels named no
+# candidate as a guest since July; they stay listed, at no cost, should one come.
+media:
+  lookback_days: 3
+  daily_max_items: 3
+  max_items: 40
+  min_minutes: 8
+  keep_titles:
+    - "\\binvit[ée]"
+    - "\\binterview"
+    - "\\bentretien"
+    - "\\bgrand oral"
+    - "\\bface [àa]\\b"
+    - "\\br[ée]pond"
+    - "\\bquestions?\\b"
+    - "\\bmatinale"
+    - "\\bdiscours\\b"
+    - "\\bmeeting"
+    - "\\ballocution"
+    - "\\bd[ée]claration"
+    - "\\bconf[ée]rence de presse"
+    - "en int[ée]gralit[ée]"
+    - "\\bl'int[ée]grale"
+  skip_titles:
+    - "\\b[ée]dito"
+    - "\\bchronique"
+    - "\\banaly"
+    - "\\bd[ée]crypt"
+    - "\\bd[ée]bat"
+    - "\\bconfrontation"
+    - "\\bsondage"
+    - "\\bportrait"
+    - "\\bcoulisses"
+    - "\\brevue de presse"
+    - "\\bbest[- ]of"
+  channels:
+    - {id: france24, name: "France 24", channel: "UCCCPCZNChQdGa9EkATeye4g", url: "https://www.youtube.com/@FRANCE24"}
+    - {id: bfmtv, name: "BFMTV", channel: "UCXwDLMDV86ldKoFVc_g8P0g", url: "https://www.youtube.com/@BFMTV"}
+    - {id: cnews, name: "CNews", channel: "UCXKJrYczY2_fJEZgFPGY0HQ", url: "https://www.youtube.com/@cnewsofficiel"}
+    - {id: lci, name: "LCI", channel: "UCewhc0fvja891XkpIPGRMxQ", url: "https://www.youtube.com/@lci"}
+    - {id: rtl, name: "RTL", channel: "UCzBoVtUqSyAyr0kF5ABW7gQ", url: "https://www.youtube.com/@rtl_france"}
+    - {id: le-monde, name: "Le Monde", channel: "UCYpRDnhk5H8h16jpS84uqsA", url: "https://www.youtube.com/@lemonde"}
+    - {id: liberation, name: "Libération", channel: "UC9x4Iyu-D257P0P-VDRwSzw", url: "https://www.youtube.com/@liberation"}
+    - {id: le-figaro, name: "Le Figaro", channel: "UCCDz_XYeKWd0OIyjp95dqyQ", url: "https://www.youtube.com/@lefigaro"}
+    - {id: europe-1, name: "Europe 1", channel: "UCIMGfEAERXjmWwQeg15BFsg", url: "https://www.youtube.com/@Europe1"}
+    - {id: public-senat, name: "Public Sénat", channel: "UCTa1bPArjpvNMgSHAb_pflA", url: "https://www.youtube.com/@publicsenat"}
+    - {id: lcp, name: "LCP - Assemblée nationale", channel: "UCHGFbA0KWBgf6gMbyUCZeCQ", url: "https://www.youtube.com/@lcpassembleenationale"}
+    - {id: clement-viktorovitch, name: "Clément Viktorovitch", channel: "UCQcas4dulTzVUrAo0fMfWWg", url: "https://www.youtube.com/@clemovitch"}
+    - {id: usul, name: "Usul", channel: "UC_NukSq2ve_AHVAz_9ikTDg", url: "https://www.youtube.com/@usulmasta"}
+    - {id: thinkerview, name: "Thinkerview", channel: "UCQgWpmt02UtJkyO32HGUASQ", url: "https://www.youtube.com/@thinkerview"}
+    - {id: le-media, name: "Le Média", channel: "UCT67YOMntJxfRnO_9bXDpvw", url: "https://www.youtube.com/@lemedia-tv"}
+    - {id: osons-causer, name: "Osons Causer", channel: "UCVeMw72tepFl1Zt5fvf9QKQ", url: "https://www.youtube.com/@OsonsCauser"}
+    - {id: data-gueule, name: "Data Gueule", channel: "UCm5wThREh298TkK8hCT9HuA", url: "https://www.youtube.com/@datagueule"}
+
 collection:
   since: 2026-07-01
   # The same URL read again can extract slightly differently (another PDF library, one
