@@ -231,9 +231,47 @@ class VideoLedger:
             self._path.write_text(json.dumps(self._videos, indent=1), encoding="utf-8")
 
 
-def transcribe(apify: ApifyClient, label: str, chosen: Sequence[Video]) -> dict[str, Transcript]:
-    """Video id -> French captions, from the cheaper actor, then the fallback for the
-    videos YouTube blocked. No caption at all, with errors: the source is unavailable."""
+class TranscriptCache:
+    """Every transcript paid for, one JSON file per video: a video whose reading failed
+    after its transcript was paid for (the model did not answer) is never paid for again."""
+
+    def __init__(self, directory: Path | None) -> None:
+        self._dir = directory
+
+    def get(self, vid: str) -> Transcript | None:
+        path = self._dir / f"{vid}.json" if self._dir else None
+        if path is None or not path.exists():
+            return None
+        return Transcript.model_validate_json(path.read_text(encoding="utf-8"))
+
+    def put(self, vid: str, transcript: Transcript) -> None:
+        if self._dir is None:
+            return
+        self._dir.mkdir(parents=True, exist_ok=True)
+        (self._dir / f"{vid}.json").write_text(transcript.model_dump_json(), encoding="utf-8")
+
+
+def transcribe(
+    apify: ApifyClient,
+    label: str,
+    chosen: Sequence[Video],
+    cache: TranscriptCache | None = None,
+) -> dict[str, Transcript]:
+    """Video id -> French captions: from the cache, else from the cheaper actor, then the
+    fallback for the videos YouTube blocked. No caption at all, with errors: the source is
+    unavailable."""
+    cache = cache or TranscriptCache(None)
+    cached = {v.id: t for v in chosen if (t := cache.get(v.id)) is not None}
+    to_pay = [v for v in chosen if v.id not in cached]
+    if not to_pay:
+        return cached
+    found = _paid(apify, label, to_pay)
+    for vid, transcript in found.items():
+        cache.put(vid, transcript)
+    return {**cached, **found}
+
+
+def _paid(apify: ApifyClient, label: str, chosen: Sequence[Video]) -> dict[str, Transcript]:
     by_id = {v.id: v for v in chosen}
     items = apify.run(
         TRANSCRIPT_ACTOR,
@@ -308,6 +346,7 @@ class YoutubeReader:
         speech_check: SpeechCheck | None = None,
         set_aside: SetAside | None = None,
         ledger: VideoLedger | None = None,
+        cache: TranscriptCache | None = None,
         workers: int = 8,
         retry_seconds: float = 5,
     ) -> None:
@@ -332,6 +371,7 @@ class YoutubeReader:
         self._check = speech_check
         self._set_aside = set_aside or SetAside(None)
         self._ledger = ledger or VideoLedger(None)
+        self._cache = cache or TranscriptCache(None)
         self._workers = workers
         self._retry_seconds = retry_seconds
 
@@ -375,7 +415,9 @@ class YoutubeReader:
         if not chosen:
             return []
         by_id = {v.id: v for v in chosen}
-        transcripts = {k: t.text for k, t in transcribe(self._apify, source.url, chosen).items()}
+        transcripts = {
+            k: t.text for k, t in transcribe(self._apify, source.url, chosen, self._cache).items()
+        }
         for vid in transcripts:
             self._ledger.add(source.candidate_id, by_id[vid])
         speaker = self._speakers.get(source.candidate_id, source.candidate_id)

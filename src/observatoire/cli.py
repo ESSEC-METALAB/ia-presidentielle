@@ -47,6 +47,7 @@ from observatoire.adapters.sources.youtube_reader import (
     TRANSCRIPT_ACTOR,
     Screened,
     SetAside,
+    TranscriptCache,
     VideoLedger,
     YoutubeApi,
     YoutubeReader,
@@ -675,6 +676,7 @@ def _youtube_reader(
         speech_check=speech_check,
         set_aside=SetAside(settings.database_path.parent / "youtube-set-aside.json"),
         ledger=VideoLedger(settings.database_path.parent / "youtube-ledger.json"),
+        cache=TranscriptCache(settings.database_path.parent / "youtube-transcripts"),
     )
 
 
@@ -705,6 +707,7 @@ def _media_reader(
         attributor=attributor,
         set_aside=SetAside(settings.database_path.parent / "youtube-set-aside.json"),
         ledger=VideoLedger(settings.database_path.parent / "youtube-ledger.json"),
+        cache=TranscriptCache(settings.database_path.parent / "youtube-transcripts"),
     )
 
 
@@ -728,12 +731,12 @@ def _spoken_texts(registry: Registry, documents: Sequence[RawDocument]) -> dict[
     return stored
 
 
-def _mistral(settings: Settings) -> MistralClient | None:
+def _mistral(settings: Settings, timeout: float | None = None) -> MistralClient | None:
     if settings.llm_provider != "mistral" or not settings.mistral_model:
         return None
     if settings.mistral_api_key is None:
         return None
-    http = httpx.Client(timeout=settings.llm_timeout_seconds)
+    http = httpx.Client(timeout=timeout or settings.llm_timeout_seconds)
     return MistralClient(
         http, api_key=settings.mistral_api_key.get_secret_value(), model=settings.mistral_model
     )
@@ -749,8 +752,9 @@ def _turn_attributor(
     settings: Settings, clock: Clock, usage: BufferedUsage
 ) -> TurnAttributor | None:
     """Mistral splitting interviews into speaking turns; None without Mistral (no
-    interview is then read)."""
-    client = _mistral(settings)
+    interview is then read). Two hundred caption lines to split: a reasoning model may
+    need more than three minutes."""
+    client = _mistral(settings, timeout=600)
     return (
         LLMTurnAttributor(UsageRecordingClient(client, usage, clock, "turns")) if client else None
     )

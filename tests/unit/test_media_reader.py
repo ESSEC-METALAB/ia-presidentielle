@@ -9,7 +9,13 @@ import httpx
 
 from observatoire.adapters.sources.apify_client import ApifyClient
 from observatoire.adapters.sources.media_reader import MediaReader
-from observatoire.adapters.sources.youtube_reader import SetAside, VideoLedger, YoutubeApi, video_id
+from observatoire.adapters.sources.youtube_reader import (
+    SetAside,
+    TranscriptCache,
+    VideoLedger,
+    YoutubeApi,
+    video_id,
+)
 from observatoire.config.registry import MediaChannel, MediaSettings, media_sources
 from observatoire.domain.errors import AnnotationUnavailableError
 from observatoire.domain.models import Source, SpeakingTurn
@@ -71,6 +77,7 @@ def _reader(
     stored: dict[str, list[str]] | None = None,
     ledger: VideoLedger | None = None,
     set_aside: SetAside | None = None,
+    cache: TranscriptCache | None = None,
 ) -> MediaReader:
     def handle(request: httpx.Request) -> httpx.Response:
         if request.url.host == "www.googleapis.com":
@@ -120,6 +127,7 @@ def _reader(
         attributor=_Turns() if attributor is None else attributor,
         set_aside=set_aside,
         ledger=ledger,
+        cache=cache,
         retry_seconds=0,
     )
 
@@ -218,3 +226,15 @@ def test_each_channel_becomes_one_source_per_candidate_on_the_register() -> None
 
     assert [s.id for s in sources] == ["camille-exemple/media/tele", "dominique-autre/media/tele"]
     assert "Dominique" in sources[0].options["others"]
+
+
+def test_a_transcript_paid_for_is_never_paid_for_again(tmp_path: Path) -> None:
+    cache = TranscriptCache(tmp_path / "transcripts")
+    video = [_video("aaaaaaaaaaa", "Camille Exemple invitée")]
+    _reader(video, attributor=_Turns(error=True), cache=cache).fetch(_source(), since=None)
+    asked: list[dict[str, Any]] = []
+
+    (document,) = _reader(video, asked=asked, cache=cache).fetch(_source(), since=None)
+
+    assert asked == []
+    assert document.text.startswith("Je propose")

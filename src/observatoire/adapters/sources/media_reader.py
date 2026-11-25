@@ -36,6 +36,7 @@ from observatoire.adapters.sources.youtube_reader import (
     Screened,
     SetAside,
     Transcript,
+    TranscriptCache,
     Video,
     VideoLedger,
     YoutubeApi,
@@ -54,9 +55,10 @@ from observatoire.domain.ports import Clock, TurnAttributor
 
 _log = structlog.get_logger(__name__)
 
-# Lines sent to the model at once: about twenty minutes of captions. A 40-minute
-# interview sent whole made Mistral answer HTTP 500 (measured on 2026-11-25).
-CHUNK_LINES = 450
+# Lines sent to the model at once: about eight minutes of captions. A 40-minute
+# interview sent whole made Mistral answer HTTP 500, and 450 lines often took longer
+# than three minutes (measured on 2026-11-25).
+CHUNK_LINES = 200
 # Fewer words than this attributed to the candidate: not their interview.
 MIN_WORDS = 150
 # The candidate's words share this much of their eight-word sequences with a text of
@@ -82,6 +84,7 @@ class MediaReader:
         attributor: TurnAttributor | None = None,
         set_aside: SetAside | None = None,
         ledger: VideoLedger | None = None,
+        cache: TranscriptCache | None = None,
         workers: int = 6,
         retry_seconds: float = 5,
     ) -> None:
@@ -102,6 +105,7 @@ class MediaReader:
         self._attributor = attributor
         self._set_aside = set_aside or SetAside(None)
         self._ledger = ledger or VideoLedger(None)
+        self._cache = cache or TranscriptCache(None)
         self._workers = workers
         self._retry_seconds = retry_seconds
         self._listings: dict[tuple[str, date | None], list[Video]] = {}
@@ -156,7 +160,7 @@ class MediaReader:
         if not chosen:
             return []
         by_id = {v.id: v for v in chosen}
-        transcripts = transcribe(self._apify, source.url, chosen)
+        transcripts = transcribe(self._apify, source.url, chosen, self._cache)
         for vid in transcripts:
             self._ledger.add(source.candidate_id, by_id[vid])
         speaker = self._speakers.get(source.candidate_id, source.candidate_id)
