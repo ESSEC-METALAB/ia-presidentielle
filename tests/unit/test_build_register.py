@@ -119,6 +119,21 @@ def test_a_statement_carries_the_stored_documents_provenance() -> None:
     assert not entry.verified
 
 
+def test_a_quote_already_shown_is_not_shown_again_from_a_media() -> None:
+    store = InMemoryStore()
+    media = source("camille-exemple/media/tele", kind="media", trust_level=TrustLevel.OWN_WORDS)
+    _annotated(store, document(TEXT))
+    _annotated(
+        store,
+        document(f"{TEXT} Rediffusion.", source_id=media.id, trust_level=TrustLevel.OWN_WORDS),
+    )
+
+    register = _build(store, [candidate()], [FEED, media])
+
+    (entry,) = register.entries
+    assert entry.source.id == FEED.id
+
+
 def test_an_excluded_document_gives_no_statement() -> None:
     store = InMemoryStore()
     doc = document(TEXT)

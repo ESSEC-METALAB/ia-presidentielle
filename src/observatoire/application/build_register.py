@@ -10,6 +10,7 @@ AI that nobody has annotated yet are counted as pending, per candidate, so the s
 says "aucune position identifiée" about text it has not read.
 """
 
+import re
 from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -165,7 +166,7 @@ def _entries(
         for pid, annotation in chosen.items()
         for statement in annotation.annotations
     ]
-    return tuple(sorted(_one_per_quote(entries), key=lambda e: e.annotation.id))
+    return tuple(sorted(_media_repeats_out(_one_per_quote(entries)), key=lambda e: e.annotation.id))
 
 
 def _framed(
@@ -217,6 +218,26 @@ def _one_per_quote(entries: Sequence[RegisterEntry]) -> list[RegisterEntry]:
         if current is None or _preferred(entry) > _preferred(current):
             kept[key] = entry
     return list(kept.values())
+
+
+def _media_repeats_out(entries: Sequence[RegisterEntry]) -> list[RegisterEntry]:
+    """A quote from a media channel already shown from another source, the candidate's
+    own above all, is not shown again: the same speech or interview, broadcast twice."""
+    seen = {_said(e) for e in entries if e.source.kind != "media"}
+    out: list[RegisterEntry] = []
+    for entry in sorted(entries, key=lambda e: (e.source.kind == "media", _preferred(e))):
+        if entry.source.kind == "media":
+            if _said(entry) in seen:
+                continue
+            seen.add(_said(entry))
+        out.append(entry)
+    return out
+
+
+def _said(entry: RegisterEntry) -> tuple[str, str]:
+    """Who said it and what, whatever the case, punctuation and spacing."""
+    words = re.findall(r"\w+", entry.annotation.quote.lower())
+    return entry.document.candidate_id, " ".join(words)
 
 
 def _preferred(entry: RegisterEntry) -> tuple[bool, str]:
